@@ -2,20 +2,52 @@ import AuthHeader from "@/components/AuthHeader";
 import "./home.css";
 
 const categories = [
-  ["01", "DINING", "맛집", "지역별 인기 다이닝"],
-  ["02", "CAFE", "카페", "분위기 좋은 카페"],
-  ["03", "TRAVEL", "여행지", "전국 여행 명소"],
-  ["04", "FESTIVAL", "축제", "지역별 행사 정보"],
-  ["05", "CULTURE", "문화", "전시와 문화생활"],
-  ["06", "COURSE", "추천 코스", "AI 맞춤 동선"],
+  {
+    number: "01",
+    english: "DINING",
+    title: "맛집",
+    description: "지역별 인기 다이닝",
+  },
+  {
+    number: "02",
+    english: "CAFE",
+    title: "카페",
+    description: "분위기 좋은 카페",
+  },
+  {
+    number: "03",
+    english: "TRAVEL",
+    title: "여행지",
+    description: "전국 여행 명소",
+  },
+  {
+    number: "04",
+    english: "FESTIVAL",
+    title: "축제",
+    description: "지역별 행사 정보",
+  },
+  {
+    number: "05",
+    english: "CULTURE",
+    title: "문화",
+    description: "전시와 문화생활",
+  },
+  {
+    number: "06",
+    english: "COURSE",
+    title: "추천 코스",
+    description: "AI 맞춤 동선",
+  },
 ];
 
 const recommendations = [
   {
     category: "카페",
     icon: "☕",
+    badge: "실시간 인기",
     region: "부산 해운대",
     title: "해운대 오션뷰 루프탑 카페",
+    description: "바다와 노을을 바라보며 여유를 즐길 수 있는 카페",
     rating: "4.8",
     reviews: "961",
     className: "recommendation-beige",
@@ -23,8 +55,10 @@ const recommendations = [
   {
     category: "축제",
     icon: "🎆",
+    badge: "실시간 인기",
     region: "경기 수원",
     title: "수원화성 야간 문화축제",
+    description: "야경과 전통문화를 함께 경험할 수 있는 지역 축제",
     rating: "4.7",
     reviews: "790",
     className: "recommendation-lime",
@@ -32,8 +66,10 @@ const recommendations = [
   {
     category: "여행",
     icon: "🚙",
+    badge: "실시간 인기",
     region: "제주 서귀포",
     title: "애월 해안도로 드라이브",
+    description: "제주 바다와 감성 카페를 함께 즐기는 드라이브 코스",
     rating: "4.9",
     reviews: "2,127",
     className: "recommendation-pink",
@@ -41,12 +77,29 @@ const recommendations = [
   {
     category: "데이트",
     icon: "🎪",
+    badge: "실시간 인기",
     region: "서울 성동구",
     title: "한강 노을 데이트 코스",
+    description: "산책부터 야경까지 이어지는 아이디어 데이트 코스",
     rating: "4.8",
     reviews: "1,559",
     className: "recommendation-yellow",
   },
+];
+
+const regions = [
+  "서울",
+  "경기",
+  "인천",
+  "부산",
+  "제주",
+  "강원",
+  "충청",
+  "전라",
+  "경상",
+  "대구",
+  "광주",
+  "대전",
 ];
 
 export default function Home() {
@@ -88,13 +141,15 @@ export default function Home() {
             </h1>
 
             <p className="kp-hero-description">
-              맛집, 카페, 여행지, 축제와 데이트 코스까지
-              검색과 리뷰 데이터를 기반으로 추천합니다.
+              맛집, 카페, 여행지, 축제와 데이트 코스까지.
+              검색과 리뷰 데이터를 바탕으로 지금 주목받는 장소를
+              추천합니다.
             </p>
 
             <div className="kp-search">
               <input
                 type="search"
+                aria-label="추천 장소 검색"
                 placeholder="장소, 지역 또는 카테고리를 검색하세요"
               />
               <button type="button">검색</button>
@@ -104,10 +159,11 @@ export default function Home() {
               <small>실시간 인기 검색어</small>
 
               <div>
-                <button type="button">서울 데이트</button>
-                <button type="button">부산 여행</button>
-                <button type="button">제주 카페</button>
-                <button type="button">수원 맛집</button>
+                <button type="button">1. 서울 데이트</button>
+                <button type="button">2. 부산 여행</button>
+                <button type="button">3. 제주 카페</button>
+                <button type="button">4. 수원 맛집</button>
+                <button type="button">5. 속초 여행</button>
               </div>
             </div>
           </article>
@@ -151,7 +207,10 @@ export default function Home() {
             <div>
               <p className="kp-overline">EXPLORE</p>
               <h2>무엇을 찾고 계신가요?</h2>
-              <p>관심 카테고리를 선택해 추천 장소를 확인하세요.</p>
+              <p>
+                관심 카테고리를 선택해 전국의 추천 장소를
+                둘러보세요.
+              </p>
             </div>
 
             <button className="kp-outline-button" type="button">
@@ -160,14 +219,16 @@ export default function Home() {
           </div>
 
           <div className="kp-category-grid">
-            {categories.map(([number, english, title, description]) => (
-              <article key={number}>
-                <span className="kp-category-number">{number}</span>
+            {categories.map((category) => (
+              <article key={category.number}>
+                <span className="kp-category-number">
+                  {category.number}
+                </span>
 
                 <div>
-                  <small>{english}</small>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
+                  <small>{category.english}</small>
+                  <h3>{category.title}</h3>
+                  <p>{category.description}</p>
                 </div>
 
                 <b>↗</b>
@@ -182,7 +243,15 @@ export default function Home() {
           <div className="kp-popular-heading">
             <div>
               <h2>지금 인기 있는 추천</h2>
-              <p>평점과 최근 리뷰 증가량을 반영합니다.</p>
+              <p>
+                평점, 누적 리뷰와 최근 리뷰 증가량을 실시간으로
+                반영합니다.
+              </p>
+            </div>
+
+            <div className="kp-popular-action">
+              <button type="button">더 많은 장소 →</button>
+              <small>LIVE 오후 12:05 기준</small>
             </div>
           </div>
 
@@ -205,17 +274,22 @@ export default function Home() {
                   </button>
 
                   <span className="kp-card-icon">{item.icon}</span>
-                  <span className="kp-live-badge">실시간 인기</span>
+
+                  <span className="kp-live-badge">{item.badge}</span>
                 </div>
 
                 <div className="kp-recommendation-content">
                   <small>{item.region}</small>
                   <h3>{item.title}</h3>
-                  <p>장소 정보와 방문자 리뷰를 확인해 보세요.</p>
+                  <p>{item.description}</p>
                 </div>
 
                 <div className="kp-recommendation-meta">
-                  <strong>★ {item.rating}</strong>
+                  <div>
+                    <strong>★ {item.rating}</strong>
+                    <small>최근 리뷰 증가</small>
+                  </div>
+
                   <span>리뷰 {item.reviews}</span>
                 </div>
               </article>
@@ -236,22 +310,12 @@ export default function Home() {
             </h2>
 
             <p>
-              원하는 지역을 선택해 맛집, 카페, 관광지와 축제를
-              확인할 수 있습니다.
+              원하는 지역을 선택하면 인기 맛집과 카페,
+              관광지와 축제 정보를 한 번에 확인할 수 있습니다.
             </p>
 
             <div className="kp-region-buttons">
-              {[
-                "서울",
-                "경기",
-                "인천",
-                "부산",
-                "제주",
-                "강원",
-                "충청",
-                "전라",
-                "경상",
-              ].map((region) => (
+              {regions.map((region) => (
                 <button type="button" key={region}>
                   {region}
                 </button>
@@ -261,11 +325,13 @@ export default function Home() {
 
           <article className="kp-region-poster">
             <small>KOREA</small>
+
             <strong>
               LOCAL
               <br />
               SELECTION
             </strong>
+
             <span>12 REGIONS · DAILY UPDATE</span>
           </article>
         </div>
@@ -286,13 +352,19 @@ export default function Home() {
           </div>
 
           <p>
-            지역, 예산, 인원과 분위기를 분석해 맞춤 코스를
-            추천합니다.
+            지역, 예산, 인원, 이동 방식과 분위기를 분석해
+            실제로 방문 가능한 맞춤 코스를 추천합니다.
           </p>
 
           <button type="button">AI 추천 시작하기 →</button>
         </div>
       </section>
+
+      <footer className="kp-footer">
+        <div className="kp-container">
+          © 2026 KOREA PICK · 전국 추천 플랫폼
+        </div>
+      </footer>
     </main>
   );
 }

@@ -1,0 +1,298 @@
+﻿import LiveKeywords from "@/components/LiveKeywords";
+import LiveRecommendations from "@/components/LiveRecommendations";
+
+const categories = [
+  {
+    icon: "🍽️",
+    title: "맛집",
+    description: "지역별 인기 맛집",
+  },
+  {
+    icon: "☕",
+    title: "카페",
+    description: "감성 카페와 디저트",
+  },
+  {
+    icon: "🌊",
+    title: "여행지",
+    description: "전국 여행 명소",
+  },
+  {
+    icon: "🎆",
+    title: "축제",
+    description: "지역별 행사와 축제",
+  },
+  {
+    icon: "🎬",
+    title: "문화",
+    description: "영화와 전시 정보",
+  },
+  {
+    icon: "🗺️",
+    title: "추천 코스",
+    description: "AI 맞춤 여행 코스",
+  },
+];
+
+const regions = [
+  "서울",
+  "경기",
+  "인천",
+  "강원",
+  "충청",
+  "전라",
+  "경상",
+  "부산",
+  "대구",
+  "광주",
+  "대전",
+  "제주",
+];
+
+export default function Home() {
+  return (
+    <>
+      <header className="site-header">
+        <div className="container header-inner">
+          <a className="brand" href="#">
+            <span className="brand-symbol">K</span>
+            <span>코리아픽</span>
+          </a>
+
+          <nav className="desktop-navigation" aria-label="주요 메뉴">
+            <a href="#category">카테고리</a>
+            <a href="#trending">인기 추천</a>
+            <a href="#region">지역 찾기</a>
+            <a href="#ai">AI 추천</a>
+          </nav>
+
+          <div className="header-actions">
+            <button className="login-button" type="button">
+              로그인
+            </button>
+
+            <button className="start-button" type="button">
+              시작하기
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section className="hero-section">
+          <div className="container">
+            <div className="hero-card">
+              <div className="hero-decoration hero-decoration-top" />
+              <div className="hero-decoration hero-decoration-bottom" />
+
+              <div className="hero-content">
+                <span className="hero-badge">
+                  ✨ 전국의 좋은 장소를 한곳에서
+                </span>
+
+                <h1>
+                  오늘 어디 갈지
+                  <br />
+                  <strong>코리아픽이 추천할게요</strong>
+                </h1>
+
+                <p>
+                  맛집, 카페, 여행지, 축제부터 데이트 코스까지
+                  <br />
+                  지역과 취향에 맞는 장소를 빠르게 찾아보세요.
+                </p>
+
+                <form className="hero-search">
+                  <label className="hero-search-field">
+                    <span aria-hidden>⌕</span>
+
+                    <input
+                      type="search"
+                      aria-label="지역 또는 장소 검색"
+                      placeholder="지역, 장소 또는 원하는 분위기를 검색하세요"
+                    />
+                  </label>
+
+                  <button type="submit">검색하기</button>
+                </form>
+
+                <LiveKeywords />
+              </div>
+
+              <div className="hero-visual" aria-label="추천 장소 미리보기">
+                <div className="hero-floating-card hero-floating-top">
+                  <span className="floating-icon">📍</span>
+
+                  <div>
+                    <strong>내 주변 추천</strong>
+                    <small>현재 위치 기반 탐색</small>
+                  </div>
+                </div>
+
+                <article className="hero-place-card">
+                  <div className="hero-place-image">
+                    <span aria-hidden>🎪</span>
+                  </div>
+
+                  <div className="hero-place-content">
+                    <div className="hero-place-meta">
+                      <span>서울 · 여의도</span>
+                      <strong>★ 4.9</strong>
+                    </div>
+
+                    <h2>한강 노을 데이트 코스</h2>
+
+                    <p>
+                      산책부터 야경까지 이어지는 4시간 추천 코스
+                    </p>
+                  </div>
+                </article>
+
+                <div className="hero-floating-card hero-floating-bottom">
+                  <span className="floating-icon">💜</span>
+
+                  <div>
+                    <strong>98% 취향 일치</strong>
+                    <small>AI 맞춤 추천 결과</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section category-section" id="category">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <span className="section-eyebrow">CATEGORY</span>
+                <h2>어떤 장소를 찾고 있나요?</h2>
+                <p>
+                  카테고리를 선택하고 전국의 인기 장소를 확인해 보세요.
+                </p>
+              </div>
+
+              <button className="outline-button" type="button">
+                전체 카테고리
+                <span>→</span>
+              </button>
+            </div>
+
+            <div className="category-grid">
+              {categories.map((category) => (
+                <button
+                  className="category-card"
+                  key={category.title}
+                  type="button"
+                >
+                  <span className="category-icon">
+                    {category.icon}
+                  </span>
+
+                  <strong>{category.title}</strong>
+                  <small>{category.description}</small>
+                  <span className="category-arrow">→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="section trending-section" id="trending">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <span className="section-eyebrow">TRENDING</span>
+                <h2>지금 인기 있는 추천</h2>
+                <p>
+                  리뷰, 평점과 최근 리뷰 증가량을 기준으로 추천합니다.
+                </p>
+              </div>
+
+              <button className="outline-button" type="button">
+                더 많은 장소
+                <span>→</span>
+              </button>
+            </div>
+
+            <LiveRecommendations />
+          </div>
+        </section>
+
+        <section className="section region-section" id="region">
+          <div className="container">
+            <div className="region-card">
+              <div className="region-content">
+                <span className="section-eyebrow">REGION</span>
+                <h2>지역별로 찾아보세요</h2>
+
+                <p>
+                  원하는 지역을 선택하면 맛집, 카페, 관광지와 축제를
+                  한눈에 확인할 수 있습니다.
+                </p>
+
+                <div className="region-buttons">
+                  {regions.map((region) => (
+                    <button key={region} type="button">
+                      {region}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="region-map">
+                <strong>KR</strong>
+                <span>전국 지역 추천</span>
+                <small>지역 선택형 지도 영역</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="section ai-section" id="ai">
+          <div className="container">
+            <div className="ai-card">
+              <div className="ai-symbol">✦</div>
+
+              <div className="ai-content">
+                <span>AI PERSONAL CURATOR</span>
+
+                <h2>
+                  취향만 알려주면 하루 코스를 완성해 드려요
+                </h2>
+
+                <p>
+                  지역, 예산, 인원, 이동 방법과 분위기를 분석해
+                  나에게 맞는 여행 및 데이트 코스를 추천합니다.
+                </p>
+              </div>
+
+              <button type="button">
+                AI 추천 시작하기
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="container footer-inner">
+          <a className="brand" href="#">
+            <span className="brand-symbol">K</span>
+            <span>코리아픽</span>
+          </a>
+
+          <p>전국의 좋은 장소를 더 쉽고 즐겁게 발견하세요.</p>
+
+          <nav className="footer-navigation">
+            <a href="#">서비스 소개</a>
+            <a href="#">이용약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="#">문의하기</a>
+          </nav>
+        </div>
+      </footer>
+    </>
+  );
+}

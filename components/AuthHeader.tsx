@@ -1,0 +1,97 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "../utils/supabase/client";
+
+export default function AuthHeader() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const loadSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    void loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setUser(null);
+    window.location.replace("/login");
+  };
+
+  if (loading) {
+    return (
+      <button
+        className="header-login-button"
+        type="button"
+        disabled
+      >
+        확인 중
+      </button>
+    );
+  }
+
+  if (user) {
+    return (
+      <div className="header-user">
+        <span>
+          {user.user_metadata?.full_name ??
+            user.user_metadata?.name ??
+            user.email}
+        </span>
+
+        <button
+          className="header-login-button"
+          type="button"
+          onClick={handleLogout}
+        >
+          로그아웃
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="header-auth-buttons">
+      <Link className="header-login-button" href="/login">
+        로그인
+      </Link>
+
+      <Link
+        className="header-signup-button"
+        href="/login?mode=signup"
+      >
+        시작하기
+      </Link>
+    </div>
+  );
+}

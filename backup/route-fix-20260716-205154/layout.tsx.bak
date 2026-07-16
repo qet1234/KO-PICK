@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "코리아픽 | 전국 추천 플랫폼",
-  description: "전국 맛집, 여행지, 카페와 데이트 코스를 추천합니다.",
+  description:
+    "전국 맛집, 여행, 데이트, 생활 정보를 추천하는 플랫폼",
 };
 
 export default function RootLayout({

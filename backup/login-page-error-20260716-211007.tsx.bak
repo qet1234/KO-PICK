@@ -1,0 +1,225 @@
+"use client";
+
+
+import { FormEvent, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleGoogleLogin = async () => {
+    if (loading) return;
+
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const supabase = createClient();
+
+      const { data, error } =
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo:
+              `${window.location.origin}/auth/callback`,
+            queryParams: {
+              prompt: "select_account",
+            },
+            skipBrowserRedirect: true,
+          },
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.url) {
+        throw new Error(
+          "Google 嚥≪뮄???雅뚯눘?쇘몴???밴쉐??? 筌륁궢六??щ빍??"
+        );
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Google 嚥≪뮄??紐꾨퓠 ??쎈솭??됰뮸??덈뼄.";
+
+      console.error("Google 嚥≪뮄?????살첒:", error);
+      setMessage(errorMessage);
+      setLoading(false);
+    }
+  };
+
+  const handleEmailLogin = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    try {
+      setLoading(true);
+      setMessage("");
+
+      if (!email || !password) {
+        throw new Error(
+          "??李??⑤궢 ??쑬?甕곕뜇?뉒몴???낆젾??雅뚯눘苑??"
+        );
+      }
+
+      const supabase = createClient();
+
+      const { error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      window.location.assign("/");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "??李??嚥≪뮄??紐꾨퓠 ??쎈솭??됰뮸??덈뼄.";
+
+      setMessage(errorMessage);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="login-page">
+      <section className="login-visual">
+        <div className="login-brand">
+          <span>K</span>
+          <strong>?꾨뗀??袁る동</strong>
+        </div>
+
+        <div className="login-copy">
+          <small>KOREA PICK MEMBERSHIP</small>
+
+          <h1>
+            ?띯뫂堉??筌띿쉶??            <br />
+            ?袁㏓럢???關?쇘몴?            <br />
+            ???館釉?紐꾩뒄
+          </h1>
+
+          <p>
+            筌띿룇彛? 燁삳똾?? ??六억쭪??? ?怨쀬뵠???꾨뗄?ょ몴????館釉??            ??롮춸???곕뗄荑?疫꿸퀡以????볥궔?癒?퐣 ?온?귐뗫막 ????됰뮸??덈뼄.
+          </p>
+
+          <div className="login-benefits">
+            <article>
+              <small>01</small>
+              <strong>筌띿쉸???곕뗄荑?/strong>
+            </article>
+
+            <article>
+              <small>02</small>
+              <strong>?關??????/strong>
+            </article>
+
+            <article>
+              <small>03</small>
+              <strong>?꾨뗄???온??/strong>
+            </article>
+          </div>
+        </div>
+
+        <div className="login-pick">
+          <small>TODAY&apos;S CURATION</small>
+          <strong>
+            ??삳뮎????뚯뱽
+            <br />
+            筌띾슢援배퉪?곴쉭??          </strong>
+        </div>
+      </section>
+
+      <section className="login-form-section">
+        <div className="login-card">
+          <span className="login-label">
+            MEMBER LOGIN
+          </span>
+
+          <h2>??쇰뻻 筌띾슢援??獄쏆꼵????뒄</h2>
+
+          <p className="login-description">
+            嚥≪뮄??紐낅릭?????館釉??關??? 筌띿쉸???곕뗄荑?疫꿸퀡以??            ?類ㅼ뵥??뤾쉭??
+          </p>
+
+          <button
+            className="google-button"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading}
+          >
+            <span>G</span>
+            {loading
+              ? "Google ?怨뚭퍙 餓?.."
+              : "Google ?④쑴???곗쨮 ?④쑴???띾┛"}
+          </button>
+
+          <div className="login-divider">
+            <span />
+            <p>?癒?뮉 ??李??곗쨮 嚥≪뮄???/p>
+            <span />
+          </div>
+
+          <form onSubmit={handleEmailLogin}>
+            <label htmlFor="email">??李??/label>
+
+            <input
+              id="email"
+              type="email"
+              value={email}
+              placeholder="example@email.com"
+              autoComplete="email"
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
+            />
+
+            <label htmlFor="password">??쑬?甕곕뜇??/label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              placeholder="??쑬?甕곕뜇????낆젾"
+              autoComplete="current-password"
+              onChange={(event) =>
+                setPassword(event.target.value)
+              }
+            />
+
+            <button
+              className="email-login-button"
+              type="submit"
+              disabled={loading}
+            >
+              嚥≪뮄???            </button>
+          </form>
+
+          <Link
+            className="signup-link"
+            href="/login?mode=signup"
+          >
+            ?袁⑹춦 ?꾨뗀??袁る동 ?④쑴?????욧돌?? ???뜚揶쎛??          </div>
+
+          {message ? (
+            <p className="login-message" role="alert">
+              {message}
+            </p>
+          ) : null}
+        </div>
+      </section>
+    </main>
+  );
+}
