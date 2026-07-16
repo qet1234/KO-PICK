@@ -18,30 +18,20 @@ export default function LoginPage() {
 
       const supabase = createClient();
 
-      const { data, error } =
-        await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo:
-              `${window.location.origin}/auth/callback`,
-            queryParams: {
-              prompt: "select_account",
-            },
-            skipBrowserRedirect: true,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo:
+            "https://koreapick.duckdns.org/auth/callback",
+          queryParams: {
+            prompt: "select_account",
           },
-        });
+        },
+      });
 
       if (error) {
         throw error;
       }
-
-      if (!data.url) {
-        throw new Error(
-          "Google 로그인 주소를 생성하지 못했습니다."
-        );
-      }
-
-      window.location.assign(data.url);
     } catch (error) {
       const errorMessage =
         error instanceof Error
