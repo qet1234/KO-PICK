@@ -933,20 +933,35 @@ export default function KakaoRegionExplorer() {
             <nav className="kp-place-pagination" aria-label="추천 장소 페이지">
               <button
                 type="button"
+                className="kp-pagination-button kp-pagination-button--prev"
+                aria-label="이전 페이지"
                 disabled={page <= 1}
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
               >
-                이전
+                <span className="kp-pagination-arrow" aria-hidden="true">‹</span>
+                <span>이전</span>
               </button>
-              <span>
-                {page.toLocaleString("ko-KR")} / {totalPages.toLocaleString("ko-KR")}
+
+              <span
+                key={page}
+                className="kp-pagination-status"
+                aria-live="polite"
+                aria-label={`${page} / ${totalPages} 페이지`}
+              >
+                <strong>{page.toLocaleString("ko-KR")}</strong>
+                <span aria-hidden="true">/</span>
+                <span>{totalPages.toLocaleString("ko-KR")}</span>
               </span>
+
               <button
                 type="button"
+                className="kp-pagination-button kp-pagination-button--next"
+                aria-label="다음 페이지"
                 disabled={page >= totalPages}
                 onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               >
-                다음
+                <span>다음</span>
+                <span className="kp-pagination-arrow" aria-hidden="true">›</span>
               </button>
             </nav>
           )}
