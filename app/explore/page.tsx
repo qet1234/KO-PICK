@@ -3,14 +3,19 @@ import "./explore.css";
 
 const allowedCategories = [
   "전체",
-  "맛집",
+  "음식",
   "카페",
-  "관광지",
   "축제",
-  "문화",
+  "관광지",
 ] as const;
 
 type AllowedCategory = (typeof allowedCategories)[number];
+
+const categoryAliases: Record<string, AllowedCategory> = {
+  맛집: "음식",
+  여행지: "관광지",
+  문화: "관광지",
+};
 
 interface ExplorePageProps {
   searchParams: Promise<{
@@ -25,12 +30,15 @@ export default async function ExplorePage({
   const rawCategory = Array.isArray(params.category)
     ? params.category[0]
     : params.category;
+  const normalizedCategory = rawCategory
+    ? categoryAliases[rawCategory] ?? rawCategory
+    : "전체";
 
-  const initialCategory: AllowedCategory =
-    rawCategory &&
-    allowedCategories.includes(rawCategory as AllowedCategory)
-      ? (rawCategory as AllowedCategory)
-      : "전체";
+  const initialCategory: AllowedCategory = allowedCategories.includes(
+    normalizedCategory as AllowedCategory
+  )
+    ? (normalizedCategory as AllowedCategory)
+    : "전체";
 
   return <CategoryExplorePage initialCategory={initialCategory} />;
 }

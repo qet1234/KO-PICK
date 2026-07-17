@@ -520,3 +520,70 @@ select {
     transition: none !important;
   }
 }
+
+
+/* KOREAPICK EXPLORE DETAIL FILTER */
+.kp-explore-detail-filter {
+  margin-top: 14px;
+}
+
+.kp-explore-detail-filter > span {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.kp-explore-detail-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.kp-explore-detail-buttons button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #d7d7d1;
+  border-radius: 999px;
+  background: #fff;
+  color: #353530;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease,
+    background-color 180ms ease, border-color 180ms ease;
+}
+
+.kp-explore-detail-buttons button.is-active {
+  border-color: #151515;
+  background: #151515;
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .kp-explore-detail-buttons button:hover {
+    transform: translateY(-1px);
+    border-color: var(--explore-red);
+  }
+}
+
+@media (max-width: 720px) {
+  .kp-explore-detail-buttons {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: thin;
+  }
+
+  .kp-explore-detail-buttons button {
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-explore-detail-buttons button {
+    transition: none !important;
+  }
+}
+/* END KOREAPICK EXPLORE DETAIL FILTER */

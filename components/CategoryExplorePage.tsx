@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type CategoryValue =
-  | "전체"
-  | "맛집"
-  | "카페"
-  | "관광지"
-  | "축제"
-  | "문화";
+type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
 interface Place {
   id: number | string;
@@ -109,15 +103,60 @@ const categoryOptions: Array<{
   label: string;
 }> = [
   { value: "전체", label: "전체" },
-  { value: "맛집", label: "맛집" },
+  { value: "음식", label: "음식" },
   { value: "카페", label: "카페" },
-  { value: "관광지", label: "여행지" },
   { value: "축제", label: "축제" },
-  { value: "문화", label: "문화" },
+  { value: "관광지", label: "관광지" },
 ];
 
+const categoryDetails: Record<Exclude<CategoryValue, "전체">, string[]> = {
+  음식: [
+    "전체",
+    "한식",
+    "일식",
+    "중식",
+    "양식",
+    "세계음식",
+    "해산물",
+    "간편식",
+    "건강식",
+    "주점",
+  ],
+  카페: [
+    "전체",
+    "프랜차이즈",
+    "감성카페",
+    "뷰카페",
+    "대형카페",
+    "조용한카페",
+    "작업하기 좋은 카페",
+    "이색카페",
+  ],
+  축제: [
+    "전체",
+    "지역축제",
+    "계절축제",
+    "먹거리축제",
+    "전통축제",
+    "문화예술축제",
+    "음악 페스티벌",
+    "불꽃축제",
+    "체험행사",
+  ],
+  관광지: [
+    "전체",
+    "박물관",
+    "미술관·전시관",
+    "전시회",
+    "공원",
+    "자연명소",
+    "역사·유적",
+    "테마파크",
+  ],
+};
+
 function displayCategory(category: string) {
-  return category === "관광지" ? "여행지" : category;
+  return category === "맛집" ? "음식" : category;
 }
 
 interface CategoryExplorePageProps {
@@ -134,6 +173,7 @@ export default function CategoryExplorePage({
 
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryValue>(initialCategory);
+  const [selectedDetail, setSelectedDetail] = useState("전체");
   const [selectedRegion, setSelectedRegion] =
     useState<RegionName>("전국");
   const [selectedSubregion, setSelectedSubregion] = useState("전체");
@@ -154,6 +194,9 @@ export default function CategoryExplorePage({
       )?.label ?? selectedCategory,
     [selectedCategory]
   );
+
+  const detailOptions =
+    selectedCategory === "전체" ? [] : categoryDetails[selectedCategory];
 
   useEffect(() => {
     let cancelled = false;
@@ -215,6 +258,9 @@ export default function CategoryExplorePage({
         });
 
         if (sigunguCode) params.set("sigunguCode", sigunguCode);
+        if (selectedDetail !== "전체") {
+          params.set("detailType", selectedDetail);
+        }
 
         const response = await fetch(
           "/api/tour/places?" + params.toString()
@@ -257,6 +303,7 @@ export default function CategoryExplorePage({
   }, [
     page,
     selectedCategory,
+    selectedDetail,
     selectedRegion,
     selectedSubregion,
     subregions,
@@ -479,6 +526,7 @@ export default function CategoryExplorePage({
                   aria-pressed={selectedCategory === option.value}
                   onClick={() => {
                     setSelectedCategory(option.value);
+                    setSelectedDetail("전체");
                     setPage(1);
                   }}
                 >
@@ -486,6 +534,28 @@ export default function CategoryExplorePage({
                 </button>
               ))}
             </div>
+
+            {detailOptions.length > 0 && (
+              <div className="kp-explore-detail-filter">
+                <span>세부 종류</span>
+                <div className="kp-explore-detail-buttons">
+                  {detailOptions.map((detail) => (
+                    <button
+                      key={detail}
+                      type="button"
+                      className={selectedDetail === detail ? "is-active" : ""}
+                      aria-pressed={selectedDetail === detail}
+                      onClick={() => {
+                        setSelectedDetail(detail);
+                        setPage(1);
+                      }}
+                    >
+                      {detail}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="kp-explore-region-selects">
               <label>

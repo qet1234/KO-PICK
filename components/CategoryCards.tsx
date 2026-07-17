@@ -8,7 +8,7 @@ const categoryCards = [
     english: "DINING",
     title: "맛집",
     description: "지역별 인기 다이닝",
-    target: "맛집",
+    target: "음식",
   },
   {
     number: "02",
@@ -30,13 +30,6 @@ const categoryCards = [
     title: "축제",
     description: "지역별 행사 정보",
     target: "축제",
-  },
-  {
-    number: "05",
-    english: "CULTURE",
-    title: "문화",
-    description: "전시와 문화생활",
-    target: "문화",
   },
 ] as const;
 

@@ -294,7 +294,13 @@ export async function GET(request: NextRequest) {
       positiveInteger(searchParams.get("pageSize"), 100),
       PAGE_SIZE_MAX
     );
-    const category = searchParams.get("category") ?? "전체";
+    const requestedCategory = searchParams.get("category") ?? "전체";
+    const categoryAliases: Record<string, string> = {
+      맛집: "음식",
+      여행지: "관광지",
+      문화: "관광지",
+    };
+    const category = categoryAliases[requestedCategory] ?? requestedCategory;
     const detailType = searchParams.get("detailType") ?? "전체";
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
     const sources = getQuerySources(category, detailType);
