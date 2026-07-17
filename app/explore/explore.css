@@ -525,14 +525,30 @@ select {
 /* KOREAPICK EXPLORE DETAIL FILTER */
 .kp-explore-detail-filter {
   margin-top: 14px;
+  padding: 15px 16px 16px;
+  border: 1px solid rgba(255, 59, 54, 0.22);
+  background: #fff8f5;
 }
 
-.kp-explore-detail-filter > span {
-  display: block;
-  margin-bottom: 7px;
+.kp-explore-detail-heading {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kp-explore-detail-heading strong {
+  color: var(--explore-red);
   font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.kp-explore-detail-heading span {
+  color: #555550;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .kp-explore-detail-buttons {
@@ -559,6 +575,15 @@ select {
   border-color: #151515;
   background: #151515;
   color: #fff;
+}
+
+.kp-explore-place-card > button:active {
+  transform: scale(0.975);
+}
+
+.kp-explore-place-card > button:focus-visible {
+  outline: 3px solid rgba(255, 59, 54, 0.3);
+  outline-offset: -3px;
 }
 
 @media (hover: hover) {

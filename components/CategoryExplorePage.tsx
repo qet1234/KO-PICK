@@ -155,6 +155,13 @@ const categoryDetails: Record<Exclude<CategoryValue, "전체">, string[]> = {
   ],
 };
 
+const detailLabels: Record<Exclude<CategoryValue, "전체">, string> = {
+  음식: "음식 종류",
+  카페: "카페 유형",
+  축제: "축제·행사 유형",
+  관광지: "관광지 유형",
+};
+
 function displayCategory(category: string) {
   return category === "맛집" ? "음식" : category;
 }
@@ -197,6 +204,8 @@ export default function CategoryExplorePage({
 
   const detailOptions =
     selectedCategory === "전체" ? [] : categoryDetails[selectedCategory];
+  const detailLabel =
+    selectedCategory === "전체" ? "" : detailLabels[selectedCategory];
 
   useEffect(() => {
     let cancelled = false;
@@ -537,7 +546,10 @@ export default function CategoryExplorePage({
 
             {detailOptions.length > 0 && (
               <div className="kp-explore-detail-filter">
-                <span>세부 종류</span>
+                <div className="kp-explore-detail-heading">
+                  <strong>DETAIL TYPE</strong>
+                  <span>{detailLabel}</span>
+                </div>
                 <div className="kp-explore-detail-buttons">
                   {detailOptions.map((detail) => (
                     <button
@@ -607,7 +619,9 @@ export default function CategoryExplorePage({
                   ? " · " + selectedSubregion
                   : ""}
                 {" · "}
-                {selectedCategoryLabel} 추천 장소{" "}
+                {selectedCategoryLabel}
+                {selectedDetail !== "전체" ? " · " + selectedDetail : ""}
+                {" 추천 장소 "}
                 {totalCount.toLocaleString("ko-KR")}곳
               </strong>
             )}
@@ -635,8 +649,9 @@ export default function CategoryExplorePage({
                       {place.imageUrl && (
                         <img
                           src={place.imageUrl}
-                          alt=""
+                          alt={place.name + " 대표 사진"}
                           loading="lazy"
+                          decoding="async"
                           referrerPolicy="no-referrer"
                           onError={(event) => {
                             event.currentTarget.style.display = "none";

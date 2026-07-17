@@ -398,7 +398,11 @@ export async function GET(request: NextRequest) {
           address: address || null,
           latitude: Number(item.mapy),
           longitude: Number(item.mapx),
-          imageUrl: item.firstimage ?? item.firstimage2 ?? null,
+          imageUrl:
+            (item.firstimage ?? item.firstimage2 ?? "").replace(
+              /^http:/,
+              "https:"
+            ) || null,
         };
       })
       .filter(

@@ -371,7 +371,7 @@ button {
 
 .kp-category-grid article {
   min-height: 188px;
-  padding: 22px;
+  padding: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -407,6 +407,102 @@ button {
   position: absolute;
   right: 18px;
   bottom: 16px;
+}
+
+/* Category cards route interaction */
+.kp-category-card-button {
+  width: 100%;
+  min-height: 188px;
+  padding: 22px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.kp-category-card-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.kp-category-card-copy > strong {
+  margin-top: 10px;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+
+.kp-category-card-copy > span {
+  margin-top: 6px;
+  color: var(--kp-muted);
+  font-size: 11px;
+  transition: color 180ms ease;
+}
+
+.kp-category-arrow {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--kp-black);
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.kp-category-grid article {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 200ms ease, background-color 200ms ease, box-shadow 240ms ease;
+}
+
+@media (hover: hover) {
+  .kp-category-grid article:hover {
+    z-index: 2;
+    color: #fff;
+    background: var(--kp-black);
+    box-shadow: 0 18px 38px rgba(17, 17, 17, 0.16);
+    transform: translateY(-5px);
+  }
+
+  .kp-category-grid article:hover .kp-category-card-copy > span {
+    color: rgba(255, 255, 255, 0.68);
+  }
+
+  .kp-category-grid article:hover .kp-category-arrow {
+    border-color: var(--kp-red);
+    color: #fff;
+    background: var(--kp-red);
+    box-shadow: 0 8px 20px rgba(255, 59, 59, 0.3);
+    transform: rotate(45deg) scale(1.06);
+  }
+}
+
+.kp-category-card-button:active {
+  transform: scale(0.975);
+}
+
+.kp-category-card-button:active .kp-category-arrow {
+  transform: rotate(45deg) scale(0.86) !important;
+}
+
+.kp-category-card-button:focus-visible {
+  outline: 3px solid rgba(255, 59, 59, 0.3);
+  outline-offset: -4px;
 }
 
 /* Popular */
