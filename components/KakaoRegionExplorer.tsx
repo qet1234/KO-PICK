@@ -92,6 +92,62 @@ interface Place {
   longitude: number | string;
 }
 
+type PlaceCategory = "전체" | "음식" | "카페" | "축제" | "관광지";
+
+const categories: PlaceCategory[] = [
+  "전체",
+  "음식",
+  "카페",
+  "축제",
+  "관광지",
+];
+
+const categoryDetails: Record<Exclude<PlaceCategory, "전체">, string[]> = {
+  음식: [
+    "전체",
+    "한식",
+    "일식",
+    "중식",
+    "양식",
+    "세계음식",
+    "해산물",
+    "간편식",
+    "건강식",
+    "주점",
+  ],
+  카페: [
+    "전체",
+    "프랜차이즈",
+    "감성카페",
+    "뷰카페",
+    "대형카페",
+    "조용한카페",
+    "작업하기 좋은 카페",
+    "이색카페",
+  ],
+  축제: [
+    "전체",
+    "지역축제",
+    "계절축제",
+    "먹거리축제",
+    "전통축제",
+    "문화예술축제",
+    "음악 페스티벌",
+    "불꽃축제",
+    "체험행사",
+  ],
+  관광지: [
+    "전체",
+    "박물관",
+    "미술관·전시관",
+    "전시회",
+    "공원",
+    "자연명소",
+    "역사·유적",
+    "테마파크",
+  ],
+};
+
 type RegionName =
   | "전국"
   | "서울"
@@ -277,12 +333,18 @@ export default function KakaoRegionExplorer() {
   const [selectedSubregion, setSelectedSubregion] =
     useState("전체");
   const [selectedCategory, setSelectedCategory] =
+    useState<PlaceCategory>("전체");
+  const [selectedDetail, setSelectedDetail] =
     useState("전체");
   const [places, setPlaces] = useState<Place[]>([]);
   const [placesLoading, setPlacesLoading] = useState(true);
   const [placesError, setPlacesError] = useState("");
   const [ready, setReady] = useState(false);
-  const [mapError, setMapError] = useState("");
+  const [mapError, setMapError] = useState(() =>
+    process.env.NEXT_PUBLIC_KAKAO_MAP_KEY
+      ? ""
+      : "카카오 지도 API 키가 설정되지 않았습니다."
+  );
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -290,12 +352,15 @@ export default function KakaoRegionExplorer() {
     Array<{ code: string; name: string }>
   >([]);
 
-  const categories = ["전체", "관광지", "문화", "자연", "맛집"];
-
   const availableSubregions = useMemo(
     () => subregionOptions.map((option) => option.name),
     [subregionOptions]
   );
+
+  const availableDetails =
+    selectedCategory === "전체"
+      ? []
+      : categoryDetails[selectedCategory];
 
   const filteredPlaces = places;
 
@@ -351,6 +416,10 @@ export default function KakaoRegionExplorer() {
           params.set("sigunguCode", selectedSubregionCode);
         }
 
+        if (selectedDetail !== "전체") {
+          params.set("detailType", selectedDetail);
+        }
+
         const response = await fetch(`/api/tour/places?${params.toString()}`);
         const payload = await response.json();
 
@@ -382,16 +451,20 @@ export default function KakaoRegionExplorer() {
     return () => {
       cancelled = true;
     };
-  }, [page, selectedRegion, selectedSubregion, selectedCategory, subregionOptions]);
+  }, [
+    page,
+    selectedRegion,
+    selectedSubregion,
+    selectedCategory,
+    selectedDetail,
+    subregionOptions,
+  ]);
 
   useEffect(() => {
     const apiKey =
       process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 
     if (!apiKey) {
-      setMapError(
-        "카카오 지도 API 키가 설정되지 않았습니다."
-      );
       return;
     }
 
@@ -709,8 +782,8 @@ export default function KakaoRegionExplorer() {
           </h2>
 
           <p>
-            시·도와 시·군·구를 선택하면 자체 추천
-            장소가 지도에 표시됩니다.
+            시·도와 시·군·구를 선택한 뒤 음식, 카페,
+            축제와 관광지의 세부 종류를 찾아보세요.
           </p>
 
           <div className="kp-region-buttons">
@@ -786,6 +859,7 @@ export default function KakaoRegionExplorer() {
                   }
                   onClick={() => {
                     setSelectedCategory(category);
+                    setSelectedDetail("전체");
                     setPage(1);
                   }}
                 >
@@ -794,6 +868,36 @@ export default function KakaoRegionExplorer() {
               ))}
             </div>
           </div>
+
+          {selectedCategory !== "전체" && (
+            <div className="kp-detail-filter">
+              <div className="kp-detail-filter-heading">
+                <small>DETAIL TYPE</small>
+                <strong>{selectedCategory} 종류</strong>
+              </div>
+
+              <div className="kp-detail-buttons">
+                {availableDetails.map((detail) => (
+                  <button
+                    type="button"
+                    key={detail}
+                    className={
+                      selectedDetail === detail
+                        ? "is-active"
+                        : ""
+                    }
+                    aria-pressed={selectedDetail === detail}
+                    onClick={() => {
+                      setSelectedDetail(detail);
+                      setPage(1);
+                    }}
+                  >
+                    {detail}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="kp-place-summary">
             {placesLoading && (
@@ -815,7 +919,11 @@ export default function KakaoRegionExplorer() {
                   ? ` · ${selectedSubregion}`
                   : ""}
                 {" · "}
-                {selectedCategory} 추천 장소{" "}
+                {selectedCategory}
+                {selectedDetail !== "전체"
+                  ? ` · ${selectedDetail}`
+                  : ""}{" "}
+                추천 장소{" "}
                 {totalCount.toLocaleString("ko-KR")}곳
               </strong>
             )}
@@ -876,4 +984,3 @@ export default function KakaoRegionExplorer() {
     </section>
   );
 }
-

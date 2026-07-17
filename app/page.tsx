@@ -3,12 +3,10 @@ import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import "./home.css";
 
 const categories = [
-  ["01", "DINING", "맛집", "지역별 인기 다이닝"],
-  ["02", "CAFE", "카페", "분위기 좋은 카페"],
-  ["03", "TRAVEL", "여행지", "전국 여행 명소"],
-  ["04", "FESTIVAL", "축제", "지역별 행사 정보"],
-  ["05", "CULTURE", "문화", "전시와 문화생활"],
-  ["06", "COURSE", "추천 코스", "AI 맞춤 동선"],
+  ["01", "DINING", "음식", "한식부터 세계음식까지"],
+  ["02", "CAFE", "카페", "프랜차이즈와 분위기별 카페"],
+  ["03", "FESTIVAL", "축제", "축제·페스티벌·지역 행사"],
+  ["04", "ATTRACTION", "관광지", "박물관·전시회·공원"],
 ];
 
 const recommendations = [
@@ -31,7 +29,7 @@ const recommendations = [
     className: "recommendation-lime",
   },
   {
-    category: "여행",
+    category: "관광지",
     icon: "🚙",
     region: "제주 서귀포",
     title: "애월 해안도로 드라이브",
@@ -40,7 +38,7 @@ const recommendations = [
     className: "recommendation-pink",
   },
   {
-    category: "데이트",
+    category: "관광지",
     icon: "🎪",
     region: "서울 성동구",
     title: "한강 노을 데이트 코스",
@@ -89,8 +87,8 @@ export default function Home() {
             </h1>
 
             <p className="kp-hero-description">
-              맛집, 카페, 여행지, 축제와 데이트 코스까지
-              검색과 리뷰 데이터를 기반으로 추천합니다.
+              음식, 카페, 축제와 관광지까지 지역과 세부
+              종류에 맞춰 빠르게 찾아보세요.
             </p>
 
             <div className="kp-search">
@@ -106,9 +104,9 @@ export default function Home() {
 
               <div>
                 <button type="button">서울 데이트</button>
-                <button type="button">부산 여행</button>
+                <button type="button">부산 관광지</button>
                 <button type="button">제주 카페</button>
-                <button type="button">수원 맛집</button>
+                <button type="button">수원 음식</button>
               </div>
             </div>
           </article>
@@ -139,8 +137,8 @@ export default function Home() {
         <div className="kp-container kp-trend-row">
           <strong>빠른 탐색</strong>
           <button type="button">서울 데이트</button>
-          <button type="button">부산 여행</button>
-          <button type="button">제주 맛집</button>
+          <button type="button">부산 관광지</button>
+          <button type="button">제주 음식</button>
           <button type="button">비 오는 날</button>
           <button type="button">주말 나들이</button>
         </div>

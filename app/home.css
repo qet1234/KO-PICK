@@ -364,7 +364,7 @@ button {
 
 .kp-category-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--kp-line);
   border-left: 1px solid var(--kp-line);
 }
@@ -689,6 +689,10 @@ button {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .kp-category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .kp-ai-panel {
     grid-template-columns: 1fr;
     align-items: flex-start;
@@ -900,6 +904,68 @@ button {
   color: #fff;
 }
 
+.kp-detail-filter {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #f0d7cd;
+  background: #fff7f2;
+}
+
+.kp-detail-filter-heading {
+  margin-bottom: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kp-detail-filter-heading small {
+  color: #ff3b3b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.kp-detail-filter-heading strong {
+  color: #555;
+  font-size: 11px;
+}
+
+.kp-detail-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.kp-detail-buttons button {
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid #e4cbc1;
+  border-radius: 999px;
+  background: #fff;
+  color: #333;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.kp-detail-buttons button:hover {
+  transform: translateY(-1px);
+  border-color: #ff3b3b;
+  color: #ff3b3b;
+}
+
+.kp-detail-buttons button.is-active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
 .kp-place-summary {
   min-height: 22px;
   margin-top: 18px;
@@ -953,6 +1019,28 @@ button {
 @media (max-width: 760px) {
   .kp-place-filter {
     margin-top: 22px;
+  }
+
+  .kp-detail-filter {
+    padding: 14px;
+  }
+
+  .kp-detail-filter-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .kp-detail-buttons {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .kp-detail-buttons button {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .kp-map-info-card {
