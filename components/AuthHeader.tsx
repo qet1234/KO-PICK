@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -37,7 +37,11 @@ export default function AuthHeader() {
 
   const handleLogout = async () => {
     const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
+
+    // Google 계정 전체가 아니라 현재 KO-PICK 사이트 세션만 종료합니다.
+    const { error } = await supabase.auth.signOut({
+      scope: "local",
+    });
 
     if (error) {
       alert(error.message);
@@ -69,6 +73,13 @@ export default function AuthHeader() {
             user.email}
         </span>
 
+        <Link
+          className="header-account-button"
+          href="/account"
+        >
+          계정 설정
+        </Link>
+
         <button
           className="header-login-button"
           type="button"
@@ -82,7 +93,10 @@ export default function AuthHeader() {
 
   return (
     <div className="header-auth-buttons">
-      <Link className="header-login-button" href="/login">
+      <Link
+        className="header-login-button"
+        href="/login"
+      >
         로그인
       </Link>
 

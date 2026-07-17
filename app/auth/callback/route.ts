@@ -10,8 +10,8 @@ export async function GET(request: Request) {
     requestUrl.searchParams.get("error_description");
 
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000";
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    requestUrl.origin;
 
   const createErrorRedirect = (message: string) => {
     const destination = new URL("/", appUrl);

@@ -755,3 +755,268 @@ button {
     padding: 28px 21px;
   }
 }
+
+/* Kakao region explorer */
+.kp-region-explorer-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.5fr);
+  gap: 54px;
+  align-items: stretch;
+}
+
+.kp-region-map-shell {
+  min-width: 0;
+  min-height: 560px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #deded8;
+  background: #f1f1ed;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.09);
+}
+
+.kp-region-map {
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
+}
+
+.kp-region-map-label {
+  position: absolute;
+  z-index: 10;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 112px;
+  padding: 11px 14px;
+  color: #fff;
+  background: #ff3838;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.kp-region-map-label small {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.kp-region-map-label strong {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.kp-region-map-state {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #333;
+  background: rgba(250, 250, 247, 0.92);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.kp-region-map-error {
+  color: #a40000;
+}
+
+.kp-region-buttons button {
+  cursor: pointer;
+}
+
+.kp-region-buttons button.is-active {
+  color: #fff;
+  border-color: #ff3838;
+  background: #ff3838;
+}
+
+@media (max-width: 980px) {
+  .kp-region-explorer-grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .kp-region-map-shell,
+  .kp-region-map {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 680px) {
+  .kp-region-map-shell,
+  .kp-region-map {
+    min-height: 420px;
+  }
+
+  .kp-region-map-label {
+    top: 12px;
+    left: 12px;
+  }
+}
+.kp-place-filter {
+  margin-top: 28px;
+}
+
+.kp-place-filter > small {
+  display: block;
+  margin-bottom: 12px;
+  color: #ff3b3b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.kp-category-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kp-category-buttons button {
+  min-height: 34px;
+  padding: 7px 15px;
+  border: 1px solid #d8d8d2;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.kp-category-buttons button:hover,
+.kp-category-buttons button.is-active {
+  border-color: #ff3b3b;
+  background: #ff3b3b;
+  color: #fff;
+}
+
+.kp-place-summary {
+  min-height: 22px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #555;
+}
+
+.kp-place-summary strong {
+  color: #111;
+}
+
+.kp-place-summary .is-error {
+  color: #d71919;
+}
+
+.kp-map-info-card {
+  display: flex;
+  width: 230px;
+  padding: 16px;
+  flex-direction: column;
+  gap: 5px;
+  background: #fff;
+  color: #111;
+  font-family: Arial, "Noto Sans KR", sans-serif;
+}
+
+.kp-map-info-card small {
+  color: #ff3b3b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.kp-map-info-card strong {
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.kp-map-info-card span {
+  color: #555;
+  font-size: 12px;
+}
+
+.kp-map-info-card p {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .kp-place-filter {
+    margin-top: 22px;
+  }
+
+  .kp-map-info-card {
+    width: 190px;
+    padding: 13px;
+  }
+}
+/* KAKAO SUBREGION AND CLUSTER */
+.kp-subregion-filter {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #e2e2dc;
+  background: #f7f7f4;
+}
+
+.kp-subregion-filter > small {
+  display: block;
+  margin-bottom: 12px;
+  color: #111;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.kp-subregion-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.kp-subregion-buttons button {
+  min-height: 32px;
+  padding: 6px 13px;
+  border: 1px solid #d5d5ce;
+  border-radius: 999px;
+  background: #fff;
+  color: #333;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.kp-subregion-buttons button:hover,
+.kp-subregion-buttons button.is-active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .kp-subregion-filter {
+    margin-top: 18px;
+    padding: 14px;
+  }
+
+  .kp-subregion-buttons {
+    gap: 6px;
+  }
+
+  .kp-subregion-buttons button {
+    padding: 6px 11px;
+  }
+}

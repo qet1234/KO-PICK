@@ -1,4 +1,5 @@
 import AuthHeader from "@/components/AuthHeader";
+import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import "./home.css";
 
 const categories = [
@@ -224,52 +225,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="kp-region-section" id="regions">
-        <div className="kp-container kp-region-grid">
-          <div className="kp-region-content">
-            <p className="kp-overline">REGION GUIDE</p>
-
-            <h2>
-              지역별 인기 장소를
-              <br />
-              빠르게 찾아보세요
-            </h2>
-
-            <p>
-              원하는 지역을 선택해 맛집, 카페, 관광지와 축제를
-              확인할 수 있습니다.
-            </p>
-
-            <div className="kp-region-buttons">
-              {[
-                "서울",
-                "경기",
-                "인천",
-                "부산",
-                "제주",
-                "강원",
-                "충청",
-                "전라",
-                "경상",
-              ].map((region) => (
-                <button type="button" key={region}>
-                  {region}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <article className="kp-region-poster">
-            <small>KOREA</small>
-            <strong>
-              LOCAL
-              <br />
-              SELECTION
-            </strong>
-            <span>12 REGIONS · DAILY UPDATE</span>
-          </article>
-        </div>
-      </section>
+      <KakaoRegionExplorer />
 
       <section className="kp-ai-section" id="ai">
         <div className="kp-container kp-ai-panel">
