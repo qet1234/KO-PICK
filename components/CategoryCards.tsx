@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const categoryCards = [
   {
@@ -34,22 +34,15 @@ const categoryCards = [
 ] as const;
 
 export default function CategoryCards() {
-  const router = useRouter();
-
-  const openCategory = (category: string) => {
-    router.push("/explore?category=" + encodeURIComponent(category));
-  };
-
   return (
     <div className="kp-category-grid">
       {categoryCards.map(
         ({ number, english, title, description, target }) => (
           <article key={number}>
-            <button
+            <Link
               className="kp-category-card-button"
-              type="button"
+              href={"/explore?category=" + encodeURIComponent(target)}
               aria-label={title + " 카테고리와 세부 필터 보기"}
-              onClick={() => openCategory(target)}
             >
               <span className="kp-category-number">{number}</span>
 
@@ -60,7 +53,7 @@ export default function CategoryCards() {
               </span>
 
               <span className="kp-category-arrow" aria-hidden="true">↗</span>
-            </button>
+            </Link>
           </article>
         )
       )}
