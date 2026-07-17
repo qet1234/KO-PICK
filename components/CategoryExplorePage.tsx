@@ -419,6 +419,18 @@ export default function CategoryExplorePage({
       const content = document.createElement("div");
       content.className = "kp-explore-info-window";
 
+      if (place.imageUrl) {
+        const image = document.createElement("img");
+        image.className = "kp-explore-info-window-image";
+        image.src = place.imageUrl;
+        image.alt = place.name + " 대표 사진";
+        image.loading = "lazy";
+        image.decoding = "async";
+        image.referrerPolicy = "no-referrer";
+        image.addEventListener("error", () => image.remove(), { once: true });
+        content.append(image);
+      }
+
       const category = document.createElement("small");
       category.textContent = displayCategory(place.category);
       const title = document.createElement("strong");

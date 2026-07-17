@@ -612,3 +612,20 @@ select {
   }
 }
 /* END KOREAPICK EXPLORE DETAIL FILTER */
+
+/* BEGIN KOREAPICK MAP PHOTO V4 */
+.kp-explore-info-window {
+  width: 238px;
+  padding: 10px;
+}
+
+.kp-explore-info-window .kp-explore-info-window-image {
+  width: 100%;
+  height: 118px;
+  margin-bottom: 5px;
+  display: block;
+  border-radius: 9px;
+  background: #eee;
+  object-fit: cover;
+}
+/* END KOREAPICK MAP PHOTO V4 */
