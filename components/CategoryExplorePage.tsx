@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -535,7 +535,9 @@ export default function CategoryExplorePage({
             </p>
 
             <div className="kp-explore-category-buttons">
-              {categoryOptions.map((option) => (
+              {categoryOptions
+                .filter((option) => option.value === initialCategory)
+                .map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -752,3 +754,4 @@ export default function CategoryExplorePage({
     </main>
   );
 }
+
