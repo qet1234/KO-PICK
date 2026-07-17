@@ -1,13 +1,7 @@
 import AuthHeader from "@/components/AuthHeader";
 import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
+import CategoryCards from "@/components/CategoryCards";
 import "./home.css";
-
-const categories = [
-  ["01", "DINING", "음식", "한식부터 세계음식까지"],
-  ["02", "CAFE", "카페", "프랜차이즈와 분위기별 카페"],
-  ["03", "FESTIVAL", "축제", "축제·페스티벌·지역 행사"],
-  ["04", "ATTRACTION", "관광지", "박물관·전시회·공원"],
-];
 
 const recommendations = [
   {
@@ -158,21 +152,7 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="kp-category-grid">
-            {categories.map(([number, english, title, description]) => (
-              <article key={number}>
-                <span className="kp-category-number">{number}</span>
-
-                <div>
-                  <small>{english}</small>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </div>
-
-                <b>↗</b>
-              </article>
-            ))}
-          </div>
+          <CategoryCards />
         </div>
       </section>
 
