@@ -39,20 +39,21 @@ export default function CategoryCards() {
       {categoryCards.map(
         ({ number, english, title, description, target }) => (
           <article key={number}>
+            <span className="kp-category-number">{number}</span>
+
+            <div className="kp-category-card-copy">
+              <small>{english}</small>
+              <strong>{title}</strong>
+              <span>{description}</span>
+            </div>
+
             <Link
-              className="kp-category-card-button"
+              className="kp-category-arrow"
               href={"/explore?category=" + encodeURIComponent(target)}
               aria-label={title + " 카테고리와 세부 필터 보기"}
+              title={title + " 카테고리 보기"}
             >
-              <span className="kp-category-number">{number}</span>
-
-              <span className="kp-category-card-copy">
-                <small>{english}</small>
-                <strong>{title}</strong>
-                <span>{description}</span>
-              </span>
-
-              <span className="kp-category-arrow" aria-hidden="true">↗</span>
+              <span aria-hidden="true">↗</span>
             </Link>
           </article>
         )
