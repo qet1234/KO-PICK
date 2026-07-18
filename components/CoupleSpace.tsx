@@ -124,7 +124,7 @@ function friendlyError(error: unknown, fallback: string) {
   const searchable = [message, hint, details].join(" ").toLowerCase();
 
   if (code === "PGRST202" || searchable.includes("schema cache")) {
-    return "커플 공간 생성 함수를 찾지 못했습니다. Supabase 스키마를 새로고침해 주세요. [PGRST202]";
+    return "개발 중입니다.";
   }
   if (code === "42501" || searchable.includes("permission denied")) {
     return "커플 공간 데이터베이스 실행 권한이 없습니다. 권한 설정을 다시 적용해 주세요. [42501]";
