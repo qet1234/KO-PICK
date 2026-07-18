@@ -192,26 +192,35 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => handleComingSoon("휴대폰")}
+              onClick={() => void handleGoogleLogin()}
               disabled={loading}
-              aria-label="휴대폰 번호로 로그인"
+              aria-label="Google 계정으로 로그인"
             >
-              <span className="quick-login-icon is-phone">☎</span>
-              <small>휴대폰</small>
+              <span className="quick-login-icon is-google">
+                <svg aria-hidden="true" viewBox="0 0 18 18">
+                  <path
+                    fill="#4285F4"
+                    d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.909c1.702-1.566 2.683-3.874 2.683-6.616Z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M9 18c2.43 0 4.468-.806 5.957-2.179l-2.909-2.259c-.806.54-1.835.859-3.048.859-2.344 0-4.328-1.585-5.037-3.714H.956v2.332A9 9 0 0 0 9 18Z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M3.963 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.171.281-1.707V4.961H.956A9.001 9.001 0 0 0 0 9c0 1.45.347 2.824.956 4.039l3.007-2.332Z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M9 3.579c1.321 0 2.507.454 3.441 1.345l2.581-2.581C13.464.891 11.426 0 9 0A9 9 0 0 0 .956 4.961l3.007 2.332C4.672 5.164 6.656 3.579 9 3.579Z"
+                  />
+                </svg>
+              </span>
+              <small>
+                {activeProvider === "google" ? "연결 중" : "Google"}
+              </small>
             </button>
           </div>
-
-          <button
-            className="google-button"
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            <span>G</span>
-            {activeProvider === "google"
-              ? "Google 연결 중..."
-              : "Google 계정으로 계속하기"}
-          </button>
 
           {message ? (
             <p className="login-message" role="alert">
