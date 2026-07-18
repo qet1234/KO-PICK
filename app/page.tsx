@@ -2,6 +2,8 @@ import AuthHeader from "@/components/AuthHeader";
 import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
+import LiveKeywords from "@/components/LiveKeywords";
+import HeroSearch from "@/components/HeroSearch";
 import "./home.css";
 
 export default function Home() {
@@ -47,24 +49,7 @@ export default function Home() {
               종류에 맞춰 빠르게 찾아보세요.
             </p>
 
-            <div className="kp-search">
-              <input
-                type="search"
-                placeholder="장소, 지역 또는 카테고리를 검색하세요"
-              />
-              <button type="button">검색</button>
-            </div>
-
-            <div className="kp-live-tags">
-              <small>실시간 인기 검색어</small>
-
-              <div>
-                <button type="button">서울 데이트</button>
-                <button type="button">부산 관광지</button>
-                <button type="button">제주 카페</button>
-                <button type="button">수원 음식</button>
-              </div>
-            </div>
+            <HeroSearch />
           </article>
 
           <article className="kp-editor-pick">
@@ -90,13 +75,8 @@ export default function Home() {
           </article>
         </div>
 
-        <div className="kp-container kp-trend-row">
-          <strong>빠른 탐색</strong>
-          <button type="button">서울 데이트</button>
-          <button type="button">부산 관광지</button>
-          <button type="button">제주 음식</button>
-          <button type="button">비 오는 날</button>
-          <button type="button">주말 나들이</button>
+        <div className="kp-container kp-live-keyword-section">
+          <LiveKeywords />
         </div>
       </section>
 

@@ -1,51 +1,103 @@
-﻿import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const keywords = [
-  { id: 1, keyword: "\uC11C\uC6B8 \uB370\uC774\uD2B8", base: 1620 },
-  { id: 2, keyword: "\uBD80\uC0B0 \uC5EC\uD589", base: 1510 },
-  { id: 3, keyword: "\uC81C\uC8FC \uCE74\uD398", base: 1430 },
-  { id: 4, keyword: "\uBE44 \uC624\uB294 \uB0A0", base: 1360 },
-  { id: 5, keyword: "\uC218\uC6D0 \uB370\uC774\uD2B8", base: 1280 },
-  { id: 6, keyword: "\uAC15\uB989 \uC624\uC158\uBDF0", base: 1190 },
-  { id: 7, keyword: "\uC778\uCC9C \uB4DC\uB77C\uC774\uBE0C", base: 1100 },
-  { id: 8, keyword: "\uC804\uC8FC \uB9DB\uC9D1", base: 1010 },
-];
+const KEYWORD_LIMIT = 6;
 
-function randomForBlock(block: number, id: number) {
-  const value = Math.sin(block * 97 + id * 31) * 10000;
-  return value - Math.floor(value);
+type KeywordTrend = "up" | "down" | "same" | "new";
+
+interface TrendingKeywordRow {
+  keyword: string;
+  search_count: number | string;
+  current_score: number | string;
+  previous_score: number | string;
+  current_rank: number | string;
+  previous_rank: number | string | null;
 }
 
-function createRanking(block: number) {
-  return keywords
-    .map((item) => {
-      const variation = Math.floor(randomForBlock(block, item.id) * 500) - 180;
+const fallbackKeywords = [
+  "서울 데이트",
+  "부산 관광지",
+  "제주 카페",
+  "수원 음식",
+  "비 오는 날",
+  "주말 나들이",
+];
 
-      return {
-        ...item,
-        searchCount: Math.max(1, item.base + variation),
-      };
-    })
-    .sort((a, b) => b.searchCount - a.searchCount);
+function createSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) return null;
+
+  return createSupabaseClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function cleanKeyword(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.replace(/\s+/g, " ").trim().slice(0, 60);
+}
+
+function numberValue(value: number | string | null) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function fallbackResponse() {
+  return fallbackKeywords.map((keyword, index) => ({
+    id: `fallback-${index + 1}`,
+    keyword,
+    rank: index + 1,
+    previousRank: index + 1,
+    trend: "same" as const,
+    change: 0,
+    searchCount: 0,
+  }));
 }
 
 export async function GET() {
-  const currentBlock = Math.floor(Date.now() / 30000);
-  const current = createRanking(currentBlock);
-  const previous = createRanking(currentBlock - 1);
+  const supabase = createSupabase();
 
-  const previousRanks = new Map(
-    previous.map((item, index) => [item.id, index + 1]),
-  );
+  if (!supabase) {
+    return NextResponse.json(
+      {
+        updatedAt: new Date().toISOString(),
+        realtimeEnabled: false,
+        keywords: fallbackResponse(),
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
 
-  const data = current.slice(0, 5).map((item, index) => {
-    const rank = index + 1;
-    const oldRank = previousRanks.get(item.id) ?? null;
-    const previousRank = oldRank !== null && oldRank <= 5 ? oldRank : null;
+  const { data, error } = await supabase.rpc("get_live_trending_keywords", {
+    window_minutes: 30,
+    result_limit: KEYWORD_LIMIT,
+  });
 
-    let trend: "up" | "down" | "same" | "new" = "same";
+  if (error) {
+    console.warn("실시간 인기 검색어 조회 실패:", error.message);
+    return NextResponse.json(
+      {
+        updatedAt: new Date().toISOString(),
+        realtimeEnabled: false,
+        keywords: fallbackResponse(),
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  const keywords = ((data ?? []) as TrendingKeywordRow[]).map((row, index) => {
+    const rank = numberValue(row.current_rank) || index + 1;
+    const previousRank = row.previous_rank
+      ? numberValue(row.previous_rank)
+      : null;
+    let trend: KeywordTrend = "same";
     let change = 0;
 
     if (previousRank === null) {
@@ -59,25 +111,64 @@ export async function GET() {
     }
 
     return {
-      id: item.id,
-      keyword: item.keyword,
+      id: row.keyword,
+      keyword: row.keyword,
       rank,
       previousRank,
       trend,
       change,
-      searchCount: item.searchCount,
+      searchCount: numberValue(row.search_count),
+      currentScore: numberValue(row.current_score),
+      previousScore: numberValue(row.previous_score),
     };
   });
 
   return NextResponse.json(
     {
       updatedAt: new Date().toISOString(),
-      keywords: data,
+      realtimeEnabled: true,
+      keywords: keywords.length > 0 ? keywords : fallbackResponse(),
     },
-    {
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate",
-      },
-    },
+    { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
   );
+}
+
+export async function POST(request: NextRequest) {
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "요청 형식이 올바르지 않습니다." }, { status: 400 });
+  }
+
+  const keyword = cleanKeyword(body.keyword);
+  const visitorId = cleanKeyword(body.visitorId);
+  const source = body.source === "trend" ? "trend" : "search";
+
+  if (keyword.length < 2 || !visitorId) {
+    return NextResponse.json({ error: "검색어 정보가 부족합니다." }, { status: 400 });
+  }
+
+  const supabase = createSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase 연결 정보가 없습니다." }, { status: 503 });
+  }
+
+  const visitorKey = createHash("sha256")
+    .update(`${visitorId}:${process.env.KEYWORD_HASH_SALT ?? "korea-pick"}`)
+    .digest("hex");
+
+  const { error } = await supabase.from("keyword_search_events").insert({
+    keyword,
+    visitor_key: visitorKey,
+    source,
+    event_bucket: Math.floor(Date.now() / (5 * 60 * 1000)),
+  });
+
+  if (error && error.code !== "23505") {
+    console.error("인기 검색어 활동 저장 실패:", error.message);
+    return NextResponse.json({ error: "검색 활동 저장에 실패했습니다." }, { status: 503 });
+  }
+
+  return NextResponse.json({ ok: true, deduplicated: error?.code === "23505" });
 }
