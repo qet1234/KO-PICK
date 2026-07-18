@@ -74,6 +74,13 @@ export default function AuthHeader() {
         </span>
 
         <Link
+          className="header-couple-button"
+          href="/couple"
+        >
+          둘만의 공간
+        </Link>
+
+        <Link
           className="header-account-button"
           href="/account"
         >

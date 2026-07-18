@@ -169,7 +169,9 @@ button {
 }
 
 .header-login-button,
-.header-signup-button {
+.header-signup-button,
+.header-couple-button,
+.header-account-button {
   min-height: 36px;
   padding: 0 14px;
   display: inline-flex;
@@ -178,6 +180,17 @@ button {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 900;
+}
+
+.header-couple-button {
+  border: 1px solid #ff3b35;
+  color: #a71d19;
+  background: #fff0f1;
+}
+
+.header-account-button {
+  border: 1px solid #cecec8;
+  background: white;
 }
 
 .header-login-button {
@@ -1140,7 +1153,8 @@ button {
   }
 
   .kp-brand > span:last-child,
-  .header-user > span {
+  .header-user > span,
+  .header-account-button {
     display: none;
   }
 

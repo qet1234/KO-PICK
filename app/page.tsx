@@ -20,6 +20,7 @@ export default function Home() {
             <a href="#popular">인기 추천</a>
             <a href="#regions">지역 찾기</a>
             <a href="#ai">AI 추천</a>
+            <a href="/couple">커플 공간</a>
           </nav>
 
           <AuthHeader />
