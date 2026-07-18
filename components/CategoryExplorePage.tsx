@@ -1,6 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
@@ -192,7 +194,11 @@ export default function CategoryExplorePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState("");
+  const [mapError, setMapError] = useState(() =>
+    process.env.NEXT_PUBLIC_KAKAO_MAP_KEY
+      ? ""
+      : "카카오 지도 API 키가 설정되지 않았습니다."
+  );
 
   const selectedCategoryLabel = useMemo(
     () =>
@@ -322,7 +328,6 @@ export default function CategoryExplorePage({
     const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 
     if (!apiKey) {
-      setMapError("카카오 지도 API 키가 설정되지 않았습니다.");
       return;
     }
 
@@ -481,6 +486,8 @@ export default function CategoryExplorePage({
   };
 
   const focusPlace = (place: Place) => {
+    void trackPlaceActivity(place, "detail");
+
     const kakao = (window as KakaoWindow).kakao;
     const map = mapRef.current;
     const latitude = Number(place.latitude);
@@ -509,19 +516,19 @@ export default function CategoryExplorePage({
   return (
     <main className="kp-explore-page">
       <header className="kp-explore-header">
-        <a href="/" className="kp-explore-brand">
+        <Link href="/" className="kp-explore-brand">
           <span>K</span>
           <strong>코리아픽</strong>
-        </a>
+        </Link>
 
         <div>
           <small>PLACE EXPLORER</small>
           <strong>{selectedCategoryLabel} 전체 결과</strong>
         </div>
 
-        <a href="/" className="kp-explore-home-link">
+        <Link href="/" className="kp-explore-home-link">
           홈으로
-        </a>
+        </Link>
       </header>
 
       <div className="kp-explore-workspace">
@@ -754,4 +761,3 @@ export default function CategoryExplorePage({
     </main>
   );
 }
-

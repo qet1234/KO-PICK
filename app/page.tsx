@@ -1,46 +1,8 @@
 import AuthHeader from "@/components/AuthHeader";
 import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
+import LiveRecommendations from "@/components/LiveRecommendations";
 import "./home.css";
-
-const recommendations = [
-  {
-    category: "카페",
-    icon: "☕",
-    region: "부산 해운대",
-    title: "해운대 오션뷰 루프탑 카페",
-    rating: "4.8",
-    reviews: "961",
-    className: "recommendation-beige",
-  },
-  {
-    category: "축제",
-    icon: "🎆",
-    region: "경기 수원",
-    title: "수원화성 야간 문화축제",
-    rating: "4.7",
-    reviews: "790",
-    className: "recommendation-lime",
-  },
-  {
-    category: "관광지",
-    icon: "🚙",
-    region: "제주 서귀포",
-    title: "애월 해안도로 드라이브",
-    rating: "4.9",
-    reviews: "2,127",
-    className: "recommendation-pink",
-  },
-  {
-    category: "관광지",
-    icon: "🎪",
-    region: "서울 성동구",
-    title: "한강 노을 데이트 코스",
-    rating: "4.8",
-    reviews: "1,559",
-    className: "recommendation-yellow",
-  },
-];
 
 export default function Home() {
   return (
@@ -161,45 +123,10 @@ export default function Home() {
           <div className="kp-popular-heading">
             <div>
               <h2>지금 인기 있는 추천</h2>
-              <p>평점과 최근 리뷰 증가량을 반영합니다.</p>
+              <p>조회·상세보기·지도 이동·찜 활동을 실시간으로 반영합니다.</p>
             </div>
           </div>
-
-          <div className="kp-recommendation-grid">
-            {recommendations.map((item) => (
-              <article className="kp-recommendation-card" key={item.title}>
-                <div
-                  className={`kp-recommendation-image ${item.className}`}
-                >
-                  <span className="kp-card-category">
-                    {item.category}
-                  </span>
-
-                  <button
-                    className="kp-save-button"
-                    type="button"
-                    aria-label={`${item.title} 저장`}
-                  >
-                    ♡
-                  </button>
-
-                  <span className="kp-card-icon">{item.icon}</span>
-                  <span className="kp-live-badge">실시간 인기</span>
-                </div>
-
-                <div className="kp-recommendation-content">
-                  <small>{item.region}</small>
-                  <h3>{item.title}</h3>
-                  <p>장소 정보와 방문자 리뷰를 확인해 보세요.</p>
-                </div>
-
-                <div className="kp-recommendation-meta">
-                  <strong>★ {item.rating}</strong>
-                  <span>리뷰 {item.reviews}</span>
-                </div>
-              </article>
-            ))}
-          </div>
+          <LiveRecommendations />
         </div>
       </section>
 
