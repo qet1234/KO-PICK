@@ -1,31 +1,45 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
+
+type SocialProvider = Extract<Provider, "google" | "kakao" | "apple">;
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<
+    SocialProvider | "email" | null
+  >(null);
   const [message, setMessage] = useState("");
 
-  const handleGoogleLogin = async () => {
+  const handleSocialLogin = async (
+    provider: SocialProvider,
+    providerLabel: string
+  ) => {
     if (loading) return;
 
     try {
       setLoading(true);
+      setActiveProvider(provider);
       setMessage("");
 
       const supabase = createClient();
 
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider,
         options: {
           redirectTo:
             "https://koreapick.duckdns.org/auth/callback",
-          queryParams: {
-            prompt: "select_account",
-          },
+          ...(provider === "google"
+            ? {
+                queryParams: {
+                  prompt: "select_account",
+                },
+              }
+            : {}),
         },
       });
 
@@ -36,12 +50,21 @@ export default function LoginPage() {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Google 로그인에 실패했습니다.";
+          : providerLabel + " 로그인에 실패했습니다.";
 
-      console.error("Google 로그인 오류:", error);
+      console.error(providerLabel + " 로그인 오류:", error);
       setMessage(errorMessage);
       setLoading(false);
+      setActiveProvider(null);
     }
+  };
+
+  const handleGoogleLogin = () =>
+    handleSocialLogin("google", "Google");
+
+  const handleComingSoon = (providerLabel: string) => {
+    if (loading) return;
+    setMessage(providerLabel + " 로그인은 현재 준비 중입니다.");
   };
 
   const handleEmailLogin = async (
@@ -51,6 +74,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
+      setActiveProvider("email");
       setMessage("");
 
       if (!email || !password) {
@@ -80,6 +104,7 @@ export default function LoginPage() {
 
       setMessage(errorMessage);
       setLoading(false);
+      setActiveProvider(null);
     }
   };
 
@@ -151,6 +176,74 @@ export default function LoginPage() {
             확인하세요.
           </p>
 
+          <div className="quick-signup-note">
+            5초 만에 빠른 회원가입
+          </div>
+
+          <button
+            className="kakao-button"
+            type="button"
+            onClick={() =>
+              void handleSocialLogin("kakao", "카카오")
+            }
+            disabled={loading}
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 3C6.48 3 2 6.5 2 10.82c0 2.76 1.83 5.18 4.58 6.57l-1.16 3.72a.55.55 0 0 0 .83.62l4.4-2.93c.44.05.89.08 1.35.08 5.52 0 10-3.5 10-8.06S17.52 3 12 3Z" />
+            </svg>
+            {activeProvider === "kakao"
+              ? "카카오 연결 중..."
+              : "카카오로 시작"}
+          </button>
+
+          <div className="login-divider quick-login-divider">
+            <span />
+            <p>또는 간편 로그인</p>
+            <span />
+          </div>
+
+          <div
+            className="quick-login-options"
+            aria-label="간편 로그인 선택"
+          >
+            <button
+              type="button"
+              onClick={() => handleComingSoon("네이버")}
+              disabled={loading}
+              aria-label="네이버로 로그인"
+            >
+              <span className="quick-login-icon is-naver">N</span>
+              <small>네이버</small>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                void handleSocialLogin("apple", "Apple")
+              }
+              disabled={loading}
+              aria-label="Apple로 로그인"
+            >
+              <span className="quick-login-icon is-apple">A</span>
+              <small>
+                {activeProvider === "apple" ? "연결 중" : "Apple"}
+              </small>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleComingSoon("휴대폰")}
+              disabled={loading}
+              aria-label="휴대폰 번호로 로그인"
+            >
+              <span className="quick-login-icon is-phone">☎</span>
+              <small>휴대폰</small>
+            </button>
+          </div>
+
           <button
             className="google-button"
             type="button"
@@ -158,7 +251,7 @@ export default function LoginPage() {
             disabled={loading}
           >
             <span>G</span>
-            {loading
+            {activeProvider === "google"
               ? "Google 연결 중..."
               : "Google 계정으로 계속하기"}
           </button>
@@ -201,7 +294,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
             >
-              로그인
+              {activeProvider === "email" ? "로그인 중..." : "로그인"}
             </button>
           </form>
 
