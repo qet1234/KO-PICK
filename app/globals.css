@@ -527,11 +527,126 @@ h1 strong {
 }
 
 .google-button,
+.kakao-button,
 .email-login-button {
   width: 100%;
   min-height: 55px;
   border-radius: 13px;
   font-weight: 900;
+}
+
+.quick-signup-note {
+  width: fit-content;
+  margin: 0 auto 18px;
+  padding: 8px 13px;
+  position: relative;
+  border: 1px solid #ff3b36;
+  border-radius: 999px;
+  color: #ff3b36;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.quick-signup-note::after {
+  width: 9px;
+  height: 9px;
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid #ff3b36;
+  border-bottom: 1px solid #ff3b36;
+  background: #fff;
+}
+
+.kakao-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  color: #171717;
+  background: #fee500;
+}
+
+.kakao-button svg {
+  width: 23px;
+  height: 23px;
+  fill: currentColor;
+}
+
+.kakao-button:disabled,
+.quick-login-options button:disabled,
+.google-button:disabled,
+.email-login-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.quick-login-divider {
+  margin: 22px 0 18px;
+}
+
+.quick-login-options {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  gap: 34px;
+}
+
+.quick-login-options button {
+  min-width: 58px;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  border: 0;
+  color: #6d6d68;
+  background: transparent;
+}
+
+.quick-login-options small {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.quick-login-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8d8d2;
+  border-radius: 50%;
+  color: #111;
+  background: #fff;
+  font-size: 21px;
+  font-weight: 900;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.quick-login-options button:hover .quick-login-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(22,22,18,.1);
+}
+
+.quick-login-options button:active .quick-login-icon {
+  transform: translateY(1px) scale(.96);
+}
+
+.quick-login-icon.is-naver {
+  color: #03c75a;
+}
+
+.quick-login-icon.is-apple {
+  font-family: Georgia, serif;
+  font-size: 24px;
+}
+
+.quick-login-icon.is-phone {
+  font-size: 22px;
 }
 
 .google-button {
