@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 
 type KakaoLatLng = object;
 
@@ -90,6 +91,7 @@ interface Place {
   address: string | null;
   latitude: number | string;
   longitude: number | string;
+  imageUrl?: string | null;
 }
 
 type PlaceCategory = "전체" | "음식" | "카페" | "축제" | "관광지";
@@ -659,6 +661,7 @@ export default function KakaoRegionExplorer() {
         marker,
         "click",
         () => {
+          void trackPlaceActivity(place, "detail");
           infoWindowRef.current?.close();
 
           const infoWindow =
