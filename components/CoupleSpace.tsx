@@ -490,18 +490,19 @@ export default function CoupleSpace() {
     }
 
     void runAction(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.rpc("leave_couple_space");
-      if (error) throw error;
+      const response = await fetch("/api/couple/leave", {
+        method: "DELETE",
+      });
+      const result = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
 
-      setCouple(null);
-      setMembers([]);
-      setAnniversaries([]);
-      setEvents([]);
-      setInvite(null);
-      setNotice(
-        "커플 공간 연결을 해제했습니다. 코리아픽 계정과 로그인 상태는 그대로 유지됩니다."
-      );
+      if (!response.ok) {
+        throw new Error(
+          result?.error ?? "커플 공간 연결을 해제하지 못했습니다."
+        );
+      }
+
       window.location.replace("/");
     });
   };
