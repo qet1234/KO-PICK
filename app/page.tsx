@@ -2,7 +2,6 @@ import AuthHeader from "@/components/AuthHeader";
 import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
-import LiveKeywords from "@/components/LiveKeywords";
 import HeroSearch from "@/components/HeroSearch";
 import "./home.css";
 
@@ -75,9 +74,6 @@ export default function Home() {
           </article>
         </div>
 
-        <div className="kp-container kp-live-keyword-section">
-          <LiveKeywords />
-        </div>
       </section>
 
       <section className="kp-category-section" id="categories">
