@@ -1,17 +1,15 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
 type SocialProvider = Extract<Provider, "google" | "kakao" | "apple">;
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeProvider, setActiveProvider] = useState<
-    SocialProvider | "email" | null
+    SocialProvider | null
   >(null);
   const [message, setMessage] = useState("");
 
@@ -65,47 +63,6 @@ export default function LoginPage() {
   const handleComingSoon = (providerLabel: string) => {
     if (loading) return;
     setMessage(providerLabel + " 로그인은 현재 준비 중입니다.");
-  };
-
-  const handleEmailLogin = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
-    event.preventDefault();
-
-    try {
-      setLoading(true);
-      setActiveProvider("email");
-      setMessage("");
-
-      if (!email || !password) {
-        throw new Error(
-          "이메일과 비밀번호를 입력해 주세요."
-        );
-      }
-
-      const supabase = createClient();
-
-      const { error } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      window.location.assign("/");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "이메일 로그인에 실패했습니다.";
-
-      setMessage(errorMessage);
-      setLoading(false);
-      setActiveProvider(null);
-    }
   };
 
   return (
@@ -254,60 +211,6 @@ export default function LoginPage() {
             {activeProvider === "google"
               ? "Google 연결 중..."
               : "Google 계정으로 계속하기"}
-          </button>
-
-          <div className="login-divider">
-            <span />
-            <p>또는 이메일로 로그인</p>
-            <span />
-          </div>
-
-          <form onSubmit={handleEmailLogin}>
-            <label htmlFor="email">이메일</label>
-
-            <input
-              id="email"
-              type="email"
-              value={email}
-              placeholder="example@email.com"
-              autoComplete="email"
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-            />
-
-            <label htmlFor="password">비밀번호</label>
-
-            <input
-              id="password"
-              type="password"
-              value={password}
-              placeholder="비밀번호 입력"
-              autoComplete="current-password"
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
-            />
-
-            <button
-              className="email-login-button"
-              type="submit"
-              disabled={loading}
-            >
-              {activeProvider === "email" ? "로그인 중..." : "로그인"}
-            </button>
-          </form>
-
-          <button
-            className="signup-link"
-            type="button"
-            onClick={() =>
-              setMessage(
-                "회원가입 기능은 다음 단계에서 연결됩니다."
-              )
-            }
-          >
-            아직 코리아픽 계정이 없나요? 회원가입
           </button>
 
           {message ? (
