@@ -1,8 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const oauthError = requestUrl.searchParams.get("error");
@@ -21,7 +20,7 @@ export async function GET(request: Request) {
   };
 
   if (oauthError || errorDescription) {
-    console.error("Google OAuth 오류:", {
+    console.error("OAuth 오류:", {
       oauthError,
       errorDescription,
     });
@@ -32,10 +31,10 @@ export async function GET(request: Request) {
   }
 
   if (!code) {
-    console.error("Google OAuth 인증 코드가 없습니다.");
+    console.error("OAuth 인증 코드가 없습니다.");
 
     return createErrorRedirect(
-      "Google 인증 코드가 전달되지 않았습니다."
+      "OAuth 인증 코드가 전달되지 않았습니다."
     );
   }
 
@@ -53,7 +52,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const cookieStore = await cookies();
+  const successResponse = NextResponse.redirect(
+    new URL("/", appUrl)
+  );
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -61,13 +62,23 @@ export async function GET(request: Request) {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return request.cookies.getAll();
         },
 
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headersToSet) {
           cookiesToSet.forEach(
             ({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              successResponse.cookies.set(
+                name,
+                value,
+                options
+              );
+            }
+          );
+
+          Object.entries(headersToSet).forEach(
+            ([name, value]) => {
+              successResponse.headers.set(name, value);
             }
           );
         },
@@ -95,10 +106,10 @@ export async function GET(request: Request) {
     );
   }
 
-  console.log("Google OAuth 로그인 성공:", {
+  console.log("OAuth 로그인 성공:", {
     userId: data.user?.id,
     email: data.user?.email,
   });
 
-  return NextResponse.redirect(new URL("/", appUrl));
+  return successResponse;
 }
