@@ -100,11 +100,45 @@ function nextAnniversary(item: Anniversary) {
   return next;
 }
 
-function friendlyError(message: string) {
-  if (message.includes("function") && message.includes("schema cache")) {
-    return "커플 전용 데이터베이스 설정이 아직 적용되지 않았습니다.";
+type ErrorLike = {
+  code?: unknown;
+  details?: unknown;
+  hint?: unknown;
+  message?: unknown;
+};
+
+function errorString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function friendlyError(error: unknown, fallback: string) {
+  const errorLike =
+    typeof error === "object" && error !== null ? (error as ErrorLike) : null;
+  const message =
+    error instanceof Error
+      ? error.message.trim()
+      : errorString(errorLike?.message) || errorString(error);
+  const code = errorString(errorLike?.code);
+  const hint = errorString(errorLike?.hint);
+  const details = errorString(errorLike?.details);
+  const searchable = [message, hint, details].join(" ").toLowerCase();
+
+  if (code === "PGRST202" || searchable.includes("schema cache")) {
+    return "커플 공간 생성 함수를 찾지 못했습니다. Supabase 스키마를 새로고침해 주세요. [PGRST202]";
   }
-  return message;
+  if (code === "42501" || searchable.includes("permission denied")) {
+    return "커플 공간 데이터베이스 실행 권한이 없습니다. 권한 설정을 다시 적용해 주세요. [42501]";
+  }
+  if (
+    searchable.includes("failed to fetch") ||
+    searchable.includes("networkerror")
+  ) {
+    return "Supabase 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+
+  const usefulMessage = message || hint || details;
+  if (!usefulMessage) return fallback;
+  return code ? usefulMessage + " [" + code + "]" : usefulMessage;
 }
 
 export default function CoupleSpace() {
@@ -204,7 +238,7 @@ export default function CoupleSpace() {
       } catch (error) {
         if (active) {
           setErrorMessage(
-            friendlyError(error instanceof Error ? error.message : "커플 공간을 불러오지 못했습니다.")
+            friendlyError(error, "커플 공간을 불러오지 못했습니다.")
           );
         }
       } finally {
@@ -270,8 +304,9 @@ export default function CoupleSpace() {
     try {
       await action();
     } catch (error) {
+      console.error("Couple space action failed", error);
       setErrorMessage(
-        friendlyError(error instanceof Error ? error.message : "처리 중 오류가 발생했습니다.")
+        friendlyError(error, "처리 중 오류가 발생했습니다.")
       );
     } finally {
       setWorking(false);
