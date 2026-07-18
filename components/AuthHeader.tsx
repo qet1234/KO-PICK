@@ -14,10 +14,18 @@ export default function AuthHeader() {
 
     const loadSession = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user: currentUser },
+        error,
+      } = await supabase.auth.getUser();
 
-      setUser(session?.user ?? null);
+      if (error) {
+        console.error(
+          "로그인 사용자 확인 오류:",
+          error.message
+        );
+      }
+
+      setUser(error ? null : currentUser);
       setLoading(false);
     };
 
