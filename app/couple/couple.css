@@ -734,6 +734,66 @@
   font-weight: 900;
 }
 
+.couple-danger-zone {
+  margin-top: 18px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  border: 1px solid rgba(183, 35, 29, 0.28);
+  border-radius: 20px;
+  background: #fff4f2;
+}
+
+.couple-danger-zone p {
+  margin: 0;
+  color: #a8201b;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.couple-danger-zone h2 {
+  margin: 7px 0 5px;
+  font-size: 22px;
+  letter-spacing: -0.045em;
+}
+
+.couple-danger-zone span {
+  color: #756b68;
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.couple-danger-zone button {
+  min-width: 150px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid #b7231d;
+  border-radius: 999px;
+  color: #a8201b;
+  background: white;
+  font-size: 10px;
+  font-weight: 950;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.couple-danger-zone button:hover {
+  color: white;
+  background: #b7231d;
+  transform: translateY(-1px);
+}
+
+.couple-danger-zone button:active {
+  transform: scale(0.96);
+}
+
+.couple-danger-zone button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 @media (max-width: 980px) {
   .couple-intro,
   .couple-dashboard {
@@ -791,6 +851,7 @@
 
   .couple-status-card,
   .couple-invite-card,
+  .couple-danger-zone,
   .couple-calendar-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -801,6 +862,10 @@
   }
 
   .couple-invite-code {
+    width: 100%;
+  }
+
+  .couple-danger-zone button {
     width: 100%;
   }
 
@@ -840,6 +905,10 @@
   .couple-connect-card > button,
   .couple-data-form > button,
   .couple-primary-button {
+    transition: none;
+  }
+
+  .couple-danger-zone button {
     transition: none;
   }
 }
