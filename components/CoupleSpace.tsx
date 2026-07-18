@@ -262,7 +262,7 @@ export default function CoupleSpace() {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "couple_members",
           filter: "couple_id=eq." + couple.couple_id,
@@ -468,6 +468,40 @@ export default function CoupleSpace() {
       if (error) throw error;
       setNotice("일정을 삭제했습니다.");
       if (couple) await loadPrivateData(couple.couple_id);
+    });
+  };
+
+  const leaveCoupleSpace = () => {
+    const warning =
+      couple?.member_count === 2
+        ? "커플 공간에서 탈퇴하면 두 계정의 연결이 해제되고 공유 기념일과 일정이 모두 영구 삭제됩니다. 계속할까요?"
+        : "커플 공간을 삭제하면 저장한 기념일과 일정, 초대 정보가 모두 영구 삭제됩니다. 계속할까요?";
+
+    if (!window.confirm(warning)) return;
+
+    const confirmation = window.prompt(
+      "삭제를 확인하려면 아래 입력란에 '연결 해제'를 입력해 주세요."
+    );
+    if (confirmation?.trim() !== "연결 해제") {
+      if (confirmation !== null) {
+        setErrorMessage("확인 문구가 일치하지 않아 탈퇴를 취소했습니다.");
+      }
+      return;
+    }
+
+    void runAction(async () => {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("leave_couple_space");
+      if (error) throw error;
+
+      setCouple(null);
+      setMembers([]);
+      setAnniversaries([]);
+      setEvents([]);
+      setInvite(null);
+      setNotice(
+        "커플 공간 연결을 해제했습니다. 코리아픽 계정과 로그인 상태는 그대로 유지됩니다."
+      );
     });
   };
 
@@ -903,6 +937,24 @@ export default function CoupleSpace() {
                   </article>
                 ))}
               </div>
+            </section>
+
+            <section className="couple-danger-zone">
+              <div>
+                <p>PRIVATE SPACE SETTINGS</p>
+                <h2>커플 공간 연결 해제</h2>
+                <span>
+                  두 계정의 연결과 공유 기념일·일정·초대 정보가 모두 영구
+                  삭제됩니다. 코리아픽 계정과 로그인 정보는 삭제되지 않습니다.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={leaveCoupleSpace}
+                disabled={working}
+              >
+                {working ? "처리 중" : "커플 공간 탈퇴"}
+              </button>
             </section>
           </>
         )}
