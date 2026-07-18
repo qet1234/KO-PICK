@@ -526,7 +526,6 @@ h1 strong {
   line-height: 1.6;
 }
 
-.google-button,
 .kakao-button,
 .email-login-button {
   width: 100%;
@@ -579,7 +578,6 @@ h1 strong {
 
 .kakao-button:disabled,
 .quick-login-options button:disabled,
-.google-button:disabled,
 .email-login-button:disabled {
   cursor: wait;
   opacity: .65;
@@ -645,26 +643,10 @@ h1 strong {
   font-size: 24px;
 }
 
-.quick-login-icon.is-phone {
-  font-size: 22px;
-}
-
-.google-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 11px;
-  border: 1px solid #d4d4ce;
-  background: #fff;
-}
-
-.google-button > span {
-  width: 25px;
-  height: 25px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f2f2ee;
+.quick-login-icon.is-google svg {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .login-divider {
