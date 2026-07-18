@@ -502,6 +502,7 @@ export default function CoupleSpace() {
       setNotice(
         "커플 공간 연결을 해제했습니다. 코리아픽 계정과 로그인 상태는 그대로 유지됩니다."
       );
+      window.location.replace("/");
     });
   };
 
