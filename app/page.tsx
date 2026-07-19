@@ -35,13 +35,9 @@ export default function Home() {
             </p>
 
             <h1>
-              지금 가장 사랑
+              설레는
               <br />
-              받는
-              <br />
-              전국의 장소를
-              <br />
-              만나보세요
+              하루의 시작
             </h1>
 
             <p className="kp-hero-description">
