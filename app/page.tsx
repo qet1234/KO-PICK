@@ -107,6 +107,53 @@ export default function Home() {
           <button type="button">AI 추천 시작하기 →</button>
         </div>
       </section>
+
+      <footer className="kp-footer" id="privacy">
+        <div className="kp-container kp-privacy-panel">
+          <div className="kp-privacy-heading">
+            <p className="kp-overline kp-overline-light">PRIVACY &amp; SAFETY</p>
+            <h2>개인정보를 소중하게 보호합니다.</h2>
+            <p>
+              서비스 제공에 필요한 최소한의 정보만 처리하고,
+              이용 목적이 끝난 정보는 안전하게 삭제합니다.
+            </p>
+          </div>
+
+          <div className="kp-privacy-grid">
+            <article>
+              <span>01</span>
+              <strong>필요한 정보만 처리</strong>
+              <p>
+                소셜 로그인 계정 식별자, 이메일 및 공개 프로필 정보는
+                회원 식별과 서비스 제공 목적으로만 사용합니다.
+              </p>
+            </article>
+
+            <article>
+              <span>02</span>
+              <strong>커플 정보 비공개</strong>
+              <p>
+                커플 공간의 일정과 기념일은 연결된 두 사용자만
+                확인할 수 있도록 접근 권한을 제한합니다.
+              </p>
+            </article>
+
+            <article>
+              <span>03</span>
+              <strong>탈퇴 시 안전하게 삭제</strong>
+              <p>
+                회원탈퇴 시 개인정보와 저장 데이터는 관련 법령상
+                보관 의무가 있는 경우를 제외하고 삭제합니다.
+              </p>
+            </article>
+          </div>
+
+          <div className="kp-privacy-footer">
+            <span>© 2026 KOREA PICK</span>
+            <a href="/account">개인정보·계정 관리 →</a>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
