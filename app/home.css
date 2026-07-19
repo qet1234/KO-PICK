@@ -1628,6 +1628,9 @@ button {
 .kp-category-buttons button {
   min-height: 34px;
   padding: 7px 15px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border: 1px solid #d8d8d2;
   border-radius: 999px;
   background: #fff;
@@ -1636,9 +1639,27 @@ button {
   font-weight: 800;
   cursor: pointer;
   transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease,
     color 0.2s ease,
     border-color 0.2s ease,
     background 0.2s ease;
+}
+
+.kp-category-buttons button::after,
+.kp-detail-buttons button::after {
+  width: 14px;
+  height: 14px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.52);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
 }
 
 .kp-category-buttons button:hover,
@@ -1646,6 +1667,28 @@ button {
   border-color: #ff3b3b;
   background: #ff3b3b;
   color: #fff;
+}
+
+.kp-category-buttons button:hover {
+  box-shadow: 0 8px 17px rgba(255, 59, 59, 0.2);
+  transform: translateY(-2px);
+}
+
+.kp-category-buttons button:active,
+.kp-detail-buttons button:active {
+  transform: translateY(2px) scale(0.9);
+}
+
+.kp-category-buttons button:active::after,
+.kp-detail-buttons button:active::after {
+  animation: kp-filter-chip-ripple 430ms ease-out;
+}
+
+.kp-category-buttons button.is-active {
+  box-shadow:
+    0 3px 0 #c92323,
+    0 9px 18px rgba(255, 59, 59, 0.25);
+  animation: kp-filter-chip-selected 360ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .kp-detail-filter {
@@ -1684,6 +1727,9 @@ button {
 .kp-detail-buttons button {
   min-height: 34px;
   padding: 7px 13px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border: 1px solid #e4cbc1;
   border-radius: 999px;
   background: #fff;
@@ -1708,6 +1754,41 @@ button {
   border-color: #111;
   background: #111;
   color: #fff;
+  box-shadow:
+    0 3px 0 #444,
+    0 8px 17px rgba(0, 0, 0, 0.2);
+  animation: kp-filter-chip-selected 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes kp-filter-chip-selected {
+  0% {
+    transform: scale(0.88);
+  }
+  55% {
+    transform: translateY(-3px) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes kp-filter-chip-ripple {
+  0% {
+    opacity: 0.48;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-category-buttons button,
+  .kp-detail-buttons button {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 .kp-place-summary {

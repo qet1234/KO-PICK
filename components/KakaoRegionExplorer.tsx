@@ -779,9 +779,9 @@ export default function KakaoRegionExplorer() {
           </p>
 
           <h2>
-            지역별 인기 장소를
+            지역별 인기 장소
             <br />
-            빠르게 찾아보세요
+            빠르게 찾아보세요.
           </h2>
 
           <p>
