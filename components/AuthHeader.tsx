@@ -46,7 +46,7 @@ export default function AuthHeader() {
   const handleLogout = async () => {
     const supabase = createClient();
 
-    // Google 계정 전체가 아니라 현재 KO-PICK 사이트 세션만 종료합니다.
+    // 연결된 소셜 계정이 아니라 현재 KO-PICK 사이트 세션만 종료합니다.
     const { error } = await supabase.auth.signOut({
       scope: "local",
     });

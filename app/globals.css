@@ -635,7 +635,9 @@ h1 strong {
 }
 
 .quick-login-icon.is-naver {
-  color: #03c75a;
+  border-color: #03c75a;
+  color: #fff;
+  background: #03c75a;
 }
 
 .quick-login-icon.is-apple {

@@ -28,6 +28,17 @@ export default function AccountPage() {
         return;
       }
 
+      const provider = user.user_metadata?.provider;
+
+      if (provider === "naver") {
+        setEmail(
+          user.user_metadata?.contact_email
+            ? `네이버 계정 · ${user.user_metadata.contact_email}`
+            : "네이버 계정",
+        );
+        return;
+      }
+
       setEmail(user.email ?? "");
     };
 
@@ -101,7 +112,7 @@ export default function AccountPage() {
           <div>
             <h2>로그아웃</h2>
             <p>
-              Google 계정 자체가 아닌 KO-PICK 사이트
+              연결된 소셜 계정 자체가 아닌 KO-PICK 사이트
               로그인만 종료합니다.
             </p>
           </div>
@@ -131,7 +142,8 @@ export default function AccountPage() {
 
             <p>
               삭제된 정보는 복구할 수 없습니다.
-              Google 계정 자체는 삭제되지 않습니다.
+              Google, 카카오, 네이버 계정 자체는 삭제되지
+              않습니다.
             </p>
           </div>
 
@@ -179,7 +191,7 @@ export default function AccountPage() {
             </ul>
 
             <p className="account-google-notice">
-              Google 계정 자체와 다른 사이트의 Google
+              연결된 소셜 계정 자체와 다른 사이트의
               로그인에는 영향을 주지 않습니다.
             </p>
 

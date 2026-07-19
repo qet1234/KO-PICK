@@ -61,3 +61,25 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 커플, 멤버, 기념일, 일정 테이블에는 RLS가 적용됩니다. 연결된 두 계정만 데이터를
 읽고 수정할 수 있으며, 초대 코드는 해시로 저장되고 한 번 사용하면 폐기됩니다.
+
+## 네이버 로그인 설정
+
+네이버는 Supabase 기본 OAuth 제공자가 아니므로 KO-PICK 서버가 네이버 인증 결과를
+검증한 뒤 Supabase 세션으로 안전하게 변환합니다.
+
+1. 네이버 개발자 센터에서 애플리케이션을 만들고 `네이버 로그인` API를 추가합니다.
+2. 서비스 URL은 `https://koreapick.duckdns.org`, Callback URL은
+   `https://koreapick.duckdns.org/auth/naver/callback`으로 등록합니다.
+3. 제공 정보에서 회원이름 또는 별명과 프로필 이미지를 선택합니다. 이메일은 선택
+   동의를 사용할 수 있으며, 없어도 로그인은 가능합니다.
+4. Vercel Production 환경변수에 아래 값을 추가한 뒤 다시 배포합니다.
+
+```dotenv
+NAVER_CLIENT_ID=네이버_애플리케이션_Client_ID
+NAVER_CLIENT_SECRET=네이버_애플리케이션_Client_Secret
+```
+
+기존 `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`도 필요합니다.
+`SUPABASE_SERVICE_ROLE_KEY`와 `NAVER_CLIENT_SECRET`은 서버 전용이며
+`NEXT_PUBLIC_` 접두사를 붙이면 안 됩니다.

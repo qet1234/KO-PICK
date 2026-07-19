@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Provider } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 
-type SocialProvider = Extract<Provider, "google" | "kakao" | "apple">;
+type SupabaseSocialProvider = Extract<
+  Provider,
+  "google" | "kakao" | "apple"
+>;
+type SocialProvider = SupabaseSocialProvider | "naver";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -14,7 +18,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
 
   const handleSocialLogin = async (
-    provider: SocialProvider,
+    provider: SupabaseSocialProvider,
     providerLabel: string
   ) => {
     if (loading) return;
@@ -60,10 +64,25 @@ export default function LoginPage() {
   const handleGoogleLogin = () =>
     handleSocialLogin("google", "Google");
 
-  const handleComingSoon = (providerLabel: string) => {
+  const handleNaverLogin = () => {
     if (loading) return;
-    setMessage(providerLabel + " 로그인은 현재 준비 중입니다.");
+
+    setLoading(true);
+    setActiveProvider("naver");
+    setMessage("");
+    window.location.assign("/auth/naver");
   };
+
+  useEffect(() => {
+    const errorMessage = new URLSearchParams(
+      window.location.search,
+    ).get("auth_error");
+
+    if (errorMessage) {
+      window.history.replaceState({}, "", "/login");
+      queueMicrotask(() => setMessage(errorMessage));
+    }
+  }, []);
 
   return (
     <main className="login-page">
@@ -168,12 +187,14 @@ export default function LoginPage() {
           >
             <button
               type="button"
-              onClick={() => handleComingSoon("네이버")}
+              onClick={handleNaverLogin}
               disabled={loading}
               aria-label="네이버로 로그인"
             >
               <span className="quick-login-icon is-naver">N</span>
-              <small>네이버</small>
+              <small>
+                {activeProvider === "naver" ? "연결 중" : "네이버"}
+              </small>
             </button>
 
             <button
