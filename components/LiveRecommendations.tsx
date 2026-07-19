@@ -163,9 +163,6 @@ export default function LiveRecommendations() {
                 >
                   {favorite ? "♥" : "♡"}
                 </button>
-                <span className="kp-card-icon" aria-hidden="true">
-                  {place.icon}
-                </span>
                 <span className="kp-live-badge">실시간 {place.rank}위</span>
               </div>
 
@@ -197,6 +194,21 @@ export default function LiveRecommendations() {
                 >
                   지도에서 보기 ↗
                 </a>
+              </div>
+
+              <div
+                className="kp-recommendation-icon-slot"
+                aria-label={`${place.category} 카테고리 아이콘`}
+                key={`${place.id}-${place.icon}`}
+              >
+                <span className="kp-card-icon" aria-hidden="true">
+                  {place.icon}
+                </span>
+                <div>
+                  <small>LIVE CATEGORY</small>
+                  <strong>{place.category}</strong>
+                </div>
+                <span className="kp-icon-sync">실시간 연동</span>
               </div>
             </article>
           );
