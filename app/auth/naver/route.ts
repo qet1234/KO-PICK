@@ -4,6 +4,7 @@ import {
   createNaverErrorRedirect,
   getNaverCallbackUrl,
   NAVER_STATE_COOKIE,
+  readNaverOAuthStates,
 } from "@/utils/naver-auth";
 
 export const runtime = "nodejs";
@@ -31,11 +32,16 @@ export async function GET(request: NextRequest) {
   authorizeUrl.searchParams.set("state", state);
 
   const response = NextResponse.redirect(authorizeUrl);
+  const previousStates = readNaverOAuthStates(
+    request.cookies.get(NAVER_STATE_COOKIE)?.value,
+  );
+  const validStates = [...previousStates, state].slice(-5);
+
   response.headers.set("Cache-Control", "private, no-store");
-  response.cookies.set(NAVER_STATE_COOKIE, state, {
+  response.cookies.set(NAVER_STATE_COOKIE, validStates.join("."), {
     httpOnly: true,
-    maxAge: 60 * 10,
-    path: "/auth/naver",
+    maxAge: 60 * 15,
+    path: "/",
     sameSite: "lax",
     secure: callbackUrl.protocol === "https:",
   });

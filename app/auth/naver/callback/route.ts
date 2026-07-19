@@ -10,6 +10,7 @@ import {
   getAppUrl,
   getNaverCallbackUrl,
   NAVER_STATE_COOKIE,
+  readNaverOAuthStates,
 } from "@/utils/naver-auth";
 
 export const runtime = "nodejs";
@@ -52,9 +53,9 @@ export async function GET(request: NextRequest) {
     const oauthError = requestUrl.searchParams.get("error");
     const oauthErrorDescription =
       requestUrl.searchParams.get("error_description");
-    const storedState = request.cookies.get(
-      NAVER_STATE_COOKIE,
-    )?.value;
+    const storedStates = readNaverOAuthStates(
+      request.cookies.get(NAVER_STATE_COOKIE)?.value,
+    );
 
     if (oauthError || oauthErrorDescription) {
       return createNaverErrorRedirect(
@@ -68,8 +69,9 @@ export async function GET(request: NextRequest) {
     if (
       !code ||
       !state ||
-      !storedState ||
-      !statesMatch(state, storedState)
+      !storedStates.some((storedState) =>
+        statesMatch(state, storedState),
+      )
     ) {
       console.error("네이버 OAuth state 검증에 실패했습니다.");
       return createNaverErrorRedirect(
@@ -237,7 +239,7 @@ export async function GET(request: NextRequest) {
     successResponse.cookies.set(NAVER_STATE_COOKIE, "", {
       httpOnly: true,
       maxAge: 0,
-      path: "/auth/naver",
+      path: "/",
       sameSite: "lax",
       secure: getNaverCallbackUrl(request.url).protocol === "https:",
     });
