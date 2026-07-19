@@ -78,10 +78,21 @@ export default function LoginPage() {
       window.location.search,
     ).get("auth_error");
 
+    const resetSocialLoginState = () => {
+      setLoading(false);
+      setActiveProvider(null);
+    };
+
     if (errorMessage) {
       window.history.replaceState({}, "", "/login");
       queueMicrotask(() => setMessage(errorMessage));
     }
+
+    window.addEventListener("pageshow", resetSocialLoginState);
+
+    return () => {
+      window.removeEventListener("pageshow", resetSocialLoginState);
+    };
   }, []);
 
   return (
