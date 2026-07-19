@@ -3,6 +3,7 @@ import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroSearch from "@/components/HeroSearch";
+import HeroLivePick from "@/components/HeroLivePick";
 import "./home.css";
 
 export default function Home() {
@@ -48,27 +49,7 @@ export default function Home() {
             <HeroSearch />
           </article>
 
-          <article className="kp-editor-pick">
-            <span className="kp-card-number">01</span>
-
-            <div className="kp-editor-note">
-              <small>SEOUL SELECTION</small>
-              <strong>
-                오늘의
-                <br />
-                데이트 픽
-              </strong>
-            </div>
-
-            <div className="kp-editor-footer">
-              <div>
-                <small>EDITOR&apos;S CHOICE</small>
-                <p>한강 노을 데이트 코스</p>
-              </div>
-
-              <strong>4.9</strong>
-            </div>
-          </article>
+          <HeroLivePick />
         </div>
 
       </section>
