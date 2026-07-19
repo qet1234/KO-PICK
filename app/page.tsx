@@ -62,10 +62,6 @@ export default function Home() {
               <h2>무엇을 찾고 계신가요?</h2>
               <p>관심 카테고리를 선택해 추천 장소를 확인하세요.</p>
             </div>
-
-            <button className="kp-outline-button" type="button">
-              전체 보기 →
-            </button>
           </div>
 
           <CategoryCards />
@@ -76,7 +72,10 @@ export default function Home() {
         <div className="kp-container">
           <div className="kp-popular-heading">
             <div>
-              <h2>지금 인기 있는 추천</h2>
+              <h2 className="kp-popular-title">
+                지금 인기 있는 추천
+                <span className="kp-popular-star" aria-hidden="true">★</span>
+              </h2>
               <p>조회·상세보기·지도 이동·찜 활동을 실시간으로 반영합니다.</p>
             </div>
           </div>

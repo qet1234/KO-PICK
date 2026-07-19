@@ -545,6 +545,31 @@ button {
   letter-spacing: -0.06em;
 }
 
+.kp-popular-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.kp-popular-star {
+  display: inline-block;
+  color: var(--kp-lime);
+  font-size: 0.78em;
+  line-height: 1;
+  text-shadow: 4px 4px 0 var(--kp-red);
+  transform: translateY(-2px) rotate(-11deg);
+  animation: kp-popular-star-float 2.8s ease-in-out infinite;
+}
+
+@keyframes kp-popular-star-float {
+  0%, 100% {
+    transform: translateY(-2px) rotate(-11deg) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1deg) scale(1.08);
+  }
+}
+
 .kp-section-heading p:not(.kp-overline),
 .kp-popular-heading p,
 .kp-region-content > p:not(.kp-overline) {
@@ -2224,7 +2249,8 @@ button {
   .kp-editor-pick,
   .kp-editor-note,
   .kp-hero-live-status i,
-  .kp-live-pick-pagination button {
+  .kp-live-pick-pagination button,
+  .kp-popular-star {
     animation: none !important;
     transition: none !important;
   }
