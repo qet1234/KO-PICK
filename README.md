@@ -1,4 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KO-PICK
+
+지역별 음식·카페·축제·관광지를 탐색하고 커플 전용 공간을 제공하는 전국 추천 플랫폼입니다.
+
+## 전환된 구조
+
+```text
+React 19 + TypeScript + Vite
+             ↓ REST API
+Spring Boot + Spring Security
+             ↓
+PostgreSQL
+```
+
+- 웹 로그인은 Spring Security 세션(`KOPICK_SESSION`)으로 유지합니다.
+- 로그인 완료 후 `/api/auth/token`에서 API용 JWT Access/Refresh Token을 발급합니다.
+- 세션과 Refresh Token은 PostgreSQL에 저장하며 Redis는 사용하지 않습니다.
+- Google·Kakao·Naver OAuth2 로그인과 계정·커플 공간 API를 Spring Boot가 담당합니다.
+- TourAPI 장소 조회와 실시간 인기 장소·검색어 API도 Spring Boot로 이전했습니다.
+- 기존 Next.js 코드는 전환 검증과 복구를 위해 당분간 루트에 남겨두며, 실제 신규 프론트 빌드는 `frontend`가 담당합니다.
+
+## 로컬 실행
+
+프론트엔드:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+백엔드:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+Windows PowerShell에서는 `./mvnw.cmd spring-boot:run`을 사용합니다. 환경변수는 각 폴더의 `.env.example`을 참고해 등록합니다. PostgreSQL을 로컬에서 실행하려면 `backend/compose.yaml`을 사용할 수 있습니다.
+
+## OAuth 콜백 주소
+
+운영 백엔드가 `https://api.koreapick.duckdns.org`라면 다음 주소를 각 개발자 콘솔에 등록합니다.
+
+```text
+https://api.koreapick.duckdns.org/login/oauth2/code/google
+https://api.koreapick.duckdns.org/login/oauth2/code/kakao
+https://api.koreapick.duckdns.org/login/oauth2/code/naver
+```
+
+## 기존 Next.js 실행
+
+전환 검증 중 기존 화면을 비교해야 할 때만 아래 명령을 사용합니다.
 
 ## Getting Started
 

@@ -1,14 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Provider } from "@supabase/supabase-js";
-import { createClient } from "@/utils/supabase/client";
+import { socialLoginUrl } from "@/utils/spring-api";
 
-type SupabaseSocialProvider = Extract<
-  Provider,
-  "google" | "kakao" | "apple"
->;
-type SocialProvider = SupabaseSocialProvider | "naver";
+type SocialProvider = "google" | "kakao" | "naver" | "apple";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -18,7 +13,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
 
   const handleSocialLogin = async (
-    provider: SupabaseSocialProvider,
+    provider: "google" | "kakao" | "naver",
     providerLabel: string
   ) => {
     if (loading) return;
@@ -28,26 +23,7 @@ export default function LoginPage() {
       setActiveProvider(provider);
       setMessage("");
 
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo:
-            "https://koreapick.duckdns.org/auth/callback",
-          ...(provider === "google"
-            ? {
-                queryParams: {
-                  prompt: "select_account",
-                },
-              }
-            : {}),
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
+      window.location.assign(socialLoginUrl(provider));
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -70,7 +46,7 @@ export default function LoginPage() {
     setLoading(true);
     setActiveProvider("naver");
     setMessage("");
-    window.location.assign("/auth/naver");
+    window.location.assign(socialLoginUrl("naver"));
   };
 
   useEffect(() => {
@@ -210,9 +186,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() =>
-                void handleSocialLogin("apple", "Apple")
-              }
+              onClick={() => setMessage("Apple 로그인은 Spring 인증 전환 후 별도로 연결됩니다.")}
               disabled={loading}
               aria-label="Apple로 로그인"
             >

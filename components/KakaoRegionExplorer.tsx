@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { springApiUrl } from "@/utils/spring-api";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 
 type KakaoLatLng = object;
@@ -377,7 +378,7 @@ export default function KakaoRegionExplorer() {
 
       try {
         const response = await fetch(
-          `/api/tour/places?mode=subregions&region=${encodeURIComponent(selectedRegion)}`
+          `${springApiUrl}/api/public/tour/places?mode=subregions&region=${encodeURIComponent(selectedRegion)}`
         );
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error ?? "세부 지역 조회에 실패했습니다.");
@@ -422,7 +423,7 @@ export default function KakaoRegionExplorer() {
           params.set("detailType", selectedDetail);
         }
 
-        const response = await fetch(`/api/tour/places?${params.toString()}`);
+        const response = await fetch(`${springApiUrl}/api/public/tour/places?${params.toString()}`);
         const payload = await response.json();
 
         if (!response.ok) {

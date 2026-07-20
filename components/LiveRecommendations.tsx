@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
+import { springApiUrl } from "@/utils/spring-api";
 
 interface Place {
   id: string;
@@ -49,7 +49,7 @@ export default function LiveRecommendations() {
 
   const fetchPlaces = useCallback(async () => {
     try {
-      const response = await fetch(`/api/trending-places?t=${Date.now()}`, {
+      const response = await fetch(`${springApiUrl}/api/public/trending-places?t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) throw new Error("인기 추천을 불러오지 못했습니다.");
@@ -66,27 +66,9 @@ export default function LiveRecommendations() {
   useEffect(() => {
     const firstLoad = window.setTimeout(() => void fetchPlaces(), 0);
     const interval = window.setInterval(() => void fetchPlaces(), 30000);
-    let supabase: ReturnType<typeof createClient> | null = null;
-    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
-
-    try {
-      supabase = createClient();
-      channel = supabase
-        .channel("public:trending-place-scores")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "trending_place_scores" },
-          () => void fetchPlaces()
-        )
-        .subscribe();
-    } catch {
-      // 환경변수 또는 Realtime 설정 전에는 30초 폴링으로 동작합니다.
-    }
-
     return () => {
       window.clearTimeout(firstLoad);
       window.clearInterval(interval);
-      if (supabase && channel) void supabase.removeChannel(channel);
     };
   }, [fetchPlaces]);
 
