@@ -30,3 +30,7 @@
 ## 데이터베이스
 
 Flyway가 회원, Refresh Token, 커플 공간, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다.
+
+## Render 배포
+
+루트의 `render.yaml`은 Docker 기반 Spring Boot 서비스와 PostgreSQL을 함께 생성합니다. Blueprint 생성 화면에서 `sync: false`로 표시되는 프론트엔드 URL, OAuth, TourAPI 값을 입력합니다. 무료 플랜은 검증용이며 실제 운영에서는 유료 인스턴스로 변경합니다.

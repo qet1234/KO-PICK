@@ -83,3 +83,13 @@ app:
 tour-api:
   service-key: ${TOUR_API_SERVICE_KEY:}
   mobile-app: ${TOUR_API_MOBILE_APP:KoreaPick}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
