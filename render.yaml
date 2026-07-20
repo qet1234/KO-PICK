@@ -56,7 +56,7 @@ services:
       - key: COOKIE_SAME_SITE
         value: None
       - key: JAVA_TOOL_OPTIONS
-        value: -XX:MaxRAMPercentage=75.0
+        value: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=32m -XX:+UseSerialGC -Xss512k
 
 databases:
   - name: kopick-db
