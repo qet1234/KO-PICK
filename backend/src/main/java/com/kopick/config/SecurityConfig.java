@@ -2,7 +2,10 @@ package com.kopick.config;
 
 import com.kopick.auth.JwtAuthenticationFilter;
 import com.kopick.auth.OAuthLoginSuccessHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,15 +13,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -29,10 +36,10 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
         HttpSecurity http,
         JwtAuthenticationFilter jwtFilter,
-        OAuthLoginSuccessHandler successHandler
+        OAuthLoginSuccessHandler successHandler,
+        OAuth2AuthorizationRequestResolver authorizationRequestResolver
     ) throws Exception {
-        CookieCsrfTokenRepository csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrf.setCookieName("XSRF-TOKEN");
+        HttpSessionCsrfTokenRepository csrf = new HttpSessionCsrfTokenRepository();
         csrf.setHeaderName("X-XSRF-TOKEN");
 
         http
@@ -61,6 +68,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
+                .authorizationEndpoint(endpoint ->
+                    endpoint.authorizationRequestResolver(authorizationRequestResolver)
+                )
                 .userInfoEndpoint(userInfo -> userInfo.userService(oauth2UserService()))
                 .successHandler(successHandler)
                 .failureHandler((request, response, exception) -> successHandler.onFailure(response, exception))
@@ -75,6 +85,53 @@ public class SecurityConfig {
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    OAuth2AuthorizationRequestResolver authorizationRequestResolver(
+        ClientRegistrationRepository registrations
+    ) {
+        DefaultOAuth2AuthorizationRequestResolver delegate =
+            new DefaultOAuth2AuthorizationRequestResolver(registrations, "/oauth2/authorization");
+
+        return new OAuth2AuthorizationRequestResolver() {
+            @Override
+            public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
+                return requireGoogleAccountSelection(delegate.resolve(request), request);
+            }
+
+            @Override
+            public OAuth2AuthorizationRequest resolve(
+                HttpServletRequest request,
+                String clientRegistrationId
+            ) {
+                return requireGoogleAccountSelection(
+                    delegate.resolve(request, clientRegistrationId),
+                    request
+                );
+            }
+        };
+    }
+
+    private static OAuth2AuthorizationRequest requireGoogleAccountSelection(
+        OAuth2AuthorizationRequest authorizationRequest,
+        HttpServletRequest request
+    ) {
+        if (
+            authorizationRequest == null
+                || request == null
+                || !request.getRequestURI().endsWith("/google")
+        ) {
+            return authorizationRequest;
+        }
+
+        Map<String, Object> parameters =
+            new LinkedHashMap<>(authorizationRequest.getAdditionalParameters());
+        parameters.put("prompt", "select_account");
+
+        return OAuth2AuthorizationRequest.from(authorizationRequest)
+            .additionalParameters(parameters)
+            .build();
     }
 
     @Bean
