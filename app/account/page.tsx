@@ -1,8 +1,7 @@
 ﻿"use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { getCurrentUser, logoutFromSpring, springJson } from "@/utils/spring-api";
 import "./account.css";
 
 const DELETE_CONFIRM_TEXT = "회원탈퇴";
@@ -15,25 +14,17 @@ export default function AccountPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const supabase = createClient();
-
     const checkUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (error || !user) {
+      const user = await getCurrentUser();
+      if (!user) {
         window.location.replace("/login");
         return;
       }
 
-      const provider = user.user_metadata?.provider;
-
-      if (provider === "naver") {
+      if (user.provider === "naver") {
         setEmail(
-          user.user_metadata?.contact_email
-            ? `네이버 계정 · ${user.user_metadata.contact_email}`
+          user.email
+            ? `네이버 계정 · ${user.email}`
             : "네이버 계정",
         );
         return;
@@ -46,18 +37,12 @@ export default function AccountPage() {
   }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-
-    const { error } = await supabase.auth.signOut({
-      scope: "local",
-    });
-
-    if (error) {
-      setErrorMessage(error.message);
-      return;
+    try {
+      await logoutFromSpring();
+      window.location.replace("/login");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "로그아웃에 실패했습니다.");
     }
-
-    window.location.replace("/login");
   };
 
   const handleDeleteAccount = async () => {
@@ -69,23 +54,7 @@ export default function AccountPage() {
     setErrorMessage("");
 
     try {
-      const response = await fetch("/api/account", {
-        method: "DELETE",
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ?? "회원탈퇴 처리에 실패했습니다.",
-        );
-      }
-
-      const supabase = createClient();
-
-      await supabase.auth.signOut({
-        scope: "local",
-      });
+      await springJson<{ success: boolean }>("/api/web/account", { method: "DELETE" });
 
       window.location.replace("/login?deleted=1");
     } catch (error) {
@@ -162,12 +131,12 @@ export default function AccountPage() {
           </p>
         )}
 
-        <Link
+        <a
           className="account-home-link"
           href="/"
         >
           ← 홈으로 돌아가기
-        </Link>
+        </a>
       </section>
 
       {modalOpen && (

@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "dev:backend": "cd backend && ./mvnw spring-boot:run",
+    "test:backend": "cd backend && ./mvnw test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",

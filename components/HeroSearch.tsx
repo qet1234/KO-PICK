@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { trackKeywordSearch } from "@/utils/trackKeywordSearch";
 
 function categoryFromKeyword(keyword: string) {
@@ -13,7 +12,6 @@ function categoryFromKeyword(keyword: string) {
 }
 
 export default function HeroSearch() {
-  const router = useRouter();
   const [query, setQuery] = useState("");
 
   const moveToExplore = (keyword: string) => {
@@ -25,7 +23,7 @@ export default function HeroSearch() {
       category: categoryFromKeyword(normalized),
       keyword: normalized,
     });
-    router.push(`/explore?${params.toString()}`);
+    window.location.assign(`/explore?${params.toString()}`);
   };
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {

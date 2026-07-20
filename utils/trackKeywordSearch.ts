@@ -1,3 +1,5 @@
+import { springApiUrl } from "./spring-api";
+
 export type KeywordSource = "search" | "trend";
 
 function getVisitorId() {
@@ -18,7 +20,7 @@ export async function trackKeywordSearch(
   source: KeywordSource
 ) {
   try {
-    await fetch("/api/trending-keywords", {
+    await fetch(`${springApiUrl}/api/public/trending-keywords`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { springJson } from "@/utils/spring-api";
 
 type CoupleInfo = {
   couple_id: string;
@@ -46,6 +45,14 @@ type CalendarEvent = {
 type InviteResult = {
   invite_code: string;
   invite_expires_at: string;
+};
+
+type CouplePayload = {
+  user_id: string;
+  couple: CoupleInfo | null;
+  members: CoupleMember[];
+  anniversaries: Anniversary[];
+  events: CalendarEvent[];
 };
 
 const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
@@ -144,7 +151,6 @@ function friendlyError(error: unknown, fallback: string) {
 export default function CoupleSpace() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
-  const [userId, setUserId] = useState("");
   const [couple, setCouple] = useState<CoupleInfo | null>(null);
   const [members, setMembers] = useState<CoupleMember[]>([]);
   const [anniversaries, setAnniversaries] = useState<Anniversary[]>([]);
@@ -173,61 +179,25 @@ export default function CoupleSpace() {
   const [eventNote, setEventNote] = useState("");
   const [eventColor, setEventColor] = useState<CalendarEvent["color"]>("red");
 
-  const loadPrivateData = useCallback(async (coupleId: string) => {
-    const supabase = createClient();
-    const [memberResult, anniversaryResult, eventResult] = await Promise.all([
-      supabase
-        .from("couple_members")
-        .select("user_id,display_name,role,joined_at")
-        .eq("couple_id", coupleId)
-        .order("joined_at"),
-      supabase
-        .from("couple_anniversaries")
-        .select("id,couple_id,title,anniversary_date,repeats_yearly,note,created_by")
-        .eq("couple_id", coupleId)
-        .order("anniversary_date"),
-      supabase
-        .from("couple_calendar_events")
-        .select("id,couple_id,title,starts_at,ends_at,all_day,location,note,color,created_by")
-        .eq("couple_id", coupleId)
-        .order("starts_at"),
-    ]);
-
-    const firstError =
-      memberResult.error ?? anniversaryResult.error ?? eventResult.error;
-    if (firstError) throw firstError;
-
-    setMembers((memberResult.data ?? []) as CoupleMember[]);
-    setAnniversaries((anniversaryResult.data ?? []) as Anniversary[]);
-    setEvents((eventResult.data ?? []) as CalendarEvent[]);
+  const loadCouple = useCallback(async () => {
+    try {
+      const payload = await springJson<CouplePayload>("/api/web/couple");
+      setCouple(payload.couple);
+      setMembers(payload.members);
+      setAnniversaries(payload.anniversaries);
+      setEvents(payload.events);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("로그인")) {
+        window.location.replace("/login");
+        return;
+      }
+      throw error;
+    }
   }, []);
 
-  const loadCouple = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      window.location.replace("/login");
-      return;
-    }
-
-    setUserId(user.id);
-    const { data, error } = await supabase.rpc("get_my_couple");
-    if (error) throw error;
-
-    const row = ((data ?? []) as CoupleInfo[])[0] ?? null;
-    setCouple(row);
-    if (row) {
-      await loadPrivateData(row.couple_id);
-    } else {
-      setMembers([]);
-      setAnniversaries([]);
-      setEvents([]);
-    }
-  }, [loadPrivateData]);
+  const loadPrivateData = useCallback(async () => {
+    await loadCouple();
+  }, [loadCouple]);
 
   useEffect(() => {
     let active = true;
@@ -254,47 +224,9 @@ export default function CoupleSpace() {
 
   useEffect(() => {
     if (!couple) return;
-
-    const supabase = createClient();
-    const refresh = () => void loadPrivateData(couple.couple_id);
-    const channel = supabase
-      .channel("private-couple-" + couple.couple_id)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "couple_members",
-          filter: "couple_id=eq." + couple.couple_id,
-        },
-        () => void loadCouple()
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "couple_anniversaries",
-          filter: "couple_id=eq." + couple.couple_id,
-        },
-        refresh
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "couple_calendar_events",
-          filter: "couple_id=eq." + couple.couple_id,
-        },
-        refresh
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [couple, loadCouple, loadPrivateData]);
+    const interval = window.setInterval(() => void loadPrivateData(), 15000);
+    return () => window.clearInterval(interval);
+  }, [couple, loadPrivateData]);
 
   const runAction = async (action: () => Promise<void>) => {
     if (working) return;
@@ -319,14 +251,10 @@ export default function CoupleSpace() {
       const name = createName.trim();
       if (!name) throw new Error("커플 공간에서 사용할 닉네임을 입력해 주세요.");
 
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("create_couple_space", {
-        display_name_input: name,
-      });
-      if (error) throw error;
-
-      const result = ((data ?? []) as Array<InviteResult & { couple_id: string }>)[0];
-      if (!result) throw new Error("초대 코드를 만들지 못했습니다.");
+      const result = await springJson<InviteResult & { couple_id: string }>(
+        "/api/web/couple",
+        { method: "POST", body: JSON.stringify({ displayName: name }) },
+      );
 
       setInvite({
         invite_code: result.invite_code,
@@ -344,12 +272,10 @@ export default function CoupleSpace() {
       const code = joinCode.replace(/\s+/g, "").toUpperCase();
       if (!name || !code) throw new Error("닉네임과 초대 코드를 모두 입력해 주세요.");
 
-      const supabase = createClient();
-      const { error } = await supabase.rpc("join_couple_space", {
-        invite_code_input: code,
-        display_name_input: name,
+      await springJson<{ success: boolean }>("/api/web/couple/join", {
+        method: "POST",
+        body: JSON.stringify({ inviteCode: code, displayName: name }),
       });
-      if (error) throw error;
 
       setNotice("두 사람의 커플 공간이 연결되었습니다.");
       await loadCouple();
@@ -358,12 +284,9 @@ export default function CoupleSpace() {
 
   const refreshInvite = () => {
     void runAction(async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc("refresh_couple_invite");
-      if (error) throw error;
-
-      const result = ((data ?? []) as InviteResult[])[0];
-      if (!result) throw new Error("초대 코드를 만들지 못했습니다.");
+      const result = await springJson<InviteResult>("/api/web/couple/invite", {
+        method: "POST",
+      });
       setInvite(result);
       setNotice("24시간 동안 유효한 새 초대 코드를 만들었습니다.");
     });
@@ -385,21 +308,20 @@ export default function CoupleSpace() {
 
     void runAction(async () => {
       if (!anniversaryTitle.trim()) throw new Error("기념일 이름을 입력해 주세요.");
-      const supabase = createClient();
-      const { error } = await supabase.from("couple_anniversaries").insert({
-        couple_id: couple.couple_id,
-        title: anniversaryTitle.trim(),
-        anniversary_date: anniversaryDate,
-        repeats_yearly: anniversaryRepeats,
-        note: anniversaryNote.trim() || null,
-        created_by: userId,
+      await springJson<{ success: boolean }>("/api/web/couple/anniversaries", {
+        method: "POST",
+        body: JSON.stringify({
+          title: anniversaryTitle.trim(),
+          anniversaryDate,
+          repeatsYearly: anniversaryRepeats,
+          note: anniversaryNote.trim() || null,
+        }),
       });
-      if (error) throw error;
 
       setAnniversaryTitle("");
       setAnniversaryNote("");
       setNotice("기념일을 저장했습니다.");
-      await loadPrivateData(couple.couple_id);
+      await loadPrivateData();
     });
   };
 
@@ -421,53 +343,48 @@ export default function CoupleSpace() {
         throw new Error("종료 시간은 시작 시간보다 늦어야 합니다.");
       }
 
-      const supabase = createClient();
-      const { error } = await supabase.from("couple_calendar_events").insert({
-        couple_id: couple.couple_id,
-        title: eventTitle.trim(),
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt?.toISOString() ?? null,
-        all_day: eventAllDay,
-        location: eventLocation.trim() || null,
-        note: eventNote.trim() || null,
-        color: eventColor,
-        created_by: userId,
+      await springJson<{ success: boolean }>("/api/web/couple/events", {
+        method: "POST",
+        body: JSON.stringify({
+          title: eventTitle.trim(),
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt?.toISOString() ?? null,
+          allDay: eventAllDay,
+          location: eventLocation.trim() || null,
+          note: eventNote.trim() || null,
+          color: eventColor,
+        }),
       });
-      if (error) throw error;
 
       setEventTitle("");
       setEventLocation("");
       setEventNote("");
       setNotice("일정을 저장했습니다.");
-      await loadPrivateData(couple.couple_id);
+      await loadPrivateData();
     });
   };
 
   const removeAnniversary = (item: Anniversary) => {
     if (!window.confirm("'" + item.title + "' 기념일을 삭제할까요?")) return;
     void runAction(async () => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("couple_anniversaries")
-        .delete()
-        .eq("id", item.id);
-      if (error) throw error;
+      await springJson<{ success: boolean }>(
+        "/api/web/couple/anniversaries/" + encodeURIComponent(item.id),
+        { method: "DELETE" },
+      );
       setNotice("기념일을 삭제했습니다.");
-      if (couple) await loadPrivateData(couple.couple_id);
+      if (couple) await loadPrivateData();
     });
   };
 
   const removeEvent = (item: CalendarEvent) => {
     if (!window.confirm("'" + item.title + "' 일정을 삭제할까요?")) return;
     void runAction(async () => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("couple_calendar_events")
-        .delete()
-        .eq("id", item.id);
-      if (error) throw error;
+      await springJson<{ success: boolean }>(
+        "/api/web/couple/events/" + encodeURIComponent(item.id),
+        { method: "DELETE" },
+      );
       setNotice("일정을 삭제했습니다.");
-      if (couple) await loadPrivateData(couple.couple_id);
+      if (couple) await loadPrivateData();
     });
   };
 
@@ -490,18 +407,7 @@ export default function CoupleSpace() {
     }
 
     void runAction(async () => {
-      const response = await fetch("/api/couple/leave", {
-        method: "DELETE",
-      });
-      const result = (await response.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-
-      if (!response.ok) {
-        throw new Error(
-          result?.error ?? "커플 공간 연결을 해제하지 못했습니다."
-        );
-      }
+      await springJson<{ success: boolean }>("/api/web/couple", { method: "DELETE" });
 
       window.location.replace("/");
     });
@@ -536,10 +442,10 @@ export default function CoupleSpace() {
   return (
     <main className="couple-page">
       <header className="couple-topbar">
-        <Link className="couple-brand" href="/">
+        <a className="couple-brand" href="/">
           <span>K</span>
           코리아픽
-        </Link>
+        </a>
         <div className="couple-private-badge">🔒 두 사람만 볼 수 있어요</div>
       </header>
 

@@ -34,3 +34,11 @@ Thumbs.db
 next-env.d.ts
 .vercel
 .env*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Spring Boot
+backend/target/
+frontend/dist/
+frontend/node_modules/

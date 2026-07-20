@@ -1,3 +1,5 @@
+import { springApiUrl } from "./spring-api";
+
 export type PlaceActivityType = "view" | "detail" | "outbound" | "favorite";
 
 export interface TrackablePlace {
@@ -31,7 +33,7 @@ export async function trackPlaceActivity(
   eventType: PlaceActivityType
 ) {
   try {
-    await fetch("/api/trending-places", {
+    await fetch(`${springApiUrl}/api/public/trending-places`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

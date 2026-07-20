@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { springApiUrl } from "@/utils/spring-api";
 
 interface HeroPick {
   id: string;
@@ -59,7 +60,7 @@ export default function HeroLivePick() {
 
   const fetchPicks = useCallback(async () => {
     try {
-      const response = await fetch(`/api/trending-places?t=${Date.now()}`, {
+      const response = await fetch(`${springApiUrl}/api/public/trending-places?t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) return;

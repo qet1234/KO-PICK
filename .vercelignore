@@ -2,3 +2,6 @@
 apply-full-category-explorer.cjs
 apply-legal-place-cards.cjs
 apply-category-card-links.cjs
+backend/
+node_modules/
+.next/

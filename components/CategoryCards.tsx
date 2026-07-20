@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 
 const categoryCards = [
   {
@@ -47,14 +46,14 @@ export default function CategoryCards() {
               <span>{description}</span>
             </div>
 
-            <Link
+            <a
               className="kp-category-arrow"
               href={"/explore?category=" + encodeURIComponent(target)}
               aria-label={title + " 카테고리와 세부 필터 보기"}
               title={title + " 카테고리 보기"}
             >
               <span aria-hidden="true">↗</span>
-            </Link>
+            </a>
           </article>
         )
       )}

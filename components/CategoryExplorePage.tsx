@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
+import { springApiUrl } from "@/utils/spring-api";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
@@ -225,7 +225,7 @@ export default function CategoryExplorePage({
 
       try {
         const response = await fetch(
-          "/api/tour/places?mode=subregions&region=" +
+          `${springApiUrl}/api/public/tour/places?mode=subregions&region=` +
             encodeURIComponent(selectedRegion)
         );
         const payload = await response.json();
@@ -278,7 +278,7 @@ export default function CategoryExplorePage({
         }
 
         const response = await fetch(
-          "/api/tour/places?" + params.toString()
+          `${springApiUrl}/api/public/tour/places?` + params.toString()
         );
         const payload = await response.json();
 
@@ -516,19 +516,19 @@ export default function CategoryExplorePage({
   return (
     <main className="kp-explore-page">
       <header className="kp-explore-header">
-        <Link href="/" className="kp-explore-brand">
+        <a href="/" className="kp-explore-brand">
           <span>K</span>
           <strong>코리아픽</strong>
-        </Link>
+        </a>
 
         <div>
           <small>PLACE EXPLORER</small>
           <strong>{selectedCategoryLabel} 전체 결과</strong>
         </div>
 
-        <Link href="/" className="kp-explore-home-link">
+        <a href="/" className="kp-explore-home-link">
           홈으로
-        </Link>
+        </a>
       </header>
 
       <div className="kp-explore-workspace">
