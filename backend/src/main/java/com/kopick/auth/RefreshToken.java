@@ -50,13 +50,18 @@ public class RefreshToken {
     void onCreate() { createdAt = Instant.now(); }
 
     public void revoke(UUID replacement) {
-        revokedAt = Instant.now();
-        replacedByTokenId = replacement;
+        if (revokedAt == null) {
+            revokedAt = Instant.now();
+            replacedByTokenId = replacement;
+        }
     }
 
     public boolean usableAt(Instant now) {
-        return revokedAt == null && expiresAt.isAfter(now) && user.isActive();
+        return !isRevoked() && !isExpiredAt(now) && user.isActive();
     }
+
+    public boolean isRevoked() { return revokedAt != null; }
+    public boolean isExpiredAt(Instant now) { return !expiresAt.isAfter(now); }
 
     public UUID getId() { return id; }
     public AppUser getUser() { return user; }
