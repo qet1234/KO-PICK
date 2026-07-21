@@ -579,7 +579,7 @@ export default function KakaoRegionExplorer() {
       "error",
       () =>
         setMapError(
-          "카카오 지도 연결에 실패했습니다."
+          "카카오 지도 사용 설정 또는 JavaScript 키를 확인해 주세요."
         ),
       { once: true }
     );
