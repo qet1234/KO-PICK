@@ -33,6 +33,8 @@ services:
         sync: false
       - key: KAKAO_CLIENT_SECRET
         sync: false
+      - key: KAKAO_REST_API_KEY
+        sync: false
       - key: NAVER_CLIENT_ID
         sync: false
       - key: NAVER_CLIENT_SECRET
