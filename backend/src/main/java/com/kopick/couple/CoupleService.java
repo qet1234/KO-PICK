@@ -22,10 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CoupleService {
     private final JdbcTemplate jdbc;
+    private final CoupleInviteAttemptService inviteAttempts;
     private final SecureRandom random = new SecureRandom();
 
-    public CoupleService(JdbcTemplate jdbc) {
+    public CoupleService(JdbcTemplate jdbc, CoupleInviteAttemptService inviteAttempts) {
         this.jdbc = jdbc;
+        this.inviteAttempts = inviteAttempts;
     }
 
     @Transactional(readOnly = true)
@@ -86,8 +88,8 @@ public class CoupleService {
         Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
         jdbc.update("""
             insert into public.couples
-                (id, created_by, invite_code_hash, invite_expires_at, created_at, updated_at)
-            values (?, ?, ?, ?, now(), now())
+                (id, created_by, invite_code_hash, invite_expires_at, invite_revoked_at, created_at, updated_at)
+            values (?, ?, ?, ?, null, now(), now())
             """, coupleId, userId, sha256(inviteCode), Timestamp.from(expiresAt));
         jdbc.update("""
             insert into public.couple_members (couple_id, user_id, display_name, role, joined_at)
@@ -103,43 +105,48 @@ public class CoupleService {
     @Transactional
     public void join(UUID userId, String inviteCode, String displayName) {
         validateName(displayName);
-        requireNoMembership(userId);
+        inviteAttempts.requireAvailable(userId);
+
         String code = inviteCode == null ? "" : inviteCode.replaceAll("\\s+", "").toUpperCase();
-        if (!code.matches("^[0-9A-F]{8}$")) {
-            throw new IllegalArgumentException("초대 코드는 영문 대문자와 숫자로 된 8자리입니다.");
+        if (!code.matches("^(?:[0-9A-F]{8}|[0-9A-F]{32})$")) {
+            inviteAttempts.record(userId, false);
+            throw new IllegalArgumentException("초대 코드 형식이 올바르지 않습니다.");
         }
 
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-            select id
-              from public.couples
-             where invite_code_hash = ?
-               and invite_used_at is null
-               and invite_expires_at > now()
-             for update
-            """, sha256(code));
-        if (rows.isEmpty()) throw new IllegalArgumentException("초대 코드가 올바르지 않거나 만료되었습니다.");
-
-        UUID coupleId = (UUID) rows.get(0).get("id");
-        Integer memberCount = jdbc.queryForObject(
-            "select count(*) from public.couple_members where couple_id = ?", Integer.class, coupleId
-        );
-        if (memberCount != null && memberCount >= 2) {
-            throw new IllegalStateException("이미 두 사람이 연결된 커플 공간입니다.");
-        }
         try {
-            jdbc.update("""
-                insert into public.couple_members (couple_id, user_id, display_name, role, joined_at)
-                values (?, ?, ?, 'partner', now())
-                """, coupleId, userId, displayName.trim());
-        } catch (DuplicateKeyException error) {
-            throw new IllegalStateException("이미 연결된 커플 공간이 있습니다.");
+            requireNoMembership(userId);
+            List<Map<String, Object>> rows = jdbc.queryForList("""
+                update public.couples c
+                   set invite_used_at = now(),
+                       invite_revoked_at = now(),
+                       invite_code_hash = null,
+                       invite_expires_at = null,
+                       updated_at = now()
+                 where c.invite_code_hash = ?
+                   and c.invite_used_at is null
+                   and c.invite_revoked_at is null
+                   and c.invite_expires_at > now()
+                   and (select count(*) from public.couple_members cm where cm.couple_id = c.id) < 2
+                returning c.id
+                """, sha256(code));
+            if (rows.isEmpty()) {
+                throw new IllegalArgumentException("초대 코드가 올바르지 않거나 만료되었습니다.");
+            }
+
+            UUID coupleId = (UUID) rows.get(0).get("id");
+            try {
+                jdbc.update("""
+                    insert into public.couple_members (couple_id, user_id, display_name, role, joined_at)
+                    values (?, ?, ?, 'partner', now())
+                    """, coupleId, userId, displayName.trim());
+            } catch (DuplicateKeyException error) {
+                throw new IllegalStateException("이미 연결된 커플 공간이 있습니다.");
+            }
+            inviteAttempts.record(userId, true);
+        } catch (RuntimeException error) {
+            inviteAttempts.record(userId, false);
+            throw error;
         }
-        jdbc.update("""
-            update public.couples
-               set invite_used_at = now(), invite_code_hash = null,
-                   invite_expires_at = null, updated_at = now()
-             where id = ?
-            """, coupleId);
     }
 
     @Transactional
@@ -163,7 +170,8 @@ public class CoupleService {
         Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
         jdbc.update("""
             update public.couples
-               set invite_code_hash = ?, invite_expires_at = ?, invite_used_at = null, updated_at = now()
+               set invite_code_hash = ?, invite_expires_at = ?, invite_used_at = null,
+                   invite_revoked_at = null, updated_at = now()
              where id = ?
             """, sha256(code), Timestamp.from(expiresAt), coupleId);
         return Map.of("invite_code", code, "invite_expires_at", expiresAt);
@@ -256,7 +264,7 @@ public class CoupleService {
     }
 
     private String inviteCode() {
-        byte[] bytes = new byte[4];
+        byte[] bytes = new byte[16];
         random.nextBytes(bytes);
         return HexFormat.of().withUpperCase().formatHex(bytes);
     }
