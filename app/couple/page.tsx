@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CoupleSpace from "@/components/CoupleSpace";
+import CoupleInviteSecurityUiPatch from "@/components/CoupleInviteSecurityUiPatch";
 import "./couple.css";
 
 export const metadata: Metadata = {
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function CouplePage() {
-  return <CoupleSpace />;
+  return (
+    <>
+      <CoupleInviteSecurityUiPatch />
+      <CoupleSpace />
+    </>
+  );
 }
