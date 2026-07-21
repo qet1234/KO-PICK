@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/public/tour")
 public class TourApiController {
-    private final TourApiService tourApi;
+    private final PlaceSearchService placeSearch;
 
-    public TourApiController(TourApiService tourApi) {
-        this.tourApi = tourApi;
+    public TourApiController(PlaceSearchService placeSearch) {
+        this.placeSearch = placeSearch;
     }
 
     @GetMapping("/places")
     public Map<String, Object> places(@RequestParam MultiValueMap<String, String> query) {
-        return tourApi.search(query);
+        return placeSearch.search(query);
     }
 }

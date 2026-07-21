@@ -84,6 +84,9 @@ tour-api:
   service-key: ${TOUR_API_SERVICE_KEY:}
   mobile-app: ${TOUR_API_MOBILE_APP:KoreaPick}
 
+kakao-local:
+  rest-api-key: ${KAKAO_REST_API_KEY:}
+
 management:
   endpoints:
     web:
