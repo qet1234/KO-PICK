@@ -31,7 +31,7 @@ public class RefreshTokenService {
         return new IssuedRefreshToken(raw, entity);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = RefreshTokenReuseException.class)
     public Rotation rotate(String rawToken) {
         RefreshToken current = tokens.findByTokenHash(hash(rawToken))
             .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 Refresh Token입니다."));
@@ -39,7 +39,9 @@ public class RefreshTokenService {
 
         if (current.isRevoked()) {
             tokens.revokeAll(current.getUser(), now);
-            throw new IllegalArgumentException("Refresh Token 재사용이 감지되어 모든 세션을 폐기했습니다.");
+            throw new RefreshTokenReuseException(
+                "Refresh Token 재사용이 감지되어 모든 세션을 폐기했습니다."
+            );
         }
         if (current.isExpiredAt(now) || !current.getUser().isActive()) {
             throw new IllegalArgumentException("Refresh Token이 만료되었거나 사용할 수 없습니다.");
@@ -73,6 +75,12 @@ public class RefreshTokenService {
             return java.util.HexFormat.of().formatHex(digest);
         } catch (NoSuchAlgorithmException error) {
             throw new IllegalStateException("SHA-256을 사용할 수 없습니다.", error);
+        }
+    }
+
+    public static class RefreshTokenReuseException extends IllegalArgumentException {
+        public RefreshTokenReuseException(String message) {
+            super(message);
         }
     }
 
