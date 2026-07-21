@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
+import ExploreUxGuards from "@/components/ExploreUxGuards";
 import PlaceNavigationChooser from "@/components/PlaceNavigationChooser";
 import { springApiUrl } from "@/utils/spring-api";
 
@@ -229,6 +230,7 @@ export default function FastCategoryExplorePage({
     <>
       <CategoryExplorePage initialCategory={initialCategory} />
       <PlaceNavigationChooser />
+      <ExploreUxGuards />
     </>
   );
 }
