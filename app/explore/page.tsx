@@ -1,4 +1,4 @@
-import CategoryExplorePage from "@/components/CategoryExplorePage";
+import FastCategoryExplorePage from "@/components/FastCategoryExplorePage";
 import "./explore.css";
 
 const allowedCategories = [
@@ -40,5 +40,5 @@ export default async function ExplorePage({
     ? (normalizedCategory as AllowedCategory)
     : "전체";
 
-  return <CategoryExplorePage initialCategory={initialCategory} />;
+  return <FastCategoryExplorePage initialCategory={initialCategory} />;
 }
