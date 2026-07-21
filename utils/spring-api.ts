@@ -16,8 +16,38 @@ export const springApiUrl = (
 let csrfToken: string | null = null;
 let accessToken: string | null = null;
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+) {
+  const controller = new AbortController();
+  const upstreamSignal = init.signal;
+  const abortFromUpstream = () => controller.abort(upstreamSignal?.reason);
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  if (upstreamSignal?.aborted) {
+    abortFromUpstream();
+  } else {
+    upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
+  }
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted && !upstreamSignal?.aborted) {
+      throw new Error("서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
+  }
+}
+
 async function loadCsrfToken() {
-  const response = await fetch(`${springApiUrl}/api/auth/csrf`, {
+  const response = await fetchWithTimeout(`${springApiUrl}/api/auth/csrf`, {
     credentials: "include",
   });
   if (!response.ok) {
@@ -43,7 +73,7 @@ export async function springFetch(
     headers.set("X-XSRF-TOKEN", csrfToken ?? (await loadCsrfToken()));
   }
 
-  let response = await fetch(`${springApiUrl}${path}`, {
+  let response = await fetchWithTimeout(`${springApiUrl}${path}`, {
     ...init,
     method,
     headers,
@@ -53,7 +83,7 @@ export async function springFetch(
   if (response.status === 403 && !["GET", "HEAD", "OPTIONS"].includes(method)) {
     csrfToken = null;
     headers.set("X-XSRF-TOKEN", await loadCsrfToken());
-    response = await fetch(`${springApiUrl}${path}`, {
+    response = await fetchWithTimeout(`${springApiUrl}${path}`, {
       ...init,
       method,
       headers,
