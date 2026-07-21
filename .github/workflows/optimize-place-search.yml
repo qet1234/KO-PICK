@@ -1,0 +1,281 @@
+name: Optimize place search
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/optimize-place-search.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply request cancellation and memory cache
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("components/CategoryExplorePage.tsx")
+          text = path.read_text(encoding="utf-8-sig")
+
+          marker = "const PLACE_CACHE_TTL_MS = 5 * 60 * 1000;"
+          if marker in text:
+              print("Optimization is already applied.")
+              raise SystemExit(0)
+
+          anchor = '''function displayCategory(category: string) {
+            return category === "맛집" ? "음식" : category;
+          }
+          '''
+
+          cache_code = '''
+
+          type PlacesPayload = {
+            places?: Place[];
+            pagination?: {
+              totalCount?: number;
+              totalPages?: number;
+            };
+            error?: string;
+          };
+
+          const PLACE_CACHE_TTL_MS = 5 * 60 * 1000;
+          const placeCache = new Map<string, { expiresAt: number; payload: PlacesPayload }>();
+          const subregionCache = new Map<
+            string,
+            { expiresAt: number; items: SubregionOption[] }
+          >();
+
+          function getCachedPlaces(key: string) {
+            const cached = placeCache.get(key);
+            if (!cached || cached.expiresAt <= Date.now()) {
+              placeCache.delete(key);
+              return null;
+            }
+            return cached.payload;
+          }
+
+          function getCachedSubregions(region: string) {
+            const cached = subregionCache.get(region);
+            if (!cached || cached.expiresAt <= Date.now()) {
+              subregionCache.delete(region);
+              return null;
+            }
+            return cached.items;
+          }
+          '''
+
+          if anchor not in text:
+              raise SystemExit("displayCategory anchor not found")
+          text = text.replace(anchor, anchor + cache_code, 1)
+
+          old_subregions = '''  useEffect(() => {
+            let cancelled = false;
+
+            async function loadSubregions() {
+              if (selectedRegion === "전국") {
+                setSubregions([]);
+                setSelectedSubregion("전체");
+                return;
+              }
+
+              try {
+                const response = await fetch(
+                  `${springApiUrl}/api/public/tour/places?mode=subregions&region=` +
+                    encodeURIComponent(selectedRegion)
+                );
+                const payload = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(
+                    payload.error ?? "세부 지역을 불러오지 못했습니다."
+                  );
+                }
+
+                if (!cancelled) {
+                  setSubregions(payload.subregions ?? []);
+                }
+              } catch {
+                if (!cancelled) setSubregions([]);
+              }
+            }
+
+            loadSubregions();
+            return () => {
+              cancelled = true;
+            };
+          }, [selectedRegion]);
+          '''
+
+          new_subregions = '''  useEffect(() => {
+            if (selectedRegion === "전국") {
+              setSubregions([]);
+              setSelectedSubregion("전체");
+              return;
+            }
+
+            const controller = new AbortController();
+            const cached = getCachedSubregions(selectedRegion);
+
+            if (cached) {
+              setSubregions(cached);
+              return () => controller.abort();
+            }
+
+            async function loadSubregions() {
+              try {
+                const response = await fetch(
+                  `${springApiUrl}/api/public/tour/places?mode=subregions&region=` +
+                    encodeURIComponent(selectedRegion),
+                  { signal: controller.signal }
+                );
+                const payload = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(
+                    payload.error ?? "세부 지역을 불러오지 못했습니다."
+                  );
+                }
+
+                const items: SubregionOption[] = payload.subregions ?? [];
+                subregionCache.set(selectedRegion, {
+                  expiresAt: Date.now() + PLACE_CACHE_TTL_MS,
+                  items,
+                });
+                setSubregions(items);
+              } catch (loadError) {
+                if (loadError instanceof DOMException && loadError.name === "AbortError") {
+                  return;
+                }
+                setSubregions([]);
+              }
+            }
+
+            void loadSubregions();
+            return () => controller.abort();
+          }, [selectedRegion]);
+          '''
+
+          if old_subregions not in text:
+              raise SystemExit("Subregion effect not found")
+          text = text.replace(old_subregions, new_subregions, 1)
+
+          places_start = text.index('  useEffect(() => {\n    let cancelled = false;', text.index(new_subregions) + len(new_subregions))
+          map_effect = '  useEffect(() => {\n    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;'
+          places_end = text.index(map_effect, places_start)
+
+          new_places = '''  useEffect(() => {
+            const controller = new AbortController();
+            const sigunguCode =
+              selectedSubregion === "전체"
+                ? ""
+                : subregions.find(
+                    (option) => option.name === selectedSubregion
+                  )?.code ?? "";
+
+            const params = new URLSearchParams({
+              page: String(page),
+              pageSize: "12",
+              region: selectedRegion,
+              category: selectedCategory,
+            });
+
+            if (sigunguCode) params.set("sigunguCode", sigunguCode);
+            if (selectedDetail !== "전체") {
+              params.set("detailType", selectedDetail);
+            }
+
+            const requestKey = params.toString();
+            const cached = getCachedPlaces(requestKey);
+
+            function applyPayload(payload: PlacesPayload) {
+              setPlaces(payload.places ?? []);
+              setTotalCount(Number(payload.pagination?.totalCount ?? 0));
+              setTotalPages(
+                Math.max(1, Number(payload.pagination?.totalPages ?? 1))
+              );
+            }
+
+            if (cached) {
+              applyPayload(cached);
+              setLoading(false);
+              setError("");
+              return () => controller.abort();
+            }
+
+            async function loadPlaces() {
+              setLoading(true);
+              setError("");
+
+              try {
+                const response = await fetch(
+                  `${springApiUrl}/api/public/tour/places?${requestKey}`,
+                  { signal: controller.signal }
+                );
+                const payload = (await response.json()) as PlacesPayload;
+
+                if (!response.ok) {
+                  throw new Error(
+                    payload.error ?? "추천 장소를 불러오지 못했습니다."
+                  );
+                }
+
+                placeCache.set(requestKey, {
+                  expiresAt: Date.now() + PLACE_CACHE_TTL_MS,
+                  payload,
+                });
+                applyPayload(payload);
+              } catch (loadError) {
+                if (loadError instanceof DOMException && loadError.name === "AbortError") {
+                  return;
+                }
+
+                setError(
+                  loadError instanceof Error
+                    ? loadError.message
+                    : "추천 장소를 불러오지 못했습니다."
+                );
+              } finally {
+                if (!controller.signal.aborted) setLoading(false);
+              }
+            }
+
+            void loadPlaces();
+            return () => controller.abort();
+          }, [
+            page,
+            selectedCategory,
+            selectedDetail,
+            selectedRegion,
+            selectedSubregion,
+            subregions,
+          ]);
+
+          '''
+
+          text = text[:places_start] + new_places + text[places_end:]
+          path.write_text(text, encoding="utf-8")
+          print("Applied place search performance optimization.")
+
+      - name: Verify frontend build
+        run: npm ci && npm run build
+
+      - name: Commit optimization
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/CategoryExplorePage.tsx
+          git commit -m "Optimize regional place loading"
+          git push
