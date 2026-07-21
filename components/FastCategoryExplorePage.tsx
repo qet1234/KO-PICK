@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
+import PlaceNavigationChooser from "@/components/PlaceNavigationChooser";
 import { springApiUrl } from "@/utils/spring-api";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
@@ -224,5 +225,10 @@ export default function FastCategoryExplorePage({
     );
   }
 
-  return <CategoryExplorePage initialCategory={initialCategory} />;
+  return (
+    <>
+      <CategoryExplorePage initialCategory={initialCategory} />
+      <PlaceNavigationChooser />
+    </>
+  );
 }

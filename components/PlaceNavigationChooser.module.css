@@ -1,0 +1,138 @@
+.routeButton {
+  width: calc(100% - 28px);
+  min-height: 38px;
+  margin: 0 14px 14px;
+  border: 1px solid #111;
+  border-radius: 999px;
+  color: #fff;
+  background: #111;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.routeButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(17, 17, 17, 0.16);
+}
+
+.routeButton:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(17, 17, 17, 0.45);
+  backdrop-filter: blur(5px);
+}
+
+.dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(17, 17, 17, 0.24);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dialogHeader small {
+  color: #ff3b36;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.dialogHeader h2 {
+  margin: 7px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.closeButton {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+.placeName {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f5f5f1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.providerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.providerButton {
+  min-height: 92px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  border: 1px solid #d9d9d2;
+  border-radius: 16px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.providerButton:hover {
+  border-color: #111;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.1);
+}
+
+.providerButton strong {
+  font-size: 15px;
+}
+
+.providerButton span {
+  color: #74746f;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.remember {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.remember input {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 520px) {
+  .providerGrid {
+    grid-template-columns: 1fr;
+  }
+}
