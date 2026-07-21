@@ -4,6 +4,8 @@ import com.kopick.user.AppUser;
 import com.kopick.user.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.security.core.Authentication;
@@ -56,7 +58,7 @@ public class CoupleController {
     @PostMapping("/anniversaries")
     public Map<String, Boolean> addAnniversary(
         Authentication authentication,
-        @RequestBody CoupleService.AnniversaryRequest request
+        @Valid @RequestBody CoupleService.AnniversaryRequest request
     ) {
         couples.addAnniversary(user(authentication).getId(), request);
         return Map.of("success", true);
@@ -74,7 +76,7 @@ public class CoupleController {
     @PostMapping("/events")
     public Map<String, Boolean> addEvent(
         Authentication authentication,
-        @RequestBody CoupleService.EventRequest request
+        @Valid @RequestBody CoupleService.EventRequest request
     ) {
         couples.addEvent(user(authentication).getId(), request);
         return Map.of("success", true);
@@ -99,6 +101,14 @@ public class CoupleController {
         return users.resolve(authentication);
     }
 
-    public record CreateRequest(@NotBlank String displayName) {}
-    public record JoinRequest(@NotBlank String inviteCode, @NotBlank String displayName) {}
+    public record CreateRequest(
+        @NotBlank @Size(max = 24) String displayName
+    ) {}
+
+    public record JoinRequest(
+        @NotBlank
+        @Pattern(regexp = "(?i)^[0-9a-f\\s]{32,48}$", message = "초대 코드 형식이 올바르지 않습니다.")
+        String inviteCode,
+        @NotBlank @Size(max = 24) String displayName
+    ) {}
 }
