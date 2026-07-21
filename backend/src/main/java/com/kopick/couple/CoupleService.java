@@ -1,5 +1,9 @@
 package com.kopick.couple;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -21,6 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CoupleService {
+    private static final int INVITE_TOKEN_BYTES = 16;
+    private static final int INVITE_CODE_LENGTH = INVITE_TOKEN_BYTES * 2;
+    private static final long INVITE_TTL_HOURS = 24;
+
     private final JdbcTemplate jdbc;
     private final SecureRandom random = new SecureRandom();
 
@@ -83,7 +91,7 @@ public class CoupleService {
 
         UUID coupleId = UUID.randomUUID();
         String inviteCode = inviteCode();
-        Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
+        Instant expiresAt = Instant.now().plus(INVITE_TTL_HOURS, ChronoUnit.HOURS);
         jdbc.update("""
             insert into public.couples
                 (id, created_by, invite_code_hash, invite_expires_at, created_at, updated_at)
@@ -104,9 +112,9 @@ public class CoupleService {
     public void join(UUID userId, String inviteCode, String displayName) {
         validateName(displayName);
         requireNoMembership(userId);
-        String code = inviteCode == null ? "" : inviteCode.replaceAll("\\s+", "").toUpperCase();
-        if (!code.matches("^[0-9A-F]{8}$")) {
-            throw new IllegalArgumentException("초대 코드는 영문 대문자와 숫자로 된 8자리입니다.");
+        String code = normalizeInviteCode(inviteCode);
+        if (!code.matches("^[0-9A-F]{" + INVITE_CODE_LENGTH + "}$")) {
+            throw new IllegalArgumentException("초대 코드 형식이 올바르지 않습니다.");
         }
 
         List<Map<String, Object>> rows = jdbc.queryForList("""
@@ -117,7 +125,9 @@ public class CoupleService {
                and invite_expires_at > now()
              for update
             """, sha256(code));
-        if (rows.isEmpty()) throw new IllegalArgumentException("초대 코드가 올바르지 않거나 만료되었습니다.");
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("초대 코드가 올바르지 않거나 만료되었습니다.");
+        }
 
         UUID coupleId = (UUID) rows.get(0).get("id");
         Integer memberCount = jdbc.queryForObject(
@@ -160,7 +170,7 @@ public class CoupleService {
         }
 
         String code = inviteCode();
-        Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
+        Instant expiresAt = Instant.now().plus(INVITE_TTL_HOURS, ChronoUnit.HOURS);
         jdbc.update("""
             update public.couples
                set invite_code_hash = ?, invite_expires_at = ?, invite_used_at = null, updated_at = now()
@@ -172,9 +182,6 @@ public class CoupleService {
     @Transactional
     public void addAnniversary(UUID userId, AnniversaryRequest request) {
         UUID coupleId = requireMembership(userId);
-        if (request.title() == null || request.title().isBlank()) {
-            throw new IllegalArgumentException("기념일 이름을 입력해 주세요.");
-        }
         jdbc.update("""
             insert into public.couple_anniversaries
                 (id, couple_id, title, anniversary_date, repeats_yearly, note, created_by, created_at, updated_at)
@@ -195,16 +202,10 @@ public class CoupleService {
     @Transactional
     public void addEvent(UUID userId, EventRequest request) {
         UUID coupleId = requireMembership(userId);
-        if (request.title() == null || request.title().isBlank()) {
-            throw new IllegalArgumentException("일정 이름을 입력해 주세요.");
-        }
         if (request.endsAt() != null && request.endsAt().isBefore(request.startsAt())) {
             throw new IllegalArgumentException("종료 시간은 시작 시간보다 늦어야 합니다.");
         }
         String color = request.color() == null ? "red" : request.color();
-        if (!List.of("red", "blue", "lime", "pink", "black").contains(color)) {
-            throw new IllegalArgumentException("지원하지 않는 일정 색상입니다.");
-        }
         jdbc.update("""
             insert into public.couple_calendar_events
                 (id, couple_id, title, starts_at, ends_at, all_day, location, note, color,
@@ -256,9 +257,13 @@ public class CoupleService {
     }
 
     private String inviteCode() {
-        byte[] bytes = new byte[4];
+        byte[] bytes = new byte[INVITE_TOKEN_BYTES];
         random.nextBytes(bytes);
         return HexFormat.of().withUpperCase().formatHex(bytes);
+    }
+
+    private String normalizeInviteCode(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", "").toUpperCase();
     }
 
     private String sha256(String value) {
@@ -266,7 +271,7 @@ public class CoupleService {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                 .digest(value.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException error) {
-            throw new IllegalStateException(error);
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다.", error);
         }
     }
 
@@ -275,19 +280,19 @@ public class CoupleService {
     }
 
     public record AnniversaryRequest(
-        String title,
-        LocalDate anniversaryDate,
+        @NotBlank @Size(max = 80) String title,
+        @NotNull LocalDate anniversaryDate,
         boolean repeatsYearly,
-        String note
+        @Size(max = 500) String note
     ) {}
 
     public record EventRequest(
-        String title,
-        Instant startsAt,
+        @NotBlank @Size(max = 100) String title,
+        @NotNull Instant startsAt,
         Instant endsAt,
         boolean allDay,
-        String location,
-        String note,
-        String color
+        @Size(max = 160) String location,
+        @Size(max = 1000) String note,
+        @Pattern(regexp = "red|blue|lime|pink|black") String color
     ) {}
 }
