@@ -35,9 +35,16 @@ public class RefreshTokenService {
     public Rotation rotate(String rawToken) {
         RefreshToken current = tokens.findByTokenHash(hash(rawToken))
             .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 Refresh Token입니다."));
-        if (!current.usableAt(Instant.now())) {
-            throw new IllegalArgumentException("Refresh Token이 만료되었거나 폐기되었습니다.");
+        Instant now = Instant.now();
+
+        if (current.isRevoked()) {
+            tokens.revokeAll(current.getUser(), now);
+            throw new IllegalArgumentException("Refresh Token 재사용이 감지되어 모든 세션을 폐기했습니다.");
         }
+        if (current.isExpiredAt(now) || !current.getUser().isActive()) {
+            throw new IllegalArgumentException("Refresh Token이 만료되었거나 사용할 수 없습니다.");
+        }
+
         IssuedRefreshToken next = issue(current.getUser());
         current.revoke(next.entity().getId());
         return new Rotation(current.getUser(), next.raw());
