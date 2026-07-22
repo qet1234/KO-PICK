@@ -87,6 +87,9 @@
 .reservation-candidate-actions { max-width: 380px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .reservation-candidate-actions button, .reservation-candidate-actions a, .reservation-add-trigger, .reservation-plan-actions button, .reservation-add-candidate button { min-height: 34px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #d6d2ca; border-radius: 999px; background: #fff; color: var(--reserve-ink); font-size: 9px; font-weight: 900; }
 .reservation-candidate-actions button.is-voted { border-color: var(--reserve-blue); color: #fff; background: var(--reserve-blue); }
+.reservation-candidate-actions a.is-direct-booking { border-color: #151512; color: #fff; background: #151512; }
+.reservation-candidate-actions a.is-naver-booking { border-color: #03c75a; color: #fff; background: #03c75a; }
+.reservation-candidate-actions a.is-kakao-booking { border-color: #fee500; color: #231f20; background: #fee500; }
 .reservation-candidate-actions button:disabled { opacity: .5; }
 .reservation-add-trigger { margin: 0 27px 22px; background: #f5f3ee; }
 .reservation-add-candidate { margin: 0 27px 22px; padding: 18px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; border-radius: 16px; background: #f3f1eb; }

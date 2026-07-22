@@ -2,6 +2,10 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
+import {
+  kakaoBookingSearchUrl,
+  naverBookingSearchUrl,
+} from "@/utils/external-booking";
 
 type SpaceType = "personal" | "couple" | "friends" | "family";
 type PlanStatus = "voting" | "ready" | "requested" | "confirmed" | "cancelled";
@@ -70,12 +74,6 @@ function localDateKey(date = new Date()) {
 
 function messageFrom(error: unknown, fallback: string) {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
-}
-
-function searchUrl(base: "naver" | "kakao", candidate: Candidate) {
-  const query = [candidate.place_name, candidate.address].filter(Boolean).join(" ");
-  if (base === "kakao") return `https://map.kakao.com/link/search/${encodeURIComponent(query)}`;
-  return `https://search.naver.com/search.naver?query=${encodeURIComponent(query + " 예약")}`;
 }
 
 function toIso(localDateTime: string) {
@@ -407,8 +405,9 @@ export default function ReservationPage() {
                         <div className="reservation-candidate-actions">
                           <button className={candidate.voted_by_me ? "is-voted" : ""} type="button" disabled={working || !(["voting", "ready"] as PlanStatus[]).includes(plan.status)} onClick={() => toggleVote(candidate.id)}>{candidate.voted_by_me ? "내 투표 취소" : "이 장소에 투표"}</button>
                           {plan.can_manage && (["voting", "ready"] as PlanStatus[]).includes(plan.status) && <button type="button" disabled={working || candidate.is_selected} onClick={() => finalizePlan(plan, candidate)}>{candidate.is_selected ? "달력 저장됨" : "최종 장소 확정"}</button>}
-                          <a href={searchUrl("kakao", candidate)} target="_blank" rel="noopener noreferrer">카카오맵 확인 ↗</a>
-                          <a href={candidate.external_reservation_url || searchUrl("naver", candidate)} target="_blank" rel="noopener noreferrer">{candidate.external_reservation_url ? "외부 예약 페이지 ↗" : "예약 방법 검색 ↗"}</a>
+                          {candidate.external_reservation_url && <a className="is-direct-booking" href={candidate.external_reservation_url} target="_blank" rel="noopener noreferrer">매장 예약 페이지 ↗</a>}
+                          <a className="is-naver-booking" href={naverBookingSearchUrl({ name: candidate.place_name, address: candidate.address })} target="_blank" rel="noopener noreferrer">네이버 예약 확인 ↗</a>
+                          <a className="is-kakao-booking" href={kakaoBookingSearchUrl({ name: candidate.place_name, address: candidate.address })} target="_blank" rel="noopener noreferrer">카카오 예약 확인 ↗</a>
                         </div>
                       </article>
                     ))}
