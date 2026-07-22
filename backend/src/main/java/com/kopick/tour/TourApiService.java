@@ -1,6 +1,7 @@
 package com.kopick.tour;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.PreDestroy;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -10,7 +11,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,6 +27,8 @@ public class TourApiService {
     private static final int MAX_PAGE_SIZE = 100;
     private static final int BOOKING_SCAN_PAGE_SIZE = 100;
     private static final int MAX_BOOKING_SCAN_PAGES = 5;
+    private static final int BOOKING_LOOKUP_BATCH_SIZE = 24;
+    private static final int BOOKING_LOOKUP_CONCURRENCY = 12;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
         "", "-", "없음", "해당없음", "예약불가", "불가"
@@ -90,10 +96,23 @@ public class TourApiService {
     private final RestClient restClient;
     private final TourApiProperties properties;
     private final Map<String, CachedBookingInfo> bookingInfoCache = new ConcurrentHashMap<>();
+    private final ExecutorService bookingLookupExecutor = Executors.newFixedThreadPool(
+        BOOKING_LOOKUP_CONCURRENCY,
+        runnable -> {
+            Thread thread = new Thread(runnable, "tour-booking-lookup");
+            thread.setDaemon(true);
+            return thread;
+        }
+    );
 
     public TourApiService(RestClient.Builder builder, TourApiProperties properties) {
         this.restClient = builder.build();
         this.properties = properties;
+    }
+
+    @PreDestroy
+    void shutdownBookingLookupExecutor() {
+        bookingLookupExecutor.shutdownNow();
     }
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
@@ -192,12 +211,15 @@ public class TourApiService {
             List<Map<String, Object>> candidates = normalize(payloads, region, category, detail).stream()
                 .filter(place -> seen.add(String.valueOf(place.getOrDefault("id", ""))))
                 .toList();
-            scannedCount += candidates.size();
-            List<Map<String, Object>> verifiedBatch = candidates.parallelStream()
-                .map(this::withBookingInfo)
-                .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
-                .toList();
-            verified.addAll(verifiedBatch);
+            for (int batchStart = 0; batchStart < candidates.size(); batchStart += BOOKING_LOOKUP_BATCH_SIZE) {
+                int batchEnd = Math.min(batchStart + BOOKING_LOOKUP_BATCH_SIZE, candidates.size());
+                List<Map<String, Object>> candidateBatch = candidates.subList(batchStart, batchEnd);
+                scannedCount += candidateBatch.size();
+                verified.addAll(lookupBookingInfo(candidateBatch).stream()
+                    .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
+                    .toList());
+                if (verified.size() >= requiredMatches) break;
+            }
 
             fullyScanned = true;
             for (int totalPages : sourceTotalPages) {
@@ -232,6 +254,15 @@ public class TourApiService {
             "criterion", "TOUR_API_RESERVATION_INFO"
         ));
         return result;
+    }
+
+    private List<Map<String, Object>> lookupBookingInfo(List<Map<String, Object>> candidates) {
+        List<CompletableFuture<Map<String, Object>>> lookups = candidates.stream()
+            .map(place -> CompletableFuture.supplyAsync(
+                () -> withBookingInfo(place), bookingLookupExecutor
+            ))
+            .toList();
+        return lookups.stream().map(CompletableFuture::join).toList();
     }
 
     private JsonNode searchPayload(
