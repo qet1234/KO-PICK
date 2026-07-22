@@ -726,6 +726,11 @@ h1 strong {
   line-height: 1.5;
 }
 
+.login-message.is-status {
+  color: #2753a5;
+  background: #edf4ff;
+}
+
 @media (max-width: 980px) {
   .login-page {
     grid-template-columns: 1fr;

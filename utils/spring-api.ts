@@ -23,6 +23,9 @@ const REFRESH_TOKEN_KEY = "kopick_refresh_token";
 const ACCESS_EXPIRES_AT_KEY = "kopick_access_expires_at";
 
 const REQUEST_TIMEOUT_MS = 20_000;
+const API_READY_TIMEOUT_MS = 90_000;
+const API_READY_POLL_MS = 2_000;
+const API_READY_REQUEST_TIMEOUT_MS = 10_000;
 
 function sessionValue(key: string) {
   if (typeof window === "undefined") return null;
@@ -94,6 +97,58 @@ function currentAccessToken() {
   acceptOAuthTokensFromUrl();
   if (!accessToken) accessToken = sessionValue(ACCESS_TOKEN_KEY);
   return accessToken;
+}
+
+async function springApiIsReady() {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    API_READY_REQUEST_TIMEOUT_MS,
+  );
+
+  try {
+    const response = await fetch(`${springApiUrl}/actuator/health`, {
+      cache: "no-store",
+      credentials: "omit",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return false;
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) return false;
+
+    const health = (await response.json().catch(() => null)) as {
+      status?: string;
+    } | null;
+
+    return health?.status === "UP";
+  } catch {
+    // Render's wake-up page can fail CORS until the Spring service is ready.
+    return false;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+export async function waitForSpringApiReady() {
+  const deadline = Date.now() + API_READY_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    if (await springApiIsReady()) return;
+
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, Math.min(API_READY_POLL_MS, remaining));
+    });
+  }
+
+  throw new Error(
+    "로그인 서버가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
+  );
 }
 
 // Remove OAuth credentials from the address bar before React renders or any

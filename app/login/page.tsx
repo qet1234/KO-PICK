@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { socialLoginUrl } from "@/utils/spring-api";
+import {
+  socialLoginUrl,
+  waitForSpringApiReady,
+} from "@/utils/spring-api";
 
 type SocialProvider = "google" | "kakao" | "naver" | "apple";
 
@@ -21,7 +24,9 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setActiveProvider(provider);
-      setMessage("");
+      setMessage("로그인 서버를 준비하고 있어요. 잠시만 기다려 주세요.");
+
+      await waitForSpringApiReady();
 
       window.location.assign(socialLoginUrl(provider));
     } catch (error) {
@@ -40,14 +45,8 @@ export default function LoginPage() {
   const handleGoogleLogin = () =>
     handleSocialLogin("google", "Google");
 
-  const handleNaverLogin = () => {
-    if (loading) return;
-
-    setLoading(true);
-    setActiveProvider("naver");
-    setMessage("");
-    window.location.assign(socialLoginUrl("naver"));
-  };
+  const handleNaverLogin = () =>
+    handleSocialLogin("naver", "네이버");
 
   useEffect(() => {
     const errorMessage = new URLSearchParams(
@@ -236,7 +235,10 @@ export default function LoginPage() {
           </div>
 
           {message ? (
-            <p className="login-message" role="alert">
+            <p
+              className={`login-message${loading ? " is-status" : ""}`}
+              role={loading ? "status" : "alert"}
+            >
               {message}
             </p>
           ) : null}
