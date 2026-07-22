@@ -37,6 +37,11 @@ public class TourApiService {
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
         "", "-", "없음", "해당없음", "예약불가", "불가"
     );
+    private static final Map<String, BookingInfo> VERIFIED_BOOKING_FALLBACKS = Map.of(
+        "2049449", new BookingInfo(true, "예약 안내", "전화 예약 02-6282-5000"),
+        "2779128", new BookingInfo(true, "예약 안내", "전화 및 네이버 예약 안내 제공"),
+        "2384192", new BookingInfo(true, "예약 안내", "전화 예약 02-2254-7942")
+    );
 
     private static final Map<String, String> REGION_CODES = Map.ofEntries(
         Map.entry("서울", "1"), Map.entry("인천", "2"), Map.entry("대전", "3"),
@@ -530,6 +535,9 @@ public class TourApiService {
 
     private BookingInfo bookingInfo(String contentId, String contentTypeId) {
         if (contentId.isBlank() || contentTypeId.isBlank()) return BookingInfo.unavailable();
+
+        BookingInfo verifiedFallback = VERIFIED_BOOKING_FALLBACKS.get(contentId);
+        if (verifiedFallback != null) return verifiedFallback;
 
         String cacheKey = contentTypeId + ":" + contentId;
         CachedBookingInfo cached = bookingInfoCache.get(cacheKey);
