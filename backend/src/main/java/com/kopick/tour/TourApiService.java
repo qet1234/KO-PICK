@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -20,6 +21,10 @@ import org.springframework.util.MultiValueMap;
 public class TourApiService {
     private static final String BASE = "https://apis.data.go.kr/B551011/KorService2";
     private static final int MAX_PAGE_SIZE = 100;
+    private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
+    private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
+        "", "-", "없음", "해당없음", "예약불가", "불가"
+    );
 
     private static final Map<String, String> REGION_CODES = Map.ofEntries(
         Map.entry("서울", "1"), Map.entry("인천", "2"), Map.entry("대전", "3"),
@@ -82,6 +87,7 @@ public class TourApiService {
 
     private final RestClient restClient;
     private final TourApiProperties properties;
+    private final Map<String, CachedBookingInfo> bookingInfoCache = new ConcurrentHashMap<>();
 
     public TourApiService(RestClient.Builder builder, TourApiProperties properties) {
         this.restClient = builder.build();
@@ -137,6 +143,14 @@ public class TourApiService {
         }
 
         List<Map<String, Object>> places = normalize(payloads, region, category, detail);
+        boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
+        int bookingScannedCount = places.size();
+        if (bookingOnly) {
+            places = places.parallelStream()
+                .map(this::withBookingInfo)
+                .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
+                .toList();
+        }
         int totalCount = keywordSearch ? places.size() : payloads.stream()
             .mapToInt(payload -> payload.path("response").path("body").path("totalCount").asInt(0)).sum();
         int totalPages = keywordSearch ? 1 : payloads.stream().mapToInt(payload -> {
@@ -145,15 +159,22 @@ public class TourApiService {
                 Math.max(1, body.path("numOfRows").asInt(rows))));
         }).max().orElse(1);
 
-        return Map.of(
-            "places", places,
-            "pagination", Map.of(
-                "pageNo", keywordSearch ? 1 : page,
-                "numOfRows", pageSize,
-                "totalCount", totalCount,
-                "totalPages", totalPages
-            )
-        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", places);
+        result.put("pagination", Map.of(
+            "pageNo", keywordSearch ? 1 : page,
+            "numOfRows", pageSize,
+            "totalCount", totalCount,
+            "totalPages", totalPages
+        ));
+        if (bookingOnly) {
+            result.put("bookingFilter", Map.of(
+                "verifiedCount", places.size(),
+                "scannedCount", bookingScannedCount,
+                "criterion", "TOUR_API_RESERVATION_INFO"
+            ));
+        }
+        return result;
     }
 
     private Map<String, Object> subregions(String areaCode) {
@@ -213,6 +234,7 @@ public class TourApiService {
                 place.put("latitude", latitude);
                 place.put("longitude", longitude);
                 place.put("imageUrl", image);
+                place.put("contentTypeId", text(item, "contenttypeid"));
                 places.add(place);
             }
         }
@@ -243,6 +265,74 @@ public class TourApiService {
                 List.of(new QuerySource("12", null, null, null), new QuerySource("14", null, null, null)));
         }
         return List.of();
+    }
+
+    private Map<String, Object> withBookingInfo(Map<String, Object> place) {
+        String contentId = String.valueOf(place.getOrDefault("id", ""));
+        String contentTypeId = String.valueOf(place.getOrDefault("contentTypeId", ""));
+        BookingInfo bookingInfo = bookingInfo(contentId, contentTypeId);
+
+        Map<String, Object> enriched = new LinkedHashMap<>(place);
+        enriched.put("bookingAvailable", bookingInfo.available());
+        if (bookingInfo.available()) {
+            enriched.put("bookingKind", bookingInfo.kind());
+            enriched.put("bookingInfo", bookingInfo.description());
+        }
+        return enriched;
+    }
+
+    private BookingInfo bookingInfo(String contentId, String contentTypeId) {
+        if (contentId.isBlank() || contentTypeId.isBlank()) return BookingInfo.unavailable();
+
+        String cacheKey = contentTypeId + ":" + contentId;
+        CachedBookingInfo cached = bookingInfoCache.get(cacheKey);
+        long now = System.currentTimeMillis();
+        if (cached != null && cached.expiresAt() > now) return cached.info();
+
+        BookingInfo info = fetchBookingInfo(contentId, contentTypeId);
+        bookingInfoCache.put(cacheKey, new CachedBookingInfo(info, now + BOOKING_CACHE_TTL_MS));
+        return info;
+    }
+
+    private BookingInfo fetchBookingInfo(String contentId, String contentTypeId) {
+        MultiValueMap<String, String> params = common();
+        params.set("contentId", contentId);
+        params.set("contentTypeId", contentTypeId);
+
+        try {
+            List<JsonNode> introItems = items(request("detailIntro2", params));
+            if (introItems.isEmpty()) return BookingInfo.unavailable();
+
+            JsonNode intro = introItems.get(0);
+            for (Map.Entry<String, String> field : Map.of(
+                "reservationfood", "예약 안내",
+                "bookingplace", "예매처",
+                "reservation", "예약 안내"
+            ).entrySet()) {
+                String description = cleanBookingText(text(intro, field.getKey()));
+                if (isBookableDescription(description)) {
+                    return new BookingInfo(true, field.getValue(), description);
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // 상세 예약 정보 조회 실패는 전체 장소 검색 실패로 이어지지 않게 합니다.
+        }
+        return BookingInfo.unavailable();
+    }
+
+    private String cleanBookingText(String value) {
+        return value
+            .replaceAll("<[^>]+>", " ")
+            .replace("&nbsp;", " ")
+            .replace("&amp;", "&")
+            .replaceAll("\\s+", " ")
+            .trim();
+    }
+
+    private boolean isBookableDescription(String description) {
+        String normalized = description.replaceAll("\\s+", "");
+        if (EMPTY_BOOKING_VALUES.contains(normalized)) return false;
+        return !normalized.contains("예약불가") && !normalized.contains("예매불가");
     }
 
     private List<QuerySource> keywordSources(
@@ -343,4 +433,10 @@ public class TourApiService {
     }
 
     private record QuerySource(String contentTypeId, String cat1, String cat3, String keyword) {}
+    private record BookingInfo(boolean available, String kind, String description) {
+        private static BookingInfo unavailable() {
+            return new BookingInfo(false, "", "");
+        }
+    }
+    private record CachedBookingInfo(BookingInfo info, long expiresAt) {}
 }

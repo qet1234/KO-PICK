@@ -22,7 +22,9 @@ public class PlaceSearchService {
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
         Map<String, Object> tourResult = tourApi.search(query);
-        if (!isFranchiseCafe(query) || !kakaoLocal.configured()) return tourResult;
+        if (Boolean.parseBoolean(first(query, "bookingOnly", "false"))
+            || !isFranchiseCafe(query)
+            || !kakaoLocal.configured()) return tourResult;
 
         int page = positive(first(query, "page", "1"), 1);
         int pageSize = Math.min(positive(first(query, "pageSize", "12"), 12), 100);
