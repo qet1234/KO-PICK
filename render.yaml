@@ -1,4 +1,4 @@
-# Deployment sync: time-bounded nationwide booking detail lookup
+# Deployment sync: sampled nationwide booking detail lookup
 services:
   - type: web
     name: kopick-api
