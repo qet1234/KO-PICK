@@ -144,6 +144,42 @@ select {
   gap: 8px;
 }
 
+.kp-explore-bookable-filter {
+  margin-top: 18px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  border: 1px solid rgba(255, 59, 54, 0.22);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.kp-explore-bookable-filter button {
+  min-height: 42px;
+  border: 1px solid var(--explore-line);
+  border-radius: 999px;
+  color: var(--explore-black);
+  background: #f6f6f2;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kp-explore-bookable-filter button.is-active {
+  border-color: var(--explore-red);
+  color: #fff;
+  background: var(--explore-red);
+}
+
+.kp-explore-bookable-filter small {
+  grid-column: 1 / -1;
+  color: var(--explore-muted);
+  font-size: 9px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .kp-explore-category-buttons button {
   min-height: 38px;
   padding: 0 15px;
@@ -275,6 +311,20 @@ select {
   background: rgba(17, 17, 17, 0.78);
   font-size: 8px;
   font-weight: 900;
+}
+
+.kp-explore-bookable-badge {
+  padding: 6px 9px;
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 2;
+  border-radius: 999px;
+  color: #151512;
+  background: #c2f34a;
+  box-shadow: 0 5px 14px rgba(21, 21, 18, 0.18);
+  font-size: 8px;
+  font-weight: 950;
 }
 
 .kp-explore-card-copy {
@@ -690,6 +740,16 @@ select {
   color: #77736b;
   font-size: 8px;
   text-align: right;
+}
+
+.kp-explore-booking-info {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: #45423d;
+  background: #fff;
+  font-size: 9px;
+  line-height: 1.55;
 }
 
 .kp-explore-booking-links {
