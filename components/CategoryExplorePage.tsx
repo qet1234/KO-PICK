@@ -696,7 +696,7 @@ export default function CategoryExplorePage({
                 {bookingOnly ? " 예약 안내 확인 " : " 추천 장소 "}
                 {(bookingOnly ? places.length : totalCount).toLocaleString("ko-KR")}곳
                 {bookingOnly && bookingScannedCount > 0
-                  ? ` · 현재 페이지 ${bookingScannedCount.toLocaleString("ko-KR")}곳 확인`
+                  ? ` · 원본 장소 ${bookingScannedCount.toLocaleString("ko-KR")}곳 확인`
                   : ""}
               </strong>
             )}
@@ -705,7 +705,7 @@ export default function CategoryExplorePage({
           {!loading && !error && places.length === 0 && (
             <div className="kp-explore-empty">
               {bookingOnly
-                ? "현재 페이지에는 예약 안내가 등록된 장소가 없습니다. 다음 페이지나 다른 지역을 확인해 주세요."
+                ? "선택한 조건에서 예약 안내가 등록된 장소를 찾지 못했습니다. 지역이나 음식 종류를 변경해 주세요."
                 : "선택한 조건의 장소가 없습니다."}
             </div>
           )}

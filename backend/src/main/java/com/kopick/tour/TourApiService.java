@@ -21,6 +21,8 @@ import org.springframework.util.MultiValueMap;
 public class TourApiService {
     private static final String BASE = "https://apis.data.go.kr/B551011/KorService2";
     private static final int MAX_PAGE_SIZE = 100;
+    private static final int BOOKING_SCAN_PAGE_SIZE = 100;
+    private static final int MAX_BOOKING_SCAN_PAGES = 5;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
         "", "-", "없음", "해당없음", "예약불가", "불가"
@@ -111,46 +113,22 @@ public class TourApiService {
         List<QuerySource> sources = sources(category, detail);
         if (sources.isEmpty()) throw new IllegalArgumentException("지원하지 않는 장소 카테고리입니다.");
 
+        boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
         boolean keywordSearch = sources.stream().anyMatch(source -> source.keyword() != null);
+        if (bookingOnly) {
+            return searchBookable(query, region, areaCode, category, detail, sources, page, pageSize);
+        }
+
         int rows = keywordSearch ? MAX_PAGE_SIZE
             : sources.size() > 1 ? Math.max(1, pageSize / sources.size()) : pageSize;
         List<JsonNode> payloads = new ArrayList<>();
         for (QuerySource source : sources) {
-            MultiValueMap<String, String> params = common();
-            params.set("pageNo", keywordSearch ? "1" : String.valueOf(page));
-            params.set("numOfRows", String.valueOf(rows));
-            params.set("arrange", "Q");
-            put(params, "areaCode", areaCode);
-            if (!areaCode.isBlank()) put(params, "sigunguCode", first(query, "sigunguCode", ""));
-            put(params, "contentTypeId", source.contentTypeId());
-            put(params, "cat1", source.cat1());
-            put(params, "cat3", source.cat3());
-
-            String path;
-            if (source.keyword() != null) {
-                params.set("keyword", source.keyword());
-                path = "searchKeyword2";
-            } else if (validCoordinates(query)) {
-                params.set("mapX", first(query, "lng", ""));
-                params.set("mapY", first(query, "lat", ""));
-                params.set("radius", String.valueOf(Math.min(20000, positive(first(query, "radius", "10000"), 10000))));
-                params.set("arrange", "E");
-                path = "locationBasedList2";
-            } else {
-                path = "areaBasedList2";
-            }
-            payloads.add(request(path, params));
+            payloads.add(searchPayload(
+                source, query, areaCode, keywordSearch ? 1 : page, rows
+            ));
         }
 
         List<Map<String, Object>> places = normalize(payloads, region, category, detail);
-        boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
-        int bookingScannedCount = places.size();
-        if (bookingOnly) {
-            places = places.parallelStream()
-                .map(this::withBookingInfo)
-                .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
-                .toList();
-        }
         int totalCount = keywordSearch ? places.size() : payloads.stream()
             .mapToInt(payload -> payload.path("response").path("body").path("totalCount").asInt(0)).sum();
         int totalPages = keywordSearch ? 1 : payloads.stream().mapToInt(payload -> {
@@ -167,14 +145,126 @@ public class TourApiService {
             "totalCount", totalCount,
             "totalPages", totalPages
         ));
-        if (bookingOnly) {
-            result.put("bookingFilter", Map.of(
-                "verifiedCount", places.size(),
-                "scannedCount", bookingScannedCount,
-                "criterion", "TOUR_API_RESERVATION_INFO"
-            ));
-        }
         return result;
+    }
+
+    private Map<String, Object> searchBookable(
+        MultiValueMap<String, String> query,
+        String region,
+        String areaCode,
+        String category,
+        String detail,
+        List<QuerySource> sources,
+        int page,
+        int pageSize
+    ) {
+        int requiredMatches = page * pageSize + 1;
+        int scannedCount = 0;
+        boolean fullyScanned = false;
+        Set<String> seen = new HashSet<>();
+        List<Map<String, Object>> verified = new ArrayList<>();
+        int[] sourceTotalPages = new int[sources.size()];
+
+        for (int rawPage = 1; rawPage <= MAX_BOOKING_SCAN_PAGES; rawPage++) {
+            List<JsonNode> payloads = new ArrayList<>();
+            boolean requestedAnySource = false;
+
+            for (int sourceIndex = 0; sourceIndex < sources.size(); sourceIndex++) {
+                if (sourceTotalPages[sourceIndex] > 0 && rawPage > sourceTotalPages[sourceIndex]) continue;
+
+                JsonNode payload = searchPayload(
+                    sources.get(sourceIndex), query, areaCode, rawPage, BOOKING_SCAN_PAGE_SIZE
+                );
+                payloads.add(payload);
+                requestedAnySource = true;
+
+                JsonNode body = payload.path("response").path("body");
+                int totalCount = body.path("totalCount").asInt(0);
+                int rows = Math.max(1, body.path("numOfRows").asInt(BOOKING_SCAN_PAGE_SIZE));
+                sourceTotalPages[sourceIndex] = Math.max(1, (int) Math.ceil(totalCount / (double) rows));
+            }
+
+            if (!requestedAnySource) {
+                fullyScanned = true;
+                break;
+            }
+
+            List<Map<String, Object>> candidates = normalize(payloads, region, category, detail).stream()
+                .filter(place -> seen.add(String.valueOf(place.getOrDefault("id", ""))))
+                .toList();
+            scannedCount += candidates.size();
+            List<Map<String, Object>> verifiedBatch = candidates.parallelStream()
+                .map(this::withBookingInfo)
+                .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
+                .toList();
+            verified.addAll(verifiedBatch);
+
+            fullyScanned = true;
+            for (int totalPages : sourceTotalPages) {
+                if (totalPages == 0 || rawPage < totalPages) {
+                    fullyScanned = false;
+                    break;
+                }
+            }
+            if (verified.size() >= requiredMatches || fullyScanned) break;
+        }
+
+        int offset = Math.min((page - 1) * pageSize, verified.size());
+        int end = Math.min(offset + pageSize, verified.size());
+        List<Map<String, Object>> places = verified.subList(offset, end);
+        boolean hasNextPage = verified.size() > end || !fullyScanned;
+        int totalPages = fullyScanned
+            ? Math.max(1, (int) Math.ceil(verified.size() / (double) pageSize))
+            : Math.max(page + (hasNextPage ? 1 : 0), 1);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", places);
+        result.put("pagination", Map.of(
+            "pageNo", page,
+            "numOfRows", pageSize,
+            "totalCount", verified.size(),
+            "totalPages", totalPages
+        ));
+        result.put("bookingFilter", Map.of(
+            "verifiedCount", verified.size(),
+            "scannedCount", scannedCount,
+            "fullyScanned", fullyScanned,
+            "criterion", "TOUR_API_RESERVATION_INFO"
+        ));
+        return result;
+    }
+
+    private JsonNode searchPayload(
+        QuerySource source,
+        MultiValueMap<String, String> query,
+        String areaCode,
+        int page,
+        int rows
+    ) {
+        MultiValueMap<String, String> params = common();
+        params.set("pageNo", String.valueOf(page));
+        params.set("numOfRows", String.valueOf(rows));
+        params.set("arrange", "Q");
+        put(params, "areaCode", areaCode);
+        if (!areaCode.isBlank()) put(params, "sigunguCode", first(query, "sigunguCode", ""));
+        put(params, "contentTypeId", source.contentTypeId());
+        put(params, "cat1", source.cat1());
+        put(params, "cat3", source.cat3());
+
+        String path;
+        if (source.keyword() != null) {
+            params.set("keyword", source.keyword());
+            path = "searchKeyword2";
+        } else if (validCoordinates(query)) {
+            params.set("mapX", first(query, "lng", ""));
+            params.set("mapY", first(query, "lat", ""));
+            params.set("radius", String.valueOf(Math.min(20000, positive(first(query, "radius", "10000"), 10000))));
+            params.set("arrange", "E");
+            path = "locationBasedList2";
+        } else {
+            path = "areaBasedList2";
+        }
+        return request(path, params);
     }
 
     private Map<String, Object> subregions(String areaCode) {
