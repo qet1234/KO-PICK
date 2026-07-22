@@ -298,6 +298,11 @@ export default function CategoryExplorePage({
             payload.error ?? "추천 장소를 불러오지 못했습니다."
           );
         }
+        if (bookingOnly && !payload.bookingFilter) {
+          throw new Error(
+            "예약 가능 장소 데이터를 업데이트하고 있습니다. 잠시 후 다시 확인해 주세요."
+          );
+        }
 
         if (!cancelled) {
           setPlaces(payload.places ?? []);
