@@ -17,6 +17,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -65,6 +66,29 @@ public class AuthController {
         if (raw == null) throw new IllegalArgumentException("Refresh Token이 없습니다.");
         RefreshTokenService.Rotation rotation = refreshTokens.rotate(raw);
         return withRefreshCookie(rotation.raw(), tokenResponse(rotation.user()));
+    }
+
+    @PostMapping("/refresh-token")
+    BrowserTokenResponse refreshBrowserToken(@RequestBody BrowserTokenRequest request) {
+        if (request == null || request.refreshToken() == null || request.refreshToken().isBlank()) {
+            throw new IllegalArgumentException("Refresh Token이 없습니다.");
+        }
+        RefreshTokenService.Rotation rotation = refreshTokens.rotate(request.refreshToken());
+        TokenResponse access = tokenResponse(rotation.user());
+        return new BrowserTokenResponse(
+            access.accessToken(),
+            rotation.raw(),
+            access.tokenType(),
+            access.expiresIn()
+        );
+    }
+
+    @PostMapping("/logout-token")
+    Map<String, Boolean> logoutBrowserToken(@RequestBody BrowserTokenRequest request) {
+        if (request != null && request.refreshToken() != null && !request.refreshToken().isBlank()) {
+            refreshTokens.revoke(request.refreshToken());
+        }
+        return Map.of("success", true);
     }
 
     @PostMapping("/logout")
@@ -136,6 +160,15 @@ public class AuthController {
     }
 
     public record TokenResponse(String accessToken, String tokenType, long expiresIn) {}
+
+    public record BrowserTokenRequest(String refreshToken) {}
+
+    public record BrowserTokenResponse(
+        String accessToken,
+        String refreshToken,
+        String tokenType,
+        long expiresIn
+    ) {}
 
     public record UserResponse(
         String id,
