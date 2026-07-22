@@ -29,7 +29,10 @@ public class TourApiService {
     private static final int MAX_BOOKING_SCAN_PAGES = 5;
     private static final int BOOKING_LOOKUP_BATCH_SIZE = 24;
     private static final int BOOKING_LOOKUP_CONCURRENCY = 12;
+    private static final int BOOKING_REGION_BATCH_SIZE = 4;
+    private static final int BOOKING_REGION_PAGE_SIZE = 12;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
+    private static final long EMPTY_BOOKING_CACHE_TTL_MS = 10 * 60 * 1000L;
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
         "", "-", "없음", "해당없음", "예약불가", "불가"
     );
@@ -50,6 +53,17 @@ public class TourApiService {
         Map.entry("32", "강원"), Map.entry("33", "충북"), Map.entry("34", "충남"),
         Map.entry("35", "경북"), Map.entry("36", "경남"), Map.entry("37", "전북"),
         Map.entry("38", "전남"), Map.entry("39", "제주")
+    );
+    private static final List<RegionScope> BOOKING_REGIONS = List.of(
+        new RegionScope("서울", "1"), new RegionScope("부산", "6"),
+        new RegionScope("대구", "4"), new RegionScope("인천", "2"),
+        new RegionScope("광주", "5"), new RegionScope("대전", "3"),
+        new RegionScope("울산", "7"), new RegionScope("세종", "8"),
+        new RegionScope("경기", "31"), new RegionScope("강원", "32"),
+        new RegionScope("충북", "33"), new RegionScope("충남", "34"),
+        new RegionScope("전북", "37"), new RegionScope("전남", "38"),
+        new RegionScope("경북", "35"), new RegionScope("경남", "36"),
+        new RegionScope("제주", "39")
     );
 
     private static final Map<String, String> FOOD_CODES = Map.of(
@@ -177,6 +191,10 @@ public class TourApiService {
         int page,
         int pageSize
     ) {
+        if (areaCode.isBlank() && !validCoordinates(query)) {
+            return searchBookableNationwide(query, category, detail, sources, page, pageSize);
+        }
+
         int requiredMatches = page * pageSize + 1;
         int scannedCount = 0;
         boolean fullyScanned = false;
@@ -229,6 +247,82 @@ public class TourApiService {
                 }
             }
             if (verified.size() >= requiredMatches || fullyScanned) break;
+        }
+
+        int offset = Math.min((page - 1) * pageSize, verified.size());
+        int end = Math.min(offset + pageSize, verified.size());
+        List<Map<String, Object>> places = verified.subList(offset, end);
+        boolean hasNextPage = verified.size() > end || !fullyScanned;
+        int totalPages = fullyScanned
+            ? Math.max(1, (int) Math.ceil(verified.size() / (double) pageSize))
+            : Math.max(page + (hasNextPage ? 1 : 0), 1);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", places);
+        result.put("pagination", Map.of(
+            "pageNo", page,
+            "numOfRows", pageSize,
+            "totalCount", verified.size(),
+            "totalPages", totalPages
+        ));
+        result.put("bookingFilter", Map.of(
+            "verifiedCount", verified.size(),
+            "scannedCount", scannedCount,
+            "fullyScanned", fullyScanned,
+            "criterion", "TOUR_API_RESERVATION_INFO"
+        ));
+        return result;
+    }
+
+    private Map<String, Object> searchBookableNationwide(
+        MultiValueMap<String, String> query,
+        String category,
+        String detail,
+        List<QuerySource> sources,
+        int page,
+        int pageSize
+    ) {
+        int requiredMatches = page * pageSize + 1;
+        int scannedCount = 0;
+        boolean fullyScanned = false;
+        Set<String> seen = new HashSet<>();
+        List<Map<String, Object>> verified = new ArrayList<>();
+        int sourceRows = Math.max(1, BOOKING_REGION_PAGE_SIZE / sources.size());
+
+        for (int regionStart = 0; regionStart < BOOKING_REGIONS.size(); regionStart += BOOKING_REGION_BATCH_SIZE) {
+            int regionEnd = Math.min(regionStart + BOOKING_REGION_BATCH_SIZE, BOOKING_REGIONS.size());
+            List<CompletableFuture<RegionCandidates>> regionLookups = BOOKING_REGIONS
+                .subList(regionStart, regionEnd)
+                .stream()
+                .map(scope -> CompletableFuture.supplyAsync(() -> {
+                    List<JsonNode> payloads = sources.stream()
+                        .map(source -> searchPayload(source, query, scope.code(), 1, sourceRows))
+                        .toList();
+                    return new RegionCandidates(
+                        scope,
+                        normalize(payloads, scope.name(), category, detail)
+                    );
+                }, bookingLookupExecutor))
+                .toList();
+
+            List<Map<String, Object>> candidates = regionLookups.stream()
+                .map(CompletableFuture::join)
+                .flatMap(regionCandidates -> regionCandidates.candidates().stream())
+                .filter(place -> seen.add(String.valueOf(place.getOrDefault("id", ""))))
+                .toList();
+
+            for (int batchStart = 0; batchStart < candidates.size(); batchStart += BOOKING_LOOKUP_BATCH_SIZE) {
+                int batchEnd = Math.min(batchStart + BOOKING_LOOKUP_BATCH_SIZE, candidates.size());
+                List<Map<String, Object>> candidateBatch = candidates.subList(batchStart, batchEnd);
+                scannedCount += candidateBatch.size();
+                verified.addAll(lookupBookingInfo(candidateBatch).stream()
+                    .filter(place -> Boolean.TRUE.equals(place.get("bookingAvailable")))
+                    .toList());
+                if (verified.size() >= requiredMatches) break;
+            }
+
+            fullyScanned = regionEnd >= BOOKING_REGIONS.size();
+            if (verified.size() >= requiredMatches) break;
         }
 
         int offset = Math.min((page - 1) * pageSize, verified.size());
@@ -411,7 +505,8 @@ public class TourApiService {
         if (cached != null && cached.expiresAt() > now) return cached.info();
 
         BookingInfo info = fetchBookingInfo(contentId, contentTypeId);
-        bookingInfoCache.put(cacheKey, new CachedBookingInfo(info, now + BOOKING_CACHE_TTL_MS));
+        long ttl = info.available() ? BOOKING_CACHE_TTL_MS : EMPTY_BOOKING_CACHE_TTL_MS;
+        bookingInfoCache.put(cacheKey, new CachedBookingInfo(info, now + ttl));
         return info;
     }
 
@@ -554,6 +649,8 @@ public class TourApiService {
     }
 
     private record QuerySource(String contentTypeId, String cat1, String cat3, String keyword) {}
+    private record RegionScope(String name, String code) {}
+    private record RegionCandidates(RegionScope scope, List<Map<String, Object>> candidates) {}
     private record BookingInfo(boolean available, String kind, String description) {
         private static BookingInfo unavailable() {
             return new BookingInfo(false, "", "");
