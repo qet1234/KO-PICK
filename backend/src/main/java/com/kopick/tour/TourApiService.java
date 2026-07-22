@@ -28,7 +28,7 @@ public class TourApiService {
     private static final int BOOKING_SCAN_PAGE_SIZE = 100;
     private static final int MAX_BOOKING_SCAN_PAGES = 5;
     private static final int BOOKING_LOOKUP_BATCH_SIZE = 24;
-    private static final int BOOKING_LOOKUP_CONCURRENCY = 4;
+    private static final int BOOKING_LOOKUP_CONCURRENCY = 1;
     private static final int BOOKING_REGION_BATCH_SIZE = 4;
     private static final int BOOKING_REGION_PAGE_SIZE = 100;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
