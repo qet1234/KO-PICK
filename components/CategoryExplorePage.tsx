@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
+import {
+  kakaoBookingSearchUrl,
+  naverBookingSearchUrl,
+} from "@/utils/external-booking";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
@@ -16,6 +20,7 @@ interface Place {
   latitude: number | string;
   longitude: number | string;
   imageUrl?: string | null;
+  placeUrl?: string | null;
 }
 
 interface SubregionOption {
@@ -698,17 +703,43 @@ export default function CategoryExplorePage({
                       <strong>지도에서 보기 ↗</strong>
                     </div>
                   </button>
-                  <a
-                    className="kp-explore-reservation-link"
-                    href={`/reservations?${new URLSearchParams({
-                      placeId: String(place.id),
-                      placeName: place.name,
-                      address: place.address ?? "",
-                      category: displayCategory(place.category),
-                    }).toString()}`}
-                  >
-                    이 장소 예약하기 →
-                  </a>
+                  <div className="kp-explore-booking-panel">
+                    <div className="kp-explore-booking-heading">
+                      <strong>외부 예약</strong>
+                      <span>예약 가능 여부는 외부 서비스에서 확인</span>
+                    </div>
+                    <div className="kp-explore-booking-links">
+                      <a
+                        className="is-naver"
+                        href={naverBookingSearchUrl(place)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${place.name} 네이버 예약 확인`}
+                      >
+                        네이버 예약 확인 ↗
+                      </a>
+                      <a
+                        className="is-kakao"
+                        href={kakaoBookingSearchUrl(place)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${place.name} 카카오 예약 확인`}
+                      >
+                        카카오 예약 확인 ↗
+                      </a>
+                    </div>
+                    <a
+                      className="kp-explore-reservation-link"
+                      href={`/reservations?${new URLSearchParams({
+                        placeId: String(place.id),
+                        placeName: place.name,
+                        address: place.address ?? "",
+                        category: displayCategory(place.category),
+                      }).toString()}`}
+                    >
+                      함께 예약 후보로 담기 →
+                    </a>
+                  </div>
                 </article>
               ))}
             </div>
