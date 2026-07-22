@@ -23,7 +23,8 @@ type CachedResponse = {
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_TTL_MS = 24 * 60 * 60 * 1000;
-const STORAGE_KEY = "kopick:tour-place-cache:v2";
+const STORAGE_KEY = "kopick:tour-place-cache:v3";
+const LEGACY_STORAGE_KEYS = ["kopick:tour-place-cache:v2"];
 const MAX_CACHE_ENTRIES = 80;
 
 const responseCache = new Map<string, CachedResponse>();
@@ -61,6 +62,7 @@ function loadCacheFromSession() {
   cacheLoaded = true;
 
   try {
+    LEGACY_STORAGE_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return;
 
