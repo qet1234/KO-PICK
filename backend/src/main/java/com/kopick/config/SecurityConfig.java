@@ -46,7 +46,15 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(config -> config
                 .csrfTokenRepository(csrf)
-                .ignoringRequestMatchers("/api/public/**")
+                .ignoringRequestMatchers(
+                    "/api/public/**",
+                    "/api/auth/refresh-token",
+                    "/api/auth/logout-token"
+                )
+                .ignoringRequestMatchers(request -> {
+                    String authorization = request.getHeader("Authorization");
+                    return authorization != null && authorization.startsWith("Bearer ");
+                })
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -60,7 +68,9 @@ public class SecurityConfig {
                     "/login/oauth2/**",
                     "/api/auth/csrf",
                     "/api/auth/refresh",
+                    "/api/auth/refresh-token",
                     "/api/auth/logout",
+                    "/api/auth/logout-token",
                     "/api/public/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
