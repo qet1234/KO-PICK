@@ -23,8 +23,11 @@ type CachedResponse = {
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const STALE_TTL_MS = 24 * 60 * 60 * 1000;
-const STORAGE_KEY = "kopick:tour-place-cache:v3";
-const LEGACY_STORAGE_KEYS = ["kopick:tour-place-cache:v2"];
+const STORAGE_KEY = "kopick:tour-place-cache:v4";
+const LEGACY_STORAGE_KEYS = [
+  "kopick:tour-place-cache:v2",
+  "kopick:tour-place-cache:v3",
+];
 const MAX_CACHE_ENTRIES = 80;
 
 const responseCache = new Map<string, CachedResponse>();
@@ -57,6 +60,18 @@ function responseFromCache(cached: CachedResponse) {
   });
 }
 
+function isCacheableResponse(url: string, body: string) {
+  const parsed = new URL(url, window.location.origin);
+  if (parsed.searchParams.get("bookingOnly") !== "true") return true;
+
+  try {
+    const payload = JSON.parse(body) as { bookingFilter?: unknown };
+    return Boolean(payload.bookingFilter);
+  } catch {
+    return false;
+  }
+}
+
 function loadCacheFromSession() {
   if (cacheLoaded) return;
   cacheLoaded = true;
@@ -70,7 +85,7 @@ function loadCacheFromSession() {
     const now = Date.now();
 
     for (const [url, cached] of entries) {
-      if (cached.staleUntil > now) {
+      if (cached.staleUntil > now && isCacheableResponse(url, cached.body)) {
         responseCache.set(url, cached);
       }
     }
@@ -94,6 +109,8 @@ function persistCache() {
 }
 
 function saveResponse(url: string, response: Response, body: string) {
+  if (!isCacheableResponse(url, body)) return;
+
   const now = Date.now();
   responseCache.set(url, {
     expiresAt: now + CACHE_TTL_MS,
