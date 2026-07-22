@@ -15,8 +15,126 @@ export const springApiUrl = (
 
 let csrfToken: string | null = null;
 let accessToken: string | null = null;
+let browserRefreshToken: string | null = null;
+let refreshPromise: Promise<string | null> | null = null;
+
+const ACCESS_TOKEN_KEY = "kopick_access_token";
+const REFRESH_TOKEN_KEY = "kopick_refresh_token";
+const ACCESS_EXPIRES_AT_KEY = "kopick_access_expires_at";
 
 const REQUEST_TIMEOUT_MS = 20_000;
+
+function sessionValue(key: string) {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storeBrowserTokens(
+  nextAccessToken: string,
+  refreshToken: string,
+  expiresIn: number,
+) {
+  accessToken = nextAccessToken;
+  browserRefreshToken = refreshToken;
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(ACCESS_TOKEN_KEY, nextAccessToken);
+    window.sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    window.sessionStorage.setItem(
+      ACCESS_EXPIRES_AT_KEY,
+      String(Date.now() + Math.max(0, expiresIn) * 1000),
+    );
+  } catch {
+    // In-memory access still works when private browsing blocks sessionStorage.
+  }
+}
+
+function clearBrowserTokens() {
+  accessToken = null;
+  browserRefreshToken = null;
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+    window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.sessionStorage.removeItem(ACCESS_EXPIRES_AT_KEY);
+  } catch {
+    // Nothing else to clear when browser storage is unavailable.
+  }
+}
+
+function acceptOAuthTokensFromUrl() {
+  if (typeof window === "undefined" || !window.location.hash) return;
+  const fragment = new URLSearchParams(window.location.hash.slice(1));
+  const nextAccessToken = fragment.get("access_token");
+  const nextRefreshToken = fragment.get("refresh_token");
+  const expiresIn = Number(fragment.get("expires_in") ?? "0");
+  if (!nextAccessToken || !nextRefreshToken) return;
+
+  storeBrowserTokens(
+    nextAccessToken,
+    nextRefreshToken,
+    Number.isFinite(expiresIn) ? expiresIn : 0,
+  );
+
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.hash = "";
+  cleanUrl.searchParams.delete("login");
+  window.history.replaceState(
+    {},
+    "",
+    cleanUrl.pathname + cleanUrl.search,
+  );
+}
+
+function currentAccessToken() {
+  acceptOAuthTokensFromUrl();
+  if (!accessToken) accessToken = sessionValue(ACCESS_TOKEN_KEY);
+  return accessToken;
+}
+
+// Remove OAuth credentials from the address bar before React renders or any
+// deferred third-party map script can execute.
+acceptOAuthTokensFromUrl();
+
+async function refreshBrowserAccessToken() {
+  if (refreshPromise) return refreshPromise;
+  const refreshToken = browserRefreshToken ?? sessionValue(REFRESH_TOKEN_KEY);
+  if (!refreshToken) return null;
+
+  refreshPromise = (async () => {
+    const response = await fetchWithTimeout(
+      `${springApiUrl}/api/auth/refresh-token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      },
+    );
+    if (!response.ok) {
+      clearBrowserTokens();
+      return null;
+    }
+    const result = (await response.json()) as {
+      accessToken: string;
+      refreshToken: string;
+      expiresIn: number;
+    };
+    storeBrowserTokens(
+      result.accessToken,
+      result.refreshToken,
+      result.expiresIn,
+    );
+    return result.accessToken;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+}
 
 async function fetchWithTimeout(
   input: RequestInfo | URL,
@@ -64,12 +182,20 @@ export async function springFetch(
 ) {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
+  const browserAccessToken = currentAccessToken();
+
+  if (browserAccessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${browserAccessToken}`);
+  }
 
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+  if (
+    !browserAccessToken &&
+    !["GET", "HEAD", "OPTIONS"].includes(method)
+  ) {
     headers.set("X-XSRF-TOKEN", csrfToken ?? (await loadCsrfToken()));
   }
 
@@ -80,7 +206,24 @@ export async function springFetch(
     credentials: "include",
   });
 
-  if (response.status === 403 && !["GET", "HEAD", "OPTIONS"].includes(method)) {
+  if (response.status === 401 && browserAccessToken) {
+    const refreshedAccessToken = await refreshBrowserAccessToken();
+    if (refreshedAccessToken) {
+      headers.set("Authorization", `Bearer ${refreshedAccessToken}`);
+      response = await fetchWithTimeout(`${springApiUrl}${path}`, {
+        ...init,
+        method,
+        headers,
+        credentials: "include",
+      });
+    }
+  }
+
+  if (
+    response.status === 403 &&
+    !browserAccessToken &&
+    !["GET", "HEAD", "OPTIONS"].includes(method)
+  ) {
     csrfToken = null;
     headers.set("X-XSRF-TOKEN", await loadCsrfToken());
     response = await fetchWithTimeout(`${springApiUrl}${path}`, {
@@ -117,11 +260,32 @@ export async function getCurrentUser() {
 }
 
 export async function logoutFromSpring() {
-  await springJson<{ success: boolean }>("/api/auth/logout", { method: "POST" });
-  accessToken = null;
+  const refreshToken = browserRefreshToken ?? sessionValue(REFRESH_TOKEN_KEY);
+  try {
+    if (refreshToken) {
+      await fetchWithTimeout(`${springApiUrl}/api/auth/logout-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+    } else {
+      await springJson<{ success: boolean }>("/api/auth/logout", { method: "POST" });
+    }
+  } finally {
+    clearBrowserTokens();
+  }
 }
 
 export async function issueApiToken() {
+  const existingAccessToken = currentAccessToken();
+  if (existingAccessToken) {
+    const expiresAt = Number(sessionValue(ACCESS_EXPIRES_AT_KEY) ?? "0");
+    return {
+      accessToken: existingAccessToken,
+      tokenType: "Bearer" as const,
+      expiresIn: Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)),
+    };
+  }
   const result = await springJson<{
     accessToken: string;
     tokenType: "Bearer";
