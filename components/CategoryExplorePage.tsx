@@ -526,9 +526,14 @@ export default function CategoryExplorePage({
           <strong>{selectedCategoryLabel} 전체 결과</strong>
         </div>
 
-        <a href="/" className="kp-explore-home-link">
-          홈으로
-        </a>
+        <nav className="kp-explore-header-actions" aria-label="탐색 화면 메뉴">
+          <a className="kp-explore-reservations-link" href="/reservations">
+            함께 예약
+          </a>
+          <a href="/" className="kp-explore-home-link">
+            홈으로
+          </a>
+        </nav>
       </header>
 
       <div className="kp-explore-workspace">
@@ -702,7 +707,7 @@ export default function CategoryExplorePage({
                       category: displayCategory(place.category),
                     }).toString()}`}
                   >
-                    함께 예약 후보로 담기 →
+                    이 장소 예약하기 →
                   </a>
                 </article>
               ))}

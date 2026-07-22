@@ -31,13 +31,19 @@ export default function AuthHeader() {
   };
 
   if (loading) {
-    return <button className="header-login-button" type="button" disabled>확인 중</button>;
+    return (
+      <div className="header-auth-buttons">
+        <a className="header-reservation-button" href="/reservations">함께 예약</a>
+        <button className="header-login-button" type="button" disabled>확인 중</button>
+      </div>
+    );
   }
 
   if (user) {
     return (
       <div className="header-user">
         <span>{user.displayName || user.email}</span>
+        <a className="header-reservation-button" href="/reservations">함께 예약</a>
         <a className="header-space-button" href="/spaces">함께 공간</a>
         <a className="header-account-button" href="/account">계정 설정</a>
         <button className="header-login-button" type="button" onClick={handleLogout}>
@@ -49,6 +55,7 @@ export default function AuthHeader() {
 
   return (
     <div className="header-auth-buttons">
+      <a className="header-reservation-button" href="/reservations">함께 예약</a>
       <a className="header-login-button" href="/login">로그인</a>
       <a className="header-signup-button" href="/login?mode=signup">시작하기</a>
     </div>
