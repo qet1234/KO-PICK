@@ -170,6 +170,7 @@ button {
 
 .header-login-button,
 .header-signup-button,
+.header-reservation-button,
 .header-space-button,
 .header-couple-button,
 .header-account-button {
@@ -181,6 +182,24 @@ button {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 900;
+}
+
+.header-reservation-button {
+  border: 1px solid var(--kp-red);
+  color: white;
+  background: var(--kp-red);
+  box-shadow: 0 5px 14px rgba(255, 59, 54, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.header-reservation-button:hover,
+.header-reservation-button:focus-visible {
+  box-shadow: 0 8px 18px rgba(255, 59, 54, 0.3);
+  transform: translateY(-2px);
+}
+
+.header-reservation-button:active {
+  transform: scale(0.96);
 }
 
 .header-space-button,
@@ -1536,6 +1555,11 @@ button {
   .kp-brand > span:last-child,
   .header-user > span,
   .header-account-button {
+    display: none;
+  }
+
+  .header-space-button,
+  .header-signup-button {
     display: none;
   }
 
