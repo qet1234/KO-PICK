@@ -31,6 +31,7 @@ public class TourApiService {
     private static final int BOOKING_LOOKUP_CONCURRENCY = 1;
     private static final int BOOKING_REGION_BATCH_SIZE = 4;
     private static final int BOOKING_REGION_PAGE_SIZE = 100;
+    private static final int MAX_NATIONWIDE_BOOKING_SCANS_PER_REQUEST = 96;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
     private static final long EMPTY_BOOKING_CACHE_TTL_MS = 10 * 60 * 1000L;
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
@@ -289,6 +290,7 @@ public class TourApiService {
         List<Map<String, Object>> verified = new ArrayList<>();
         int sourceRows = Math.max(1, BOOKING_REGION_PAGE_SIZE / sources.size());
 
+        nationwideScan:
         for (int regionStart = 0; regionStart < BOOKING_REGIONS.size(); regionStart += BOOKING_REGION_BATCH_SIZE) {
             int regionEnd = Math.min(regionStart + BOOKING_REGION_BATCH_SIZE, BOOKING_REGIONS.size());
             List<CompletableFuture<RegionCandidates>> regionLookups = BOOKING_REGIONS
@@ -311,7 +313,12 @@ public class TourApiService {
             List<Map<String, Object>> candidates = interleaveRegionCandidates(regionCandidates, seen);
 
             for (int batchStart = 0; batchStart < candidates.size(); batchStart += BOOKING_LOOKUP_BATCH_SIZE) {
-                int batchEnd = Math.min(batchStart + BOOKING_LOOKUP_BATCH_SIZE, candidates.size());
+                int remainingScanCapacity = MAX_NATIONWIDE_BOOKING_SCANS_PER_REQUEST - scannedCount;
+                if (remainingScanCapacity <= 0) break nationwideScan;
+                int batchEnd = Math.min(
+                    Math.min(batchStart + BOOKING_LOOKUP_BATCH_SIZE, candidates.size()),
+                    batchStart + remainingScanCapacity
+                );
                 List<Map<String, Object>> candidateBatch = candidates.subList(batchStart, batchEnd);
                 scannedCount += candidateBatch.size();
                 verified.addAll(lookupBookingInfo(candidateBatch).stream()
@@ -322,6 +329,7 @@ public class TourApiService {
 
             fullyScanned = regionEnd >= BOOKING_REGIONS.size();
             if (verified.size() >= requiredMatches) break;
+            if (scannedCount >= MAX_NATIONWIDE_BOOKING_SCANS_PER_REQUEST) break;
         }
 
         int offset = Math.min((page - 1) * pageSize, verified.size());
