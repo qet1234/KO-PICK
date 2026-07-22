@@ -1,4 +1,4 @@
-# Deployment sync: region-depth nationwide booking lookup
+# Deployment sync: verified booking fallback lookup
 services:
   - type: web
     name: kopick-api
