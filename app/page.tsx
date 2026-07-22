@@ -21,7 +21,7 @@ export default function Home() {
             <a href="#popular">인기 추천</a>
             <a href="#regions">지역 찾기</a>
             <a href="#ai">AI 추천</a>
-            <a href="/couple">커플 공간</a>
+            <a href="/spaces">함께 공간</a>
           </nav>
 
           <AuthHeader />
@@ -131,10 +131,10 @@ export default function Home() {
 
             <article>
               <span>02</span>
-              <strong>커플 정보 비공개</strong>
+              <strong>공간 정보 비공개</strong>
               <p>
-                커플 공간의 일정과 기념일은 연결된 두 사용자만
-                확인할 수 있도록 접근 권한을 제한합니다.
+                개인·커플·친구·가족 공간의 일정과 기록은 해당 공간의
+                구성원만 확인할 수 있도록 접근 권한을 제한합니다.
               </p>
             </article>
 

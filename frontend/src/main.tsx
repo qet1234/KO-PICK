@@ -6,6 +6,7 @@ import "@/app/globals.css";
 import "@/app/home.css";
 import "@/app/explore/explore.css";
 import "@/app/couple/couple.css";
+import "@/app/spaces/spaces.css";
 import "@/app/account/account.css";
 
 createRoot(document.getElementById("root")!).render(

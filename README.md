@@ -1,6 +1,6 @@
 # KO-PICK
 
-지역별 음식·카페·축제·관광지를 탐색하고 커플 전용 공간을 제공하는 전국 추천 플랫폼입니다.
+지역별 음식·카페·축제·관광지를 탐색하고 개인·커플·친구·가족이 함께 계획하는 전국 추천 플랫폼입니다.
 
 ## 전환된 구조
 
@@ -15,7 +15,7 @@ PostgreSQL
 - 웹 로그인은 Spring Security 세션(`KOPICK_SESSION`)으로 유지합니다.
 - 로그인 완료 후 `/api/auth/token`에서 API용 JWT Access/Refresh Token을 발급합니다.
 - 세션과 Refresh Token은 PostgreSQL에 저장하며 Redis는 사용하지 않습니다.
-- Google·Kakao·Naver OAuth2 로그인과 계정·커플 공간 API를 Spring Boot가 담당합니다.
+- Google·Kakao·Naver OAuth2 로그인과 계정·공간 API를 Spring Boot가 담당합니다.
 - TourAPI 장소 조회와 실시간 인기 장소·검색어 API도 Spring Boot로 이전했습니다.
 - 기존 Next.js 코드는 전환 검증과 복구를 위해 당분간 루트에 남겨두며, 실제 신규 프론트 빌드는 `frontend`가 담당합니다.
 
@@ -113,6 +113,16 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 커플, 멤버, 기념일, 일정 테이블에는 RLS가 적용됩니다. 연결된 두 계정만 데이터를
 읽고 수정할 수 있으며, 초대 코드는 해시로 저장되고 한 번 사용하면 폐기됩니다.
+
+## 함께 공간
+
+`/spaces`는 개인·커플·친구·가족 관계에 맞춰 장소와 일정을 함께 관리하는 공간 허브입니다.
+
+- 로그인 사용자의 개인 공간은 첫 접속 시 자동으로 생성됩니다.
+- 커플 공간은 최대 2명, 친구·가족 공간은 최대 20명까지 참여할 수 있습니다.
+- 초대 코드는 24시간 동안 한 번만 사용할 수 있으며 데이터베이스에는 해시로 저장됩니다.
+- 기존 커플 공간은 공통 공간 목록으로 안전하게 복사되고 기존 `/couple` 화면도 계속 사용할 수 있습니다.
+- 공통 공간 테이블은 Spring Boot 시작 시 Flyway `V6__create_shared_spaces.sql`로 생성됩니다.
 
 ## 네이버 로그인 설정
 

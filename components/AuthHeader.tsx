@@ -46,7 +46,7 @@ export default function AuthHeader() {
     return (
       <div className="header-user">
         <span>{user.displayName || user.email}</span>
-        <a className="header-couple-button" href="/couple">둘만의 공간</a>
+        <a className="header-space-button" href="/spaces">함께 공간</a>
         <a className="header-account-button" href="/account">계정 설정</a>
         <button className="header-login-button" type="button" onClick={handleLogout}>
           로그아웃
