@@ -300,6 +300,7 @@ export default function SpacesHub() {
                     </p>
                   </div>
                   <div className="spaces-list-actions">
+                    <a href={`/reservations?spaceId=${encodeURIComponent(space.id)}`}>함께 예약</a>
                     {space.legacy_couple ? (
                       <a href="/couple">기존 커플 공간 열기</a>
                     ) : space.space_type === "personal" ? (

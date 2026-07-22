@@ -8,6 +8,7 @@ import "@/app/explore/explore.css";
 import "@/app/couple/couple.css";
 import "@/app/spaces/spaces.css";
 import "@/app/account/account.css";
+import "@/app/reservations/reservations.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -22,6 +22,7 @@ export default function Home() {
             <a href="#regions">지역 찾기</a>
             <a href="#ai">AI 추천</a>
             <a href="/spaces">함께 공간</a>
+            <a href="/reservations">함께 예약</a>
           </nav>
 
           <AuthHeader />

@@ -124,6 +124,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - 기존 커플 공간은 공통 공간 목록으로 안전하게 복사되고 기존 `/couple` 화면도 계속 사용할 수 있습니다.
 - 공통 공간 테이블은 Spring Boot 시작 시 Flyway `V6__create_shared_spaces.sql`로 생성됩니다.
 
+## 함께 예약
+
+`/reservations`는 개인·커플·친구·가족 공간의 구성원이 장소 후보를 함께 고르고
+대표자가 실제 예약 상태를 관리하는 화면입니다.
+
+- 구성원은 최대 20개의 장소 후보를 추가하고 후보별로 투표할 수 있습니다.
+- 계획을 만든 대표자가 최종 장소를 고르면 공통 공간 달력에 자동 저장됩니다.
+- 매장 제휴 전에는 매장 홈페이지·외부 예약 페이지 또는 예약 검색으로 연결합니다.
+- 외부 페이지를 연 것만으로 예약 완료 처리하지 않으며 `장소·일정 확정 → 예약 요청 중 → 예약 확정` 순서로 상태를 변경합니다.
+- 테이블은 Spring Boot 시작 시 Flyway `V7__create_together_reservations.sql`로 생성됩니다.
+
 ## 네이버 로그인 설정
 
 네이버는 Supabase 기본 OAuth 제공자가 아니므로 KO-PICK 서버가 네이버 인증 결과를

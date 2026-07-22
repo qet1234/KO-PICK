@@ -693,6 +693,17 @@ export default function CategoryExplorePage({
                       <strong>지도에서 보기 ↗</strong>
                     </div>
                   </button>
+                  <a
+                    className="kp-explore-reservation-link"
+                    href={`/reservations?${new URLSearchParams({
+                      placeId: String(place.id),
+                      placeName: place.name,
+                      address: place.address ?? "",
+                      category: displayCategory(place.category),
+                    }).toString()}`}
+                  >
+                    함께 예약 후보로 담기 →
+                  </a>
                 </article>
               ))}
             </div>
