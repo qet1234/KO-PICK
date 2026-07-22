@@ -6,6 +6,7 @@ import AccountPage from "@/app/account/page";
 import CoupleSpace from "@/components/CoupleSpace";
 import SpacesHub from "@/components/SpacesHub";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
+import ReservationPage from "@/components/ReservationPage";
 
 const allowedCategories = ["전체", "음식", "카페", "축제", "관광지"] as const;
 type Category = (typeof allowedCategories)[number];
@@ -34,6 +35,8 @@ function PageMetadata() {
         ? "우리 둘의 공간 | 코리아픽"
         : location.pathname === "/spaces"
           ? "함께 공간 | 코리아픽"
+        : location.pathname === "/reservations"
+          ? "함께 예약 | 코리아픽"
         : location.pathname === "/account"
           ? "계정 설정 | 코리아픽"
           : "코리아픽 | 지역별 추천";
@@ -52,6 +55,7 @@ export default function App() {
         <Route path="/account" element={<AccountPage />} />
         <Route path="/couple" element={<CoupleSpace />} />
         <Route path="/spaces" element={<SpacesHub />} />
+        <Route path="/reservations" element={<ReservationPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="*" element={<Home />} />
       </Routes>
