@@ -28,7 +28,7 @@ public class TourApiService {
     private static final int BOOKING_SCAN_PAGE_SIZE = 100;
     private static final int MAX_BOOKING_SCAN_PAGES = 5;
     private static final int BOOKING_LOOKUP_BATCH_SIZE = 24;
-    private static final int BOOKING_LOOKUP_CONCURRENCY = 12;
+    private static final int BOOKING_LOOKUP_CONCURRENCY = 4;
     private static final int BOOKING_REGION_BATCH_SIZE = 4;
     private static final int BOOKING_REGION_PAGE_SIZE = 100;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
@@ -524,7 +524,12 @@ public class TourApiService {
         long now = System.currentTimeMillis();
         if (cached != null && cached.expiresAt() > now) return cached.info();
 
-        BookingInfo info = fetchBookingInfo(contentId, contentTypeId);
+        BookingInfo info;
+        try {
+            info = fetchBookingInfo(contentId, contentTypeId);
+        } catch (RuntimeException error) {
+            return BookingInfo.unavailable();
+        }
         long ttl = info.available() ? BOOKING_CACHE_TTL_MS : EMPTY_BOOKING_CACHE_TTL_MS;
         bookingInfoCache.put(cacheKey, new CachedBookingInfo(info, now + ttl));
         return info;
@@ -535,23 +540,19 @@ public class TourApiService {
         params.set("contentId", contentId);
         params.set("contentTypeId", contentTypeId);
 
-        try {
-            List<JsonNode> introItems = items(request("detailIntro2", params));
-            if (introItems.isEmpty()) return BookingInfo.unavailable();
+        List<JsonNode> introItems = items(request("detailIntro2", params));
+        if (introItems.isEmpty()) return BookingInfo.unavailable();
 
-            JsonNode intro = introItems.get(0);
-            for (Map.Entry<String, String> field : Map.of(
-                "reservationfood", "예약 안내",
-                "bookingplace", "예매처",
-                "reservation", "예약 안내"
-            ).entrySet()) {
-                String description = cleanBookingText(text(intro, field.getKey()));
-                if (isBookableDescription(description)) {
-                    return new BookingInfo(true, field.getValue(), description);
-                }
+        JsonNode intro = introItems.get(0);
+        for (Map.Entry<String, String> field : Map.of(
+            "reservationfood", "예약 안내",
+            "bookingplace", "예매처",
+            "reservation", "예약 안내"
+        ).entrySet()) {
+            String description = cleanBookingText(text(intro, field.getKey()));
+            if (isBookableDescription(description)) {
+                return new BookingInfo(true, field.getValue(), description);
             }
-        } catch (RuntimeException ignored) {
-            // 상세 예약 정보 조회 실패는 전체 장소 검색 실패로 이어지지 않게 합니다.
         }
         return BookingInfo.unavailable();
     }
