@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   getCurrentUser,
-  issueApiToken,
   logoutFromSpring,
   type SpringUser,
 } from "../utils/spring-api";
@@ -13,16 +12,9 @@ export default function AuthHeader() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const justLoggedIn = new URLSearchParams(window.location.search).get("login") === "success";
     getCurrentUser()
-      .then(async (currentUser) => {
+      .then((currentUser) => {
         setUser(currentUser);
-        if (currentUser && justLoggedIn) {
-          await issueApiToken();
-          const url = new URL(window.location.href);
-          url.searchParams.delete("login");
-          window.history.replaceState({}, "", url.pathname + url.search + url.hash);
-        }
       })
       .catch((error) => console.error("로그인 사용자 확인 오류:", error))
       .finally(() => setLoading(false));
