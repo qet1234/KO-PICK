@@ -30,7 +30,7 @@ public class TourApiService {
     private static final int BOOKING_LOOKUP_BATCH_SIZE = 24;
     private static final int BOOKING_LOOKUP_CONCURRENCY = 12;
     private static final int BOOKING_REGION_BATCH_SIZE = 4;
-    private static final int BOOKING_REGION_PAGE_SIZE = 12;
+    private static final int BOOKING_REGION_PAGE_SIZE = 100;
     private static final long BOOKING_CACHE_TTL_MS = 6 * 60 * 60 * 1000L;
     private static final long EMPTY_BOOKING_CACHE_TTL_MS = 10 * 60 * 1000L;
     private static final Set<String> EMPTY_BOOKING_VALUES = Set.of(
@@ -305,11 +305,10 @@ public class TourApiService {
                 }, bookingLookupExecutor))
                 .toList();
 
-            List<Map<String, Object>> candidates = regionLookups.stream()
+            List<RegionCandidates> regionCandidates = regionLookups.stream()
                 .map(CompletableFuture::join)
-                .flatMap(regionCandidates -> regionCandidates.candidates().stream())
-                .filter(place -> seen.add(String.valueOf(place.getOrDefault("id", ""))))
                 .toList();
+            List<Map<String, Object>> candidates = interleaveRegionCandidates(regionCandidates, seen);
 
             for (int batchStart = 0; batchStart < candidates.size(); batchStart += BOOKING_LOOKUP_BATCH_SIZE) {
                 int batchEnd = Math.min(batchStart + BOOKING_LOOKUP_BATCH_SIZE, candidates.size());
@@ -348,6 +347,27 @@ public class TourApiService {
             "criterion", "TOUR_API_RESERVATION_INFO"
         ));
         return result;
+    }
+
+    private List<Map<String, Object>> interleaveRegionCandidates(
+        List<RegionCandidates> regionCandidates,
+        Set<String> seen
+    ) {
+        int maxSize = regionCandidates.stream()
+            .mapToInt(group -> group.candidates().size())
+            .max()
+            .orElse(0);
+        List<Map<String, Object>> interleaved = new ArrayList<>();
+        for (int candidateIndex = 0; candidateIndex < maxSize; candidateIndex++) {
+            for (RegionCandidates group : regionCandidates) {
+                if (candidateIndex >= group.candidates().size()) continue;
+                Map<String, Object> place = group.candidates().get(candidateIndex);
+                if (seen.add(String.valueOf(place.getOrDefault("id", "")))) {
+                    interleaved.add(place);
+                }
+            }
+        }
+        return interleaved;
     }
 
     private List<Map<String, Object>> lookupBookingInfo(List<Map<String, Object>> candidates) {

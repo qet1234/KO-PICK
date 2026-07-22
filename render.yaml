@@ -1,4 +1,4 @@
-# Deployment sync: nationwide booking search region balance
+# Deployment sync: nationwide booking search region interleave
 services:
   - type: web
     name: kopick-api
