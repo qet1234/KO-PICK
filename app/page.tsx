@@ -1,12 +1,13 @@
 import AuthHeader from "@/components/AuthHeader";
-import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroSearch from "@/components/HeroSearch";
 import HeroLivePick from "@/components/HeroLivePick";
+import NaverRegionRecommendations from "@/components/NaverRegionRecommendations";
 import "./home.css";
 import "./home-recommend.css";
 import "./home-navigation.css";
+import "./home-naver-region.css";
 
 export default function Home() {
   return (
@@ -22,15 +23,14 @@ export default function Home() {
       </header>
 
       <section className="kp-hero" id="top">
-        <div className="kp-container kp-hero-frame">
+        <div className="kp-container kp-hero-frame kp-hero-frame--single">
           <article className="kp-hero-main">
             <p className="kp-overline kp-overline-light">KOREA PICK CURATION</p>
             <h1>검색 없이<br />오늘 갈 곳 결정</h1>
-            <p className="kp-hero-description">누구와, 언제, 어떤 기분인지 알려주면 지금 갈 만한 장소 3곳을 자동으로 골라드려요.</p>
-            <a className="kp-auto-recommend-link" href="/recommend">오늘 어디 갈까? →</a>
+            <p className="kp-hero-description">누구와, 언제, 어떤 기분인지 알려주면 이용자 성향에 맞는 장소를 자동으로 골라드려요.</p>
+            <a className="kp-auto-recommend-link" href="/recommend">자동 추천 시작하기 →</a>
             <HeroSearch />
           </article>
-          <HeroLivePick />
         </div>
       </section>
 
@@ -59,14 +59,22 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="kp-region-journey">
-        <div className="kp-region-journey-intro" aria-labelledby="region-journey-title">
-          <p className="kp-overline">WHERE TO FIND</p>
-          <h2 id="region-journey-title">원하는 지역에서<br />직접 찾아볼까요?</h2>
-          <p>시·도와 시·군·구를 먼저 선택하고, 필요한 경우 작은 카테고리 필터로 결과를 좁혀보세요.</p>
+      <section className="kp-region-live-section" id="regions">
+        <div className="kp-container">
+          <div className="kp-region-live-heading">
+            <p className="kp-overline">WHERE TO FIND</p>
+            <h2>원하는 지역의<br />추천 장소를 바로 확인하세요.</h2>
+            <p>실시간 오늘의 픽과 네이버 지역 검색 기반 추천 리스트를 한 화면에서 확인할 수 있습니다.</p>
+          </div>
+
+          <div className="kp-region-live-grid">
+            <div className="kp-region-live-pick">
+              <HeroLivePick />
+            </div>
+            <NaverRegionRecommendations />
+          </div>
         </div>
-        <KakaoRegionExplorer />
-      </div>
+      </section>
 
       <footer className="kp-footer" id="privacy">
         <div className="kp-container kp-privacy-panel">
