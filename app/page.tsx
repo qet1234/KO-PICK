@@ -1,5 +1,5 @@
 import AuthHeader from "@/components/AuthHeader";
-import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
+import ReliableKakaoRegionExplorer from "@/components/ReliableKakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
@@ -9,6 +9,7 @@ import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
 import "./home-weather-dashboard.css";
+import "./home-place-location.css";
 import "./home-clarity.css";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,7 @@ export default function Home() {
           <h2 id="region-journey-title">원하는 지역에서<br />직접 찾아볼까요?</h2>
           <p>시·도와 시·군·구를 먼저 선택하고, 필요한 경우 작은 카테고리 필터로 결과를 좁혀보세요.</p>
         </div>
-        <KakaoRegionExplorer />
+        <ReliableKakaoRegionExplorer />
       </div>
 
       <footer className="kp-footer" id="privacy">
