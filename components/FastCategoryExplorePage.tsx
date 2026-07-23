@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
 import { springApiUrl } from "@/utils/spring-api";
 
@@ -18,6 +18,16 @@ type CachedResponse = {
   statusText: string;
   headers: [string, string][];
   body: string;
+};
+
+const journeyMenus: Record<string, string[]> = {
+  혼자: ["전체", "혼밥", "조용한 카페", "혼자 둘러보기"],
+  커플: ["전체", "카페", "데이트 관광지", "축제", "음식"],
+};
+
+const journeyDescriptions: Record<string, string> = {
+  혼자: "혼밥, 조용한 카페와 혼자 천천히 둘러보기 좋은 장소만 지도에 표시합니다.",
+  커플: "데이트에 어울리는 카페, 관광지, 축제와 음식점을 한 지도에서 확인합니다.",
 };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -56,6 +66,11 @@ export default function FastCategoryExplorePage({
   initialDetail = "전체",
   journey = "",
 }: FastCategoryExplorePageProps) {
+  const availableJourneyMenus = journeyMenus[journey] ?? [];
+  const [selectedJourneyType, setSelectedJourneyType] = useState("전체");
+  const journeyTypeRef = useRef(selectedJourneyType);
+  journeyTypeRef.current = selectedJourneyType;
+
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
     const activeControllers = new Map<string, AbortController>();
@@ -71,7 +86,7 @@ export default function FastCategoryExplorePage({
 
       if (journey && !isSubregionRequest) {
         parsedUrl.searchParams.set("journey", journey);
-        parsedUrl.searchParams.set("journeyType", "전체");
+        parsedUrl.searchParams.set("journeyType", journeyTypeRef.current);
         parsedUrl.searchParams.set("category", "전체");
         parsedUrl.searchParams.delete("detailType");
       }
@@ -167,8 +182,35 @@ export default function FastCategoryExplorePage({
   }, [initialDetail, initialCategory, journey]);
 
   return (
-    <div data-journey={journey || undefined}>
-      <CategoryExplorePage initialCategory={initialCategory} />
+    <div className="kp-journey-explore" data-journey={journey || undefined}>
+      {availableJourneyMenus.length > 0 && (
+        <section className="kp-journey-category-menu" aria-label={`${journey} 장소 유형`}>
+          <div className="kp-journey-category-copy">
+            <small>RELATIONSHIP MAP</small>
+            <strong>{journey} 장소 카테고리</strong>
+            <p>{journeyDescriptions[journey]}</p>
+          </div>
+
+          <div className="kp-journey-category-buttons">
+            {availableJourneyMenus.map((menu) => (
+              <button
+                type="button"
+                className={selectedJourneyType === menu ? "is-active" : ""}
+                aria-pressed={selectedJourneyType === menu}
+                key={menu}
+                onClick={() => setSelectedJourneyType(menu)}
+              >
+                {menu}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <CategoryExplorePage
+        key={`${journey || "default"}-${selectedJourneyType}`}
+        initialCategory={journey ? "전체" : initialCategory}
+      />
     </div>
   );
 }
