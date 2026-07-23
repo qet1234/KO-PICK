@@ -44,8 +44,7 @@ select {
 }
 
 .kp-explore-brand,
-.kp-explore-home-link,
-.kp-explore-reservations-link {
+.kp-explore-home-link {
   color: inherit;
   text-decoration: none;
 }
@@ -80,26 +79,13 @@ select {
   letter-spacing: 0.15em;
 }
 
-.kp-explore-header-actions {
+.kp-explore-home-link {
   margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.kp-explore-home-link,
-.kp-explore-reservations-link {
   padding: 9px 15px;
   border: 1px solid var(--explore-black);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 900;
-}
-
-.kp-explore-reservations-link {
-  border-color: var(--explore-red);
-  color: #fff;
-  background: var(--explore-red);
 }
 
 .kp-explore-workspace {
@@ -142,42 +128,6 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.kp-explore-bookable-filter {
-  margin-top: 18px;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  border: 1px solid rgba(255, 59, 54, 0.22);
-  border-radius: 15px;
-  background: #fff;
-}
-
-.kp-explore-bookable-filter button {
-  min-height: 42px;
-  border: 1px solid var(--explore-line);
-  border-radius: 999px;
-  color: var(--explore-black);
-  background: #f6f6f2;
-  font-size: 11px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.kp-explore-bookable-filter button.is-active {
-  border-color: var(--explore-red);
-  color: #fff;
-  background: var(--explore-red);
-}
-
-.kp-explore-bookable-filter small {
-  grid-column: 1 / -1;
-  color: var(--explore-muted);
-  font-size: 9px;
-  line-height: 1.5;
-  text-align: center;
 }
 
 .kp-explore-category-buttons button {
@@ -269,7 +219,7 @@ select {
 
 .kp-explore-place-card > button {
   width: 100%;
-  height: auto;
+  height: 100%;
   padding: 0;
   display: block;
   border: 0;
@@ -311,20 +261,6 @@ select {
   background: rgba(17, 17, 17, 0.78);
   font-size: 8px;
   font-weight: 900;
-}
-
-.kp-explore-bookable-badge {
-  padding: 6px 9px;
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  z-index: 2;
-  border-radius: 999px;
-  color: #151512;
-  background: #c2f34a;
-  box-shadow: 0 5px 14px rgba(21, 21, 18, 0.18);
-  font-size: 8px;
-  font-weight: 950;
 }
 
 .kp-explore-card-copy {
@@ -693,93 +629,3 @@ select {
   object-fit: cover;
 }
 /* END KOREAPICK MAP PHOTO V4 */
-.kp-explore-reservation-link {
-  margin: 0;
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  color: white;
-  background: var(--explore-red);
-  font-size: 10px;
-  font-weight: 900;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.kp-explore-reservation-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(21, 21, 18, 0.2);
-}
-
-.kp-explore-reservation-link:active { transform: scale(0.97); }
-
-.kp-explore-booking-panel {
-  margin: 0 14px 14px;
-  padding: 12px;
-  display: grid;
-  gap: 9px;
-  border: 1px solid rgba(21, 21, 18, 0.12);
-  border-radius: 16px;
-  background: #f7f6f1;
-}
-
-.kp-explore-booking-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.kp-explore-booking-heading strong {
-  font-size: 10px;
-  font-weight: 950;
-}
-
-.kp-explore-booking-heading span {
-  color: #77736b;
-  font-size: 8px;
-  text-align: right;
-}
-
-.kp-explore-booking-info {
-  margin: 0;
-  padding: 9px 10px;
-  border-radius: 10px;
-  color: #45423d;
-  background: #fff;
-  font-size: 9px;
-  line-height: 1.55;
-}
-
-.kp-explore-booking-links {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
-}
-
-.kp-explore-booking-links a {
-  min-height: 38px;
-  padding: 0 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 950;
-  text-align: center;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.kp-explore-booking-links a:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 16px rgba(21, 21, 18, 0.14);
-}
-
-.kp-explore-booking-links a:active { transform: scale(0.97); }
-.kp-explore-booking-links .is-naver { color: #fff; background: #03c75a; }
-.kp-explore-booking-links .is-kakao { color: #231f20; background: #fee500; }
-
-@media (max-width: 420px) {
-  .kp-explore-booking-links { grid-template-columns: 1fr; }
-}

@@ -3,10 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
-import {
-  kakaoBookingSearchUrl,
-  naverBookingSearchUrl,
-} from "@/utils/external-booking";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
@@ -20,10 +16,6 @@ interface Place {
   latitude: number | string;
   longitude: number | string;
   imageUrl?: string | null;
-  placeUrl?: string | null;
-  bookingAvailable?: boolean;
-  bookingKind?: string | null;
-  bookingInfo?: string | null;
 }
 
 interface SubregionOption {
@@ -202,8 +194,6 @@ export default function CategoryExplorePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
-  const [bookingOnly, setBookingOnly] = useState(false);
-  const [bookingScannedCount, setBookingScannedCount] = useState(0);
   const [mapError, setMapError] = useState(() =>
     process.env.NEXT_PUBLIC_KAKAO_MAP_KEY
       ? ""
@@ -286,7 +276,6 @@ export default function CategoryExplorePage({
         if (selectedDetail !== "전체") {
           params.set("detailType", selectedDetail);
         }
-        if (bookingOnly) params.set("bookingOnly", "true");
 
         const response = await fetch(
           `${springApiUrl}/api/public/tour/places?` + params.toString()
@@ -298,11 +287,6 @@ export default function CategoryExplorePage({
             payload.error ?? "추천 장소를 불러오지 못했습니다."
           );
         }
-        if (bookingOnly && !payload.bookingFilter) {
-          throw new Error(
-            "예약 가능 장소 데이터를 업데이트하고 있습니다. 잠시 후 다시 확인해 주세요."
-          );
-        }
 
         if (!cancelled) {
           setPlaces(payload.places ?? []);
@@ -310,16 +294,12 @@ export default function CategoryExplorePage({
           setTotalPages(
             Math.max(1, Number(payload.pagination?.totalPages ?? 1))
           );
-          setBookingScannedCount(
-            Number(payload.bookingFilter?.scannedCount ?? 0)
-          );
         }
       } catch (loadError) {
         if (!cancelled) {
           setPlaces([]);
           setTotalCount(0);
           setTotalPages(1);
-          setBookingScannedCount(0);
           setError(
             loadError instanceof Error
               ? loadError.message
@@ -342,7 +322,6 @@ export default function CategoryExplorePage({
     selectedRegion,
     selectedSubregion,
     subregions,
-    bookingOnly,
   ]);
 
   useEffect(() => {
@@ -544,19 +523,12 @@ export default function CategoryExplorePage({
 
         <div>
           <small>PLACE EXPLORER</small>
-          <strong>
-            {bookingOnly ? "예약 가능 장소" : selectedCategoryLabel + " 전체 결과"}
-          </strong>
+          <strong>{selectedCategoryLabel} 전체 결과</strong>
         </div>
 
-        <nav className="kp-explore-header-actions" aria-label="탐색 화면 메뉴">
-          <a className="kp-explore-reservations-link" href="/reservations">
-            함께 예약
-          </a>
-          <a href="/" className="kp-explore-home-link">
-            홈으로
-          </a>
-        </nav>
+        <a href="/" className="kp-explore-home-link">
+          홈으로
+        </a>
       </header>
 
       <div className="kp-explore-workspace">
@@ -568,34 +540,6 @@ export default function CategoryExplorePage({
               카테고리와 지역을 선택하면 장소 목록과 지도가
               함께 변경됩니다.
             </p>
-
-            <div className="kp-explore-bookable-filter" aria-label="예약 가능 여부">
-              <button
-                type="button"
-                className={!bookingOnly ? "is-active" : ""}
-                aria-pressed={!bookingOnly}
-                onClick={() => {
-                  setBookingOnly(false);
-                  setPage(1);
-                }}
-              >
-                전체 장소
-              </button>
-              <button
-                type="button"
-                className={bookingOnly ? "is-active" : ""}
-                aria-pressed={bookingOnly}
-                onClick={() => {
-                  setBookingOnly(true);
-                  setPage(1);
-                }}
-              >
-                예약 가능한 곳
-              </button>
-              <small>
-                한국관광공사 데이터에 예약 안내·예매처가 등록된 장소만 표시
-              </small>
-            </div>
 
             <div className="kp-explore-category-buttons">
               {categoryOptions
@@ -698,20 +642,15 @@ export default function CategoryExplorePage({
                 {" · "}
                 {selectedCategoryLabel}
                 {selectedDetail !== "전체" ? " · " + selectedDetail : ""}
-                {bookingOnly ? " 예약 안내 확인 " : " 추천 장소 "}
-                {(bookingOnly ? places.length : totalCount).toLocaleString("ko-KR")}곳
-                {bookingOnly && bookingScannedCount > 0
-                  ? ` · 원본 장소 ${bookingScannedCount.toLocaleString("ko-KR")}곳 확인`
-                  : ""}
+                {" 추천 장소 "}
+                {totalCount.toLocaleString("ko-KR")}곳
               </strong>
             )}
           </div>
 
           {!loading && !error && places.length === 0 && (
             <div className="kp-explore-empty">
-              {bookingOnly
-                ? "선택한 조건에서 예약 안내가 등록된 장소를 찾지 못했습니다. 지역이나 음식 종류를 변경해 주세요."
-                : "선택한 조건의 장소가 없습니다."}
+              선택한 조건의 장소가 없습니다.
             </div>
           )}
 
@@ -741,11 +680,6 @@ export default function CategoryExplorePage({
                         />
                       )}
                       <small>{displayCategory(place.category)}</small>
-                      {place.bookingAvailable && (
-                        <b className="kp-explore-bookable-badge">
-                          예약 안내 확인
-                        </b>
-                      )}
                     </div>
 
                     <div className="kp-explore-card-copy">
@@ -759,54 +693,6 @@ export default function CategoryExplorePage({
                       <strong>지도에서 보기 ↗</strong>
                     </div>
                   </button>
-                  <div className="kp-explore-booking-panel">
-                    <div className="kp-explore-booking-heading">
-                      <strong>
-                        {place.bookingAvailable ? place.bookingKind : "외부 예약"}
-                      </strong>
-                      <span>
-                        {place.bookingAvailable
-                          ? "공식 관광 데이터 기준"
-                          : "예약 가능 여부는 외부 서비스에서 확인"}
-                      </span>
-                    </div>
-                    {place.bookingAvailable && place.bookingInfo && (
-                      <p className="kp-explore-booking-info">
-                        {place.bookingInfo}
-                      </p>
-                    )}
-                    <div className="kp-explore-booking-links">
-                      <a
-                        className="is-naver"
-                        href={naverBookingSearchUrl(place)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`${place.name} 네이버 예약 확인`}
-                      >
-                        네이버 예약 확인 ↗
-                      </a>
-                      <a
-                        className="is-kakao"
-                        href={kakaoBookingSearchUrl(place)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`${place.name} 카카오 예약 확인`}
-                      >
-                        카카오 예약 확인 ↗
-                      </a>
-                    </div>
-                    <a
-                      className="kp-explore-reservation-link"
-                      href={`/reservations?${new URLSearchParams({
-                        placeId: String(place.id),
-                        placeName: place.name,
-                        address: place.address ?? "",
-                        category: displayCategory(place.category),
-                      }).toString()}`}
-                    >
-                      함께 예약 후보로 담기 →
-                    </a>
-                  </div>
                 </article>
               ))}
             </div>
@@ -842,7 +728,6 @@ export default function CategoryExplorePage({
           <footer className="kp-explore-source">
             <strong>데이터 출처</strong>
             <span>장소 정보·이미지: 한국관광공사 TourAPI</span>
-            <span>예약 분류: TourAPI 예약 안내·예매처 등록 여부</span>
             <span>지도: Kakao Maps</span>
             <small>
               다른 서비스의 별점·리뷰·사진은 복사하지 않습니다.
