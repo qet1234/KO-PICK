@@ -23,12 +23,13 @@ public class TourPlaceStoreService {
     }
 
     /**
-     * The public place explorer must always use the live Korea Tourism Organization
-     * TourAPI result as its canonical source. The local table is only a recoverable
-     * cache/snapshot and must never replace the original count or category result.
+     * The public place explorer uses the live Korea Tourism Organization TourAPI
+     * as its canonical source. A previously synchronized database snapshot is
+     * exposed only when the live upstream request fails, so a temporary TourAPI
+     * or network problem does not leave the whole place explorer unusable.
      */
     public boolean hasData() {
-        return false;
+        return repository.count() > 0;
     }
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
