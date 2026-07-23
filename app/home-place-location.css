@@ -1,0 +1,110 @@
+.kp-reliable-region-explorer .kp-region-buttons,
+.kp-reliable-region-explorer .kp-subregion-filter {
+  display: none !important;
+}
+
+.kp-place-location-toolbar-host {
+  margin: 24px 0 20px;
+}
+
+.kp-place-location-toolbar {
+  padding: 18px;
+  border: 1px solid #deded8;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff 0%, #fff8f6 100%);
+  box-shadow: 0 14px 32px rgba(17, 17, 17, 0.08);
+}
+
+.kp-place-location-heading {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kp-place-location-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kp-place-location-heading small {
+  color: #ff3b36;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.kp-place-location-heading strong {
+  color: #111;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.kp-place-location-heading > span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #fff;
+  background: #111;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.kp-place-location-selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kp-place-location-selects label {
+  min-width: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #deded8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.kp-place-location-selects label:focus-within {
+  border-color: #ff3b36;
+  box-shadow: 0 0 0 3px rgba(255, 59, 54, 0.11);
+}
+
+.kp-place-location-selects span {
+  color: #74746f;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.kp-place-location-selects select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #111;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kp-place-location-selects select:disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .kp-place-location-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .kp-place-location-selects {
+    grid-template-columns: 1fr;
+  }
+}
