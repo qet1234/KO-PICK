@@ -6,12 +6,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 @Service
 public class PlaceSearchService {
+    private static final Logger log = LoggerFactory.getLogger(PlaceSearchService.class);
+
     private final TourApiService tourApi;
     private final TourPlaceStoreService placeStore;
     private final KakaoLocalService kakaoLocal;
@@ -28,9 +32,9 @@ public class PlaceSearchService {
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
         boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
-        Map<String, Object> tourResult = !bookingOnly && placeStore.hasData()
-            ? placeStore.search(query)
-            : tourApi.search(query);
+        Map<String, Object> tourResult = bookingOnly
+            ? tourApi.search(query)
+            : searchWithDatabaseFallback(query);
 
         if (bookingOnly
             || !isFranchiseCafe(query)
@@ -54,11 +58,32 @@ public class PlaceSearchService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("places", merged);
         result.put("pagination", pagination);
-        result.put("sources", List.of(
-            placeStore.hasData() ? "DATABASE" : "TOUR_API",
-            "KAKAO_LOCAL"
-        ));
+        result.put("sources", List.of(sourceName(tourResult), "KAKAO_LOCAL"));
         return result;
+    }
+
+    private Map<String, Object> searchWithDatabaseFallback(MultiValueMap<String, String> query) {
+        try {
+            if (placeStore.hasData()) {
+                Map<String, Object> stored = placeStore.search(query);
+                if (isSubregionMode(query) || !places(stored).isEmpty()) return stored;
+            }
+        } catch (RuntimeException error) {
+            log.warn("Tour place database query failed. Falling back to TourAPI.", error);
+        }
+
+        Map<String, Object> live = tourApi.search(query);
+        if (!live.containsKey("source")) live.put("source", "TOUR_API");
+        return live;
+    }
+
+    private boolean isSubregionMode(MultiValueMap<String, String> query) {
+        return "subregions".equals(first(query, "mode", "places"));
+    }
+
+    private String sourceName(Map<String, Object> result) {
+        Object source = result.get("source");
+        return source == null ? "TOUR_API" : String.valueOf(source);
     }
 
     private boolean isFranchiseCafe(MultiValueMap<String, String> query) {
@@ -73,9 +98,7 @@ public class PlaceSearchService {
         MultiValueMap<String, String> subregionQuery = new LinkedMultiValueMap<>();
         subregionQuery.set("mode", "subregions");
         subregionQuery.set("region", region);
-        Map<String, Object> source = placeStore.hasData()
-            ? placeStore.search(subregionQuery)
-            : tourApi.search(subregionQuery);
+        Map<String, Object> source = searchWithDatabaseFallback(subregionQuery);
         Object raw = source.get("subregions");
         if (!(raw instanceof List<?> list)) return "";
 
