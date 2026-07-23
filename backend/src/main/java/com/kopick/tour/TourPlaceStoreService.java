@@ -22,8 +22,13 @@ public class TourPlaceStoreService {
         this.tourApi = tourApi;
     }
 
+    /**
+     * The public place explorer must always use the live Korea Tourism Organization
+     * TourAPI result as its canonical source. The local table is only a recoverable
+     * cache/snapshot and must never replace the original count or category result.
+     */
     public boolean hasData() {
-        return repository.count() > 0;
+        return false;
     }
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
@@ -32,7 +37,7 @@ public class TourPlaceStoreService {
             List<Map<String, String>> subregions = repository.findSubregions(region).stream()
                 .map(row -> Map.of("code", String.valueOf(row[0]), "name", String.valueOf(row[1])))
                 .toList();
-            return Map.of("subregions", subregions);
+            return Map.of("subregions", subregions, "source", "DATABASE_SNAPSHOT");
         }
 
         int requestedPage = positive(first(query, "page", "1"), 1);
@@ -57,13 +62,18 @@ public class TourPlaceStoreService {
             "totalCount", page.getTotalElements(),
             "totalPages", Math.max(1, page.getTotalPages())
         ));
-        result.put("source", "DATABASE");
+        result.put("source", "DATABASE_SNAPSHOT");
         return result;
     }
 
+    /**
+     * Rebuilds the snapshot from TourAPI in one transaction. If any page fails,
+     * the transaction rolls back so a partial category data set is never exposed.
+     */
     @Transactional
     public int syncAll() {
-        int saved = 0;
+        List<TourPlace> synchronizedPlaces = new ArrayList<>();
+
         for (String category : List.of("음식", "카페", "축제", "관광지")) {
             int page = 1;
             int totalPages = 1;
@@ -73,27 +83,35 @@ public class TourPlaceStoreService {
                 query.set("category", category);
                 query.set("page", String.valueOf(page));
                 query.set("pageSize", "100");
+
                 Map<String, Object> result = tourApi.search(query);
-                saved += savePlaces(result, category);
+                collectPlaces(result, category, synchronizedPlaces);
                 totalPages = paginationInt(result, "totalPages", 1);
                 page++;
             } while (page <= totalPages);
         }
-        return saved;
+
+        repository.deleteAllInBatch();
+        repository.saveAll(synchronizedPlaces);
+        return synchronizedPlaces.size();
     }
 
-    @SuppressWarnings("unchecked")
-    private int savePlaces(Map<String, Object> result, String category) {
+    private void collectPlaces(
+        Map<String, Object> result,
+        String category,
+        List<TourPlace> destination
+    ) {
         Object raw = result.get("places");
-        if (!(raw instanceof List<?> values)) return 0;
-        List<TourPlace> batch = new ArrayList<>();
+        if (!(raw instanceof List<?> values)) return;
+
         OffsetDateTime now = OffsetDateTime.now();
         for (Object value : values) {
             if (!(value instanceof Map<?, ?> map)) continue;
             String contentId = text(map, "id");
             String name = text(map, "name");
             if (contentId.isBlank() || name.isBlank()) continue;
-            TourPlace place = repository.findByContentId(contentId).orElseGet(TourPlace::new);
+
+            TourPlace place = new TourPlace();
             place.setContentId(contentId);
             place.setContentTypeId(text(map, "contentTypeId"));
             place.setName(name);
@@ -111,10 +129,8 @@ public class TourPlaceStoreService {
             place.setActive(true);
             place.setLastSyncedAt(now);
             place.setUpdatedAt(now);
-            batch.add(place);
+            destination.add(place);
         }
-        repository.saveAll(batch);
-        return batch.size();
     }
 
     private Map<String, Object> toResponse(TourPlace place) {
