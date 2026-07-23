@@ -6,8 +6,8 @@ server:
       cookie:
         name: KOPICK_SESSION
         http-only: true
-        secure: ${COOKIE_SECURE:false}
-        same-site: ${COOKIE_SAME_SITE:lax}
+        secure: ${COOKIE_SECURE:true}
+        same-site: ${COOKIE_SAME_SITE:none}
       timeout: 30m
 
 spring:
@@ -37,13 +37,14 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID:}
             client-secret: ${GOOGLE_CLIENT_SECRET:}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:https://kopick-api.onrender.com/login/oauth2/code/google}
             scope: openid,profile,email
           kakao:
             client-id: ${KAKAO_CLIENT_ID:}
             client-secret: ${KAKAO_CLIENT_SECRET:}
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: ${KAKAO_REDIRECT_URI:https://kopick-api.onrender.com/login/oauth2/code/kakao}
             scope: profile_nickname,profile_image,account_email
             client-name: Kakao
           naver:
@@ -51,7 +52,7 @@ spring:
             client-secret: ${NAVER_CLIENT_SECRET:}
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: ${NAVER_REDIRECT_URI:https://kopick-api.onrender.com/login/oauth2/code/naver}
             scope: name,nickname,email,profile_image
             client-name: Naver
         provider:
@@ -67,8 +68,8 @@ spring:
             user-name-attribute: response
 
 app:
-  frontend-url: ${FRONTEND_URL:http://localhost:3000}
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000}
+  frontend-url: ${FRONTEND_URL:https://koreapick.duckdns.org}
+  allowed-origins: ${ALLOWED_ORIGINS:https://koreapick.duckdns.org}
   keyword-hash-salt: ${KEYWORD_HASH_SALT:korea-pick}
   jwt:
     secret: ${JWT_SECRET:local-development-secret-must-be-at-least-32-bytes}
@@ -76,8 +77,8 @@ app:
     access-ttl: ${JWT_ACCESS_TTL:15m}
     refresh-ttl: ${JWT_REFRESH_TTL:14d}
   cookie:
-    secure: ${COOKIE_SECURE:false}
-    same-site: ${COOKIE_SAME_SITE:Lax}
+    secure: ${COOKIE_SECURE:true}
+    same-site: ${COOKIE_SAME_SITE:None}
     domain: ${COOKIE_DOMAIN:}
 
 tour-api:
