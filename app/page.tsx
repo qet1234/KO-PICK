@@ -9,6 +9,7 @@ import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
 import "./home-weather-dashboard.css";
+import "./home-weather-navigation.css";
 import "./home-place-location.css";
 import "./home-clarity.css";
 
