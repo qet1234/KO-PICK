@@ -271,19 +271,28 @@ export default function SmartRecommendations() {
             label="누구와 가나요?"
             values={companions}
             selected={companion}
-            onSelect={setCompanion}
+            onSelect={(value) => {
+              setCompanion(value);
+              setPool([]);
+            }}
           />
           <ChoiceGroup
             label="언제 가나요?"
             values={moments}
             selected={moment}
-            onSelect={setMoment}
+            onSelect={(value) => {
+              setMoment(value);
+              setPool([]);
+            }}
           />
           <ChoiceGroup
             label="어디로 갈까요?"
             values={categories}
             selected={category}
-            onSelect={setCategory}
+            onSelect={(value) => {
+              setCategory(value);
+              setPool([]);
+            }}
           />
 
           <button
