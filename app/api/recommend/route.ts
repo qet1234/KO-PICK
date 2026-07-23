@@ -24,6 +24,11 @@ type Candidate = {
   reason: string;
 };
 
+const NATIONWIDE_REGIONS = [
+  "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+];
+
 const stripHtml = (value = "") => value.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&");
 
 function preferenceKeywords(params: URLSearchParams) {
@@ -52,6 +57,7 @@ function preferenceKeywords(params: URLSearchParams) {
 }
 
 function buildQueries(params: URLSearchParams) {
+  const scope = params.get("scope") || "내 지역";
   const region = params.get("region") || "서울";
   const relationship = params.get("relationship") || "개인";
   const category = params.get("category") || "카페";
@@ -66,6 +72,12 @@ function buildQueries(params: URLSearchParams) {
     가족: "가족",
   };
 
+  if (scope === "전국") {
+    return NATIONWIDE_REGIONS.map((regionName) =>
+      `${regionName} ${relationshipKeyword[relationship] || ""} ${mood} ${indoor} ${preference} ${category}`.trim()
+    );
+  }
+
   return [
     `${region} ${relationshipKeyword[relationship] || ""} ${mood} ${indoor} ${preference} ${category}`.trim(),
     `${region} ${preference} ${mood} ${category}`.trim(),
@@ -79,7 +91,7 @@ function scoreItem(item: NaverItem, index: number, params: URLSearchParams) {
   const mood = params.get("mood") || "조용한";
   const indoor = params.get("indoor") || "실내";
   const category = params.get("category") || "카페";
-  let score = 76 - index * 2;
+  let score = 76 - Math.min(index, 12);
 
   const relationTerms: Record<string, string[]> = {
     개인: ["혼밥", "혼자", "조용"],
@@ -119,7 +131,7 @@ function recommendationReason(score: number, params: URLSearchParams) {
   const crowd = params.get("crowd") || "한적한 곳";
   if (score >= 92) return `${crowd}과 ${discovery} 성향에 가장 잘 맞는 장소예요.`;
   if (score >= 84) return "저장한 취향과 오늘의 분위기가 고르게 잘 맞아요.";
-  return "현재 위치와 상황을 고려했을 때 부담 없이 선택하기 좋아요.";
+  return "현재 선택한 범위와 상황을 고려했을 때 부담 없이 선택하기 좋아요.";
 }
 
 export async function GET(request: NextRequest) {
@@ -133,12 +145,16 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const queries = buildQueries(request.nextUrl.searchParams);
+  const params = request.nextUrl.searchParams;
+  const requestedCount = Math.min(48, Math.max(3, Number.parseInt(params.get("resultCount") || "12", 10) || 12));
+  const queries = buildQueries(params);
+  const display = params.get("scope") === "전국" ? "5" : "5";
+
   const responses = await Promise.all(
     queries.map(async (query) => {
       const url = new URL("https://openapi.naver.com/v1/search/local.json");
       url.searchParams.set("query", query);
-      url.searchParams.set("display", "5");
+      url.searchParams.set("display", display);
       url.searchParams.set("sort", "comment");
 
       const response = await fetch(url, {
@@ -166,22 +182,27 @@ export async function GET(request: NextRequest) {
     if (!name || !address || seen.has(key)) continue;
     seen.add(key);
 
-    const score = scoreItem(item, index++, request.nextUrl.searchParams);
+    const score = scoreItem(item, index++, params);
     const mapQuery = encodeURIComponent(`${name} ${address}`);
 
     candidates.push({
       id: key,
       name,
-      category: item.category || request.nextUrl.searchParams.get("category") || "장소",
+      category: item.category || params.get("category") || "장소",
       address,
       description: stripHtml(item.description),
       mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
       reservationUrl: `https://map.naver.com/p/search/${mapQuery}`,
       score,
-      reason: recommendationReason(score, request.nextUrl.searchParams),
+      reason: recommendationReason(score, params),
     });
   }
 
-  candidates.sort((a, b) => b.score - a.score);
-  return NextResponse.json({ queries, items: candidates.slice(0, 9) });
+  candidates.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ko"));
+  return NextResponse.json({
+    scope: params.get("scope") || "내 지역",
+    queries,
+    totalCount: candidates.length,
+    items: candidates.slice(0, requestedCount),
+  });
 }
