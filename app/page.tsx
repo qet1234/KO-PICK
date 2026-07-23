@@ -8,6 +8,7 @@ import "./home.css";
 import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-naver-region.css";
+import "./home-naver-map.css";
 
 export const dynamic = "force-dynamic";
 
