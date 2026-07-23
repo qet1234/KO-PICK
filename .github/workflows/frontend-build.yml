@@ -25,6 +25,20 @@ jobs:
         run: npm ci
 
       - name: Build Next.js
+        id: next-build
+        continue-on-error: true
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-        run: npm run build
+        run: npm run build > build.log 2>&1
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-log
+          path: build.log
+          if-no-files-found: error
+
+      - name: Fail when build failed
+        if: steps.next-build.outcome == 'failure'
+        run: exit 1
