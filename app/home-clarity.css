@@ -1,0 +1,359 @@
+/* KO-PICK text clarity and accessibility overrides */
+:root {
+  --kp-muted: #4c4c48;
+}
+
+.korea-pick-home {
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    Arial,
+    sans-serif;
+  color: #111;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  font-synthesis: none;
+}
+
+/* 3D transforms can rasterize text and make it look soft on Windows. */
+.kp-hero {
+  perspective: none !important;
+}
+
+.kp-hero-frame,
+.kp-hero-main,
+.kp-hero-discovery,
+.kp-hero-main:hover,
+.kp-hero-discovery:hover {
+  transform: none !important;
+  transform-style: flat !important;
+  backface-visibility: visible !important;
+  will-change: auto !important;
+}
+
+.kp-catch-search {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.korea-pick-home :is(h1, h2, h3, h4, p, span, small, strong, b, a, button, input, select, label) {
+  filter: none !important;
+  text-shadow: none;
+}
+
+/* Header */
+.kp-brand {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.kp-navigation {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.header-login-button,
+.header-signup-button,
+.header-reservation-button,
+.header-space-button,
+.header-couple-button,
+.header-account-button {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* Hero */
+.kp-overline {
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.15em;
+}
+
+.kp-hero-main h1 {
+  letter-spacing: -0.055em;
+  font-weight: 950;
+}
+
+.kp-hero-description {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.75;
+  opacity: 1;
+}
+
+/* Catchtable-style search panel */
+.kp-catch-search-heading small {
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-catch-search-heading strong {
+  font-size: 23px;
+  font-weight: 950;
+}
+
+.kp-catch-search-heading > span {
+  color: #41413e;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.kp-catch-search-fields span {
+  color: #555550;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.kp-catch-search-fields select,
+.kp-catch-search-fields input {
+  color: #111;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.kp-catch-search-query input {
+  color: #111;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kp-catch-search-query input::placeholder {
+  color: #666660;
+  opacity: 1;
+}
+
+.kp-catch-search-query button {
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.kp-catch-search-quick button {
+  color: #292926;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+/* Relationship discovery */
+.kp-hero-journey-heading small {
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-hero-journey-heading h2 {
+  font-size: 34px;
+  font-weight: 950;
+}
+
+.kp-hero-journey-heading p {
+  color: #42423f;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.kp-hero-journey-heading > a {
+  color: #111;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.kp-relationship-card > span {
+  color: #c9c9c3;
+}
+
+.kp-relationship-card small {
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-relationship-card strong {
+  color: #111;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.kp-relationship-card p {
+  color: #444440;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.kp-relationship-card b {
+  color: #111;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.kp-hero-difference-actions small {
+  color: #171714;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-hero-difference-actions strong {
+  color: #111;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.kp-hero-difference-actions p {
+  color: #323630;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.kp-hero-difference-actions span {
+  color: #111;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+/* Main section headings and descriptions */
+.kp-section-heading h2,
+.kp-popular-heading h2,
+.kp-region-content h2,
+.kp-region-journey-intro h2 {
+  color: #111;
+  font-weight: 950;
+}
+
+.kp-section-heading p:not(.kp-overline),
+.kp-popular-heading p,
+.kp-region-content > p:not(.kp-overline),
+.kp-region-journey-intro p:last-child {
+  color: #454541;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+/* Category cards */
+.kp-category-grid .kp-category-card-copy small,
+.kp-category-grid small {
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-category-grid .kp-category-card-copy > strong,
+.kp-category-card-copy > strong {
+  color: #111;
+  font-weight: 950;
+}
+
+.kp-category-grid .kp-category-card-copy > span,
+.kp-category-card-copy > span,
+.kp-category-grid p {
+  color: #494945;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+/* Popular recommendations */
+.kp-recommendation-content h3 {
+  color: #111;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.kp-recommendation-content p {
+  color: #444440;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.kp-recommendation-content small,
+.kp-recommendation-content span,
+.kp-recommendation-meta,
+.kp-recommendation-explore-link,
+.kp-recommendation-icon-slot > div strong {
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.kp-recommendation-meta a {
+  color: #111;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+/* Region explorer */
+.kp-region-content,
+.kp-region-content button,
+.kp-region-content select,
+.kp-region-content input,
+.kp-place-summary,
+.kp-map-info-card {
+  color: #111;
+  font-weight: 700;
+}
+
+.kp-category-buttons button,
+.kp-detail-buttons button,
+.kp-subregion-buttons button {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.kp-place-summary {
+  font-size: 13px;
+}
+
+.kp-map-info-card span,
+.kp-map-info-card p {
+  color: #444;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* Footer */
+.kp-privacy-heading > p:last-child {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.kp-privacy-grid article > strong {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.kp-privacy-grid article > p {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kp-privacy-footer {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .kp-navigation {
+    font-size: 12px;
+  }
+
+  .kp-hero-description {
+    font-size: 14px;
+  }
+
+  .kp-hero-journey-heading h2 {
+    font-size: 30px;
+  }
+
+  .kp-section-heading p:not(.kp-overline),
+  .kp-popular-heading p,
+  .kp-region-journey-intro p:last-child {
+    font-size: 13px;
+  }
+}
