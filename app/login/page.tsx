@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   socialLoginUrl,
-  waitForSpringApiReady,
+  warmSpringApi,
 } from "@/utils/spring-api";
 
 type SocialProvider = "google" | "kakao" | "naver" | "apple";
@@ -15,7 +15,7 @@ export default function LoginPage() {
   >(null);
   const [message, setMessage] = useState("");
 
-  const handleSocialLogin = async (
+  const handleSocialLogin = (
     provider: "google" | "kakao" | "naver",
     providerLabel: string
   ) => {
@@ -24,9 +24,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setActiveProvider(provider);
-      setMessage("로그인 서버를 준비하고 있어요. 잠시만 기다려 주세요.");
-
-      await waitForSpringApiReady();
+      setMessage(`${providerLabel} 로그인 페이지로 이동하고 있어요.`);
 
       window.location.assign(socialLoginUrl(provider));
     } catch (error) {
@@ -49,6 +47,8 @@ export default function LoginPage() {
     handleSocialLogin("naver", "네이버");
 
   useEffect(() => {
+    warmSpringApi();
+
     const errorMessage = new URLSearchParams(
       window.location.search,
     ).get("auth_error");
@@ -146,7 +146,7 @@ export default function LoginPage() {
             className="kakao-button"
             type="button"
             onClick={() =>
-              void handleSocialLogin("kakao", "카카오")
+              handleSocialLogin("kakao", "카카오")
             }
             disabled={loading}
           >
@@ -204,7 +204,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => void handleGoogleLogin()}
+              onClick={handleGoogleLogin}
               disabled={loading}
               aria-label="Google 계정으로 로그인"
             >
