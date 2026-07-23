@@ -62,17 +62,40 @@ function seoulTodayKey() {
   }).format(new Date());
 }
 
-function weekSundayKey(todayKey: string) {
-  const today = new Date(`${todayKey}T00:00:00+09:00`);
-  const day = today.getDay();
-  const daysUntilSunday = day === 0 ? 0 : 7 - day;
-  today.setDate(today.getDate() + daysUntilSunday);
+function dateKey(date: Date) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(today);
+  }).format(date);
+}
+
+function forecastWeekRange(todayKey: string) {
+  const today = new Date(`${todayKey}T00:00:00+09:00`);
+  const day = today.getDay();
+
+  if (day === 0) {
+    const nextMonday = new Date(today);
+    nextMonday.setDate(today.getDate() + 1);
+    const nextSunday = new Date(nextMonday);
+    nextSunday.setDate(nextMonday.getDate() + 6);
+    return {
+      startKey: dateKey(nextMonday),
+      endKey: dateKey(nextSunday),
+      title: "다음 주 예보",
+      description: "다음 월요일~일요일 · 7일 전체",
+    };
+  }
+
+  const thisSunday = new Date(today);
+  thisSunday.setDate(today.getDate() + (7 - day));
+  return {
+    startKey: todayKey,
+    endKey: dateKey(thisSunday),
+    title: "이번 주 예보",
+    description: "월요일~일요일 · 지난 요일 제외",
+  };
 }
 
 function formatWeekDay(value: string, todayKey: string) {
@@ -101,13 +124,13 @@ export default function HeroWeatherDashboard() {
 
   const districts = koreaRegionDistricts[region] ?? [];
   const todayKey = seoulTodayKey();
-  const sundayKey = weekSundayKey(todayKey);
+  const weekRange = forecastWeekRange(todayKey);
 
   const remainingWeekForecast = useMemo(
     () => (weather?.daily ?? []).filter(
-      (item) => item.date >= todayKey && item.date <= sundayKey,
+      (item) => item.date >= weekRange.startKey && item.date <= weekRange.endKey,
     ),
-    [sundayKey, todayKey, weather?.daily],
+    [weekRange.endKey, weekRange.startKey, weather?.daily],
   );
 
   useEffect(() => {
@@ -244,8 +267,8 @@ export default function HeroWeatherDashboard() {
 
           <section className="kp-weather-weekly-section">
             <div className="kp-weather-section-title">
-              <strong>이번 주 예보</strong>
-              <span>월요일~일요일 · 지난 요일 제외</span>
+              <strong>{weekRange.title}</strong>
+              <span>{weekRange.description}</span>
             </div>
             <div className="kp-weather-weekly-list">
               {remainingWeekForecast.map((item) => (
