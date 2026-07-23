@@ -1,4 +1,4 @@
-# Deployment sync: retrigger Render while Northflank runs in parallel
+# Deployment sync: deploy TourAPI database persistence
 services:
   - type: web
     name: kopick-api
