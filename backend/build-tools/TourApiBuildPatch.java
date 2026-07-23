@@ -10,7 +10,7 @@ public class TourApiBuildPatch {
         source = replaceRequired(
             source,
             "import java.net.URLDecoder;",
-            "import java.net.URLEncoder;"
+            "import java.net.URLDecoder;\nimport java.net.URLEncoder;"
         );
 
         source = replaceRequired(
@@ -66,8 +66,29 @@ public class TourApiBuildPatch {
     private String encodedServiceKey() {
         String key = properties.serviceKey();
         if (key == null) return "";
+
         key = key.trim();
-        if (key.contains("%")) return key;
+        if ((key.startsWith("\\\"") && key.endsWith("\\\""))
+            || (key.startsWith("'") && key.endsWith("'"))) {
+            key = key.substring(1, key.length() - 1).trim();
+        }
+        if (key.startsWith("serviceKey=")) {
+            key = key.substring("serviceKey=".length()).trim();
+        }
+
+        // Render values may contain the decoding key, the encoding key, or a
+        // value copied after an additional URL-encoding pass. Decode until the
+        // value stabilizes, then encode exactly once for the outgoing query.
+        for (int attempt = 0; attempt < 3 && key.contains("%"); attempt++) {
+            try {
+                String decoded = URLDecoder.decode(key, StandardCharsets.UTF_8);
+                if (decoded.equals(key)) break;
+                key = decoded;
+            } catch (IllegalArgumentException error) {
+                break;
+            }
+        }
+
         return URLEncoder.encode(key, StandardCharsets.UTF_8).replace("+", "%20");
     }
 """
