@@ -8,8 +8,6 @@ import "./home.css";
 import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
-import "./home-catch-search.css";
-import "./home-weather.css";
 import "./home-weather-dashboard.css";
 import "./home-clarity.css";
 
