@@ -1,4 +1,4 @@
-# Deployment sync: nationwide preference recommendations
+# Deployment verification: confirm Northflank automatic builds are disabled
 services:
   - type: web
     name: kopick-api
