@@ -4,6 +4,8 @@ import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroSearch from "@/components/HeroSearch";
 import HeroLivePick from "@/components/HeroLivePick";
+import SmartRecommendations from "@/components/SmartRecommendations";
+import PlaceNavigationChooser from "@/components/PlaceNavigationChooser";
 import "./home.css";
 
 export default function Home() {
@@ -52,7 +54,6 @@ export default function Home() {
 
           <HeroLivePick />
         </div>
-
       </section>
 
       <section className="kp-category-section" id="categories">
@@ -86,28 +87,8 @@ export default function Home() {
 
       <KakaoRegionExplorer />
 
-      <section className="kp-ai-section" id="ai">
-        <div className="kp-container kp-ai-panel">
-          <div>
-            <p className="kp-overline kp-overline-dark">
-              AI PERSONAL CURATOR
-            </p>
-
-            <h2>
-              취향에 맞는 하루 코스를
-              <br />
-              한 번에 완성하세요
-            </h2>
-          </div>
-
-          <p>
-            지역, 예산, 인원과 분위기를 분석해 맞춤 코스를
-            추천합니다.
-          </p>
-
-          <button type="button">AI 추천 시작하기 →</button>
-        </div>
-      </section>
+      <SmartRecommendations />
+      <PlaceNavigationChooser />
 
       <footer className="kp-footer" id="privacy">
         <div className="kp-container kp-privacy-panel">
