@@ -2,14 +2,15 @@ import AuthHeader from "@/components/AuthHeader";
 import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
-import HeroSearch from "@/components/HeroSearch";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
+import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
 import "./home.css";
 import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
 import "./home-catch-search.css";
 import "./home-weather.css";
+import "./home-weather-dashboard.css";
 import "./home-clarity.css";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +30,7 @@ export default function Home() {
 
       <section className="kp-hero" id="top">
         <div className="kp-container kp-hero-frame kp-hero-frame--discovery">
-          <article className="kp-hero-main">
-            <p className="kp-overline kp-overline-light">KOREA PICK CURATION</p>
-            <h1>검색 없이<br />오늘 갈 곳 결정</h1>
-            <p className="kp-hero-description">전국의 맛집, 카페, 축제와 관광지를 검색하거나 원하는 지역에서 직접 찾아보세요.</p>
-            <HeroSearch />
-          </article>
+          <HeroWeatherDashboard />
           <HeroDiscoveryPanel />
         </div>
       </section>
