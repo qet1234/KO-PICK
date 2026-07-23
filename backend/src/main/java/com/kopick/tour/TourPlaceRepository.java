@@ -1,5 +1,6 @@
 package com.kopick.tour;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,4 +27,13 @@ public interface TourPlaceRepository extends JpaRepository<TourPlace, Long> {
         @Param("detail") String detail,
         Pageable pageable
     );
+
+    @Query("""
+        select distinct p.sigunguCode, p.city from TourPlace p
+        where p.active = true and p.region = :region
+          and p.sigunguCode is not null and p.sigunguCode <> ''
+          and p.city is not null and p.city <> ''
+        order by p.city
+        """)
+    List<Object[]> findSubregions(@Param("region") String region);
 }
