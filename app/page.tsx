@@ -9,7 +9,17 @@ import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-naver-region.css";
 
+export const dynamic = "force-dynamic";
+
+function vercelOrigin() {
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "";
+  if (!host) return "";
+  return host.startsWith("http://") || host.startsWith("https://") ? host : `https://${host}`;
+}
+
 export default function Home() {
+  const recommendationApiOrigin = vercelOrigin();
+
   return (
     <main className="korea-pick-home">
       <header className="kp-header">
@@ -71,7 +81,7 @@ export default function Home() {
             <div className="kp-region-live-pick">
               <HeroLivePick />
             </div>
-            <NaverRegionRecommendations />
+            <NaverRegionRecommendations apiOrigin={recommendationApiOrigin} />
           </div>
         </div>
       </section>
