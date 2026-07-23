@@ -13,16 +13,26 @@ import org.springframework.util.MultiValueMap;
 @Service
 public class PlaceSearchService {
     private final TourApiService tourApi;
+    private final TourPlaceStoreService placeStore;
     private final KakaoLocalService kakaoLocal;
 
-    public PlaceSearchService(TourApiService tourApi, KakaoLocalService kakaoLocal) {
+    public PlaceSearchService(
+        TourApiService tourApi,
+        TourPlaceStoreService placeStore,
+        KakaoLocalService kakaoLocal
+    ) {
         this.tourApi = tourApi;
+        this.placeStore = placeStore;
         this.kakaoLocal = kakaoLocal;
     }
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
-        Map<String, Object> tourResult = tourApi.search(query);
-        if (Boolean.parseBoolean(first(query, "bookingOnly", "false"))
+        boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
+        Map<String, Object> tourResult = !bookingOnly && placeStore.hasData()
+            ? placeStore.search(query)
+            : tourApi.search(query);
+
+        if (bookingOnly
             || !isFranchiseCafe(query)
             || !kakaoLocal.configured()) return tourResult;
 
@@ -44,7 +54,10 @@ public class PlaceSearchService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("places", merged);
         result.put("pagination", pagination);
-        result.put("sources", List.of("TOUR_API", "KAKAO_LOCAL"));
+        result.put("sources", List.of(
+            placeStore.hasData() ? "DATABASE" : "TOUR_API",
+            "KAKAO_LOCAL"
+        ));
         return result;
     }
 
@@ -60,7 +73,10 @@ public class PlaceSearchService {
         MultiValueMap<String, String> subregionQuery = new LinkedMultiValueMap<>();
         subregionQuery.set("mode", "subregions");
         subregionQuery.set("region", region);
-        Object raw = tourApi.search(subregionQuery).get("subregions");
+        Map<String, Object> source = placeStore.hasData()
+            ? placeStore.search(subregionQuery)
+            : tourApi.search(subregionQuery);
+        Object raw = source.get("subregions");
         if (!(raw instanceof List<?> list)) return "";
 
         for (Object value : list) {
