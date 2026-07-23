@@ -17,10 +17,10 @@ export default function Home() {
           </a>
 
           <nav className="kp-navigation" aria-label="주요 메뉴">
+            <a href="/recommend">오늘 어디 갈까?</a>
             <a href="#categories">카테고리</a>
             <a href="#popular">인기 추천</a>
             <a href="#regions">지역 찾기</a>
-            <a href="#ai">AI 추천</a>
             <a href="/spaces">함께 공간</a>
             <a href="/reservations">함께 예약</a>
           </nav>
@@ -37,22 +37,24 @@ export default function Home() {
             </p>
 
             <h1>
-              설레는
+              검색 없이
               <br />
-              하루의 시작
+              오늘 갈 곳 결정
             </h1>
 
             <p className="kp-hero-description">
-              음식, 카페, 축제와 관광지까지 지역과 세부
-              종류에 맞춰 빠르게 찾아보세요.
+              누구와, 언제, 어떤 기분인지 알려주면 지금 갈 만한 장소
+              3곳을 자동으로 골라드려요.
             </p>
 
+            <a className="kp-auto-recommend-link" href="/recommend">
+              오늘 어디 갈까? →
+            </a>
             <HeroSearch />
           </article>
 
           <HeroLivePick />
         </div>
-
       </section>
 
       <section className="kp-category-section" id="categories">
@@ -60,8 +62,8 @@ export default function Home() {
           <div className="kp-section-heading">
             <div>
               <p className="kp-overline">EXPLORE</p>
-              <h2>무엇을 찾고 계신가요?</h2>
-              <p>관심 카테고리를 선택해 추천 장소를 확인하세요.</p>
+              <h2>직접 찾아보고 싶나요?</h2>
+              <p>관심 카테고리를 선택해 더 많은 장소를 확인하세요.</p>
             </div>
           </div>
 
@@ -90,22 +92,22 @@ export default function Home() {
         <div className="kp-container kp-ai-panel">
           <div>
             <p className="kp-overline kp-overline-dark">
-              AI PERSONAL CURATOR
+              AUTO PERSONAL CURATOR
             </p>
 
             <h2>
-              취향에 맞는 하루 코스를
+              현재 상황에 맞는 장소를
               <br />
-              한 번에 완성하세요
+              세 곳만 추천받으세요
             </h2>
           </div>
 
           <p>
-            지역, 예산, 인원과 분위기를 분석해 맞춤 코스를
-            추천합니다.
+            관계, 시간, 예산, 거리와 분위기를 점수화해 선택하기 쉬운
+            결과만 보여드립니다.
           </p>
 
-          <button type="button">AI 추천 시작하기 →</button>
+          <a href="/recommend">자동 추천 시작하기 →</a>
         </div>
       </section>
 
