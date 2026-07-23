@@ -16,6 +16,8 @@ type Place = {
 };
 
 type FormState = {
+  scope: string;
+  resultCount: string;
   region: string;
   relationship: string;
   when: string;
@@ -35,6 +37,8 @@ type PreferenceState = {
 };
 
 const initialForm: FormState = {
+  scope: "내 지역",
+  resultCount: "12곳",
   region: "수원 인계동",
   relationship: "커플",
   when: "오늘 저녁",
@@ -54,6 +58,8 @@ const initialPreferences: PreferenceState = {
 };
 
 const choices = {
+  scope: ["내 지역", "전국"],
+  resultCount: ["3곳", "12곳", "24곳", "48곳"],
   relationship: ["개인", "커플", "친구", "가족"],
   when: ["지금", "오늘 저녁", "주말"],
   category: ["맛집", "카페", "축제", "관광지"],
@@ -98,15 +104,16 @@ export default function RecommendPage() {
     }
   }, []);
 
+  const requestedCount = Number.parseInt(form.resultCount, 10) || 12;
   const visiblePlaces = useMemo(() => {
     if (!places.length) return [];
-    return Array.from({ length: Math.min(3, places.length) }, (_, index) => places[(offset + index) % places.length]);
-  }, [places, offset]);
+    if (requestedCount === 3) {
+      return Array.from({ length: Math.min(3, places.length) }, (_, index) => places[(offset + index) % places.length]);
+    }
+    return places.slice(0, requestedCount);
+  }, [places, offset, requestedCount]);
 
-  const profileSummary = useMemo(
-    () => Object.values(preferences).join(" · "),
-    [preferences]
-  );
+  const profileSummary = useMemo(() => Object.values(preferences).join(" · "), [preferences]);
 
   const update = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -156,6 +163,8 @@ export default function RecommendPage() {
 
   if (!profileLoaded) return null;
 
+  const scopeLabel = form.scope === "전국" ? "전국" : form.region;
+
   return (
     <main className="recommend-page">
       <header className="recommend-header">
@@ -165,13 +174,13 @@ export default function RecommendPage() {
 
       <section className="recommend-hero">
         <p className="recommend-eyebrow">KO-PICK PERSONAL CURATION</p>
-        <h1>내 취향에 맞는 오늘의 장소</h1>
-        <p>처음 한 번 성향을 설정하면, 이후에는 누구와 언제 갈지만 골라도 취향에 맞는 장소를 추천해드려요.</p>
+        <h1>내 취향에 맞는 전국 장소</h1>
+        <p>내 주변의 몇 곳만 추천받거나, 전국의 장소를 성향 적합도순으로 넓게 살펴볼 수 있어요.</p>
       </section>
 
       <nav className="recommend-steps" aria-label="추천 단계">
         <span className={step === "preferences" ? "is-active" : ""}>1. 내 성향</span>
-        <span className={step === "situation" ? "is-active" : ""}>2. 오늘 상황</span>
+        <span className={step === "situation" ? "is-active" : ""}>2. 추천 범위</span>
         <span className={step === "results" ? "is-active" : ""}>3. 추천 결과</span>
       </nav>
 
@@ -197,10 +206,22 @@ export default function RecommendPage() {
             <button type="button" onClick={() => setStep("preferences")}>성향 다시 설정</button>
           </div>
 
-          <label className="region-field">
-            <span>어디에서 찾을까요?</span>
-            <input value={form.region} onChange={(event) => update("region", event.target.value)} placeholder="예: 수원 인계동" />
-          </label>
+          <Choice label="어느 범위에서 찾을까요?" values={choices.scope} selected={form.scope} onSelect={(value) => update("scope", value)} />
+          <Choice label="몇 곳을 확인할까요?" values={choices.resultCount} selected={form.resultCount} onSelect={(value) => update("resultCount", value)} />
+
+          {form.scope === "내 지역" && (
+            <label className="region-field">
+              <span>어디에서 찾을까요?</span>
+              <input value={form.region} onChange={(event) => update("region", event.target.value)} placeholder="예: 수원 인계동" />
+            </label>
+          )}
+
+          {form.scope === "전국" && (
+            <div className="nationwide-notice">
+              <strong>전국 균형 추천</strong>
+              <p>17개 시·도를 고르게 검색한 뒤 저장된 성향과 오늘 조건에 잘 맞는 장소부터 보여드려요.</p>
+            </div>
+          )}
 
           <Choice label="누구와 가나요?" values={choices.relationship} selected={form.relationship} onSelect={(value) => update("relationship", value)} />
           <Choice label="언제 가나요?" values={choices.when} selected={form.when} onSelect={(value) => update("when", value)} />
@@ -214,7 +235,7 @@ export default function RecommendPage() {
           </div>
 
           <button className="recommend-submit" onClick={recommend} disabled={loading}>
-            {loading ? "내 취향에 맞는 장소를 찾는 중..." : "내 취향으로 장소 3곳 추천받기 →"}
+            {loading ? "전국에서 내 취향에 맞는 장소를 찾는 중..." : `${scopeLabel} 맞춤 장소 ${form.resultCount} 보기 →`}
           </button>
           {error && <p className="recommend-error">{error}</p>}
         </section>
@@ -224,20 +245,22 @@ export default function RecommendPage() {
         <section className="recommend-results">
           <div className="result-heading">
             <div>
-              <p className="recommend-eyebrow">YOUR PERSONAL TOP 3</p>
-              <h2>{form.relationship}과 {form.when}에 가기 좋은 {form.category} 3곳</h2>
-              <p className="result-profile">{profileSummary} 성향을 반영했어요.</p>
+              <p className="recommend-eyebrow">YOUR PERSONAL PICKS</p>
+              <h2>{scopeLabel}에서 {form.relationship}과 가기 좋은 {form.category} {visiblePlaces.length}곳</h2>
+              <p className="result-profile">{profileSummary} 성향을 반영해 적합도순으로 정렬했어요.</p>
             </div>
             <div className="result-controls">
               <button onClick={() => setStep("situation")}>조건 수정</button>
-              <button onClick={() => setOffset((value) => (value + 3) % places.length)}>다른 곳 추천 ↻</button>
+              {requestedCount === 3 && places.length > 3 && (
+                <button onClick={() => setOffset((value) => (value + 3) % places.length)}>다른 곳 추천 ↻</button>
+              )}
             </div>
           </div>
 
-          <div className="place-grid">
+          <div className={`place-grid ${requestedCount > 3 ? "is-list-mode" : ""}`}>
             {visiblePlaces.map((place, index) => (
               <article className={`place-card ${selected === place.id ? "is-selected" : ""}`} key={`${place.id}-${index}`}>
-                <div className="place-rank">0{index + 1}</div>
+                <div className="place-rank">{String(index + 1).padStart(2, "0")}</div>
                 <div className="place-score">취향 적합도 {place.score}%</div>
                 <h3>{place.name}</h3>
                 <p className="place-category">{place.category}</p>
@@ -245,7 +268,7 @@ export default function RecommendPage() {
                 <p className="place-reason">{place.reason}</p>
                 {place.description && <p className="place-description">{place.description}</p>}
                 <div className="place-actions">
-                  <button onClick={() => savePlace(place)}>{selected === place.id ? "저장 완료 ✓" : "여기로 결정"}</button>
+                  <button onClick={() => savePlace(place)}>{selected === place.id ? "저장 완료 ✓" : "저장하기"}</button>
                   <a href={place.mapUrl} target="_blank" rel="noreferrer">지도에서 보기</a>
                   <a href={place.reservationUrl} target="_blank" rel="noreferrer">네이버 예약 확인</a>
                 </div>
