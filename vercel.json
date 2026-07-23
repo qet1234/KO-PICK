@@ -6,6 +6,13 @@
   "env": {
     "NEXT_PUBLIC_SPRING_API_URL": "/backend"
   },
+  "redirects": [
+    {
+      "source": "/backend/oauth2/authorization/:provider",
+      "destination": "https://kopick-api.onrender.com/oauth2/authorization/:provider",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/backend/:path*",
