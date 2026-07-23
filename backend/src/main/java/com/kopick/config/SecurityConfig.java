@@ -3,9 +3,12 @@ package com.kopick.config;
 import com.kopick.auth.JwtAuthenticationFilter;
 import com.kopick.auth.OAuthLoginSuccessHandler;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -151,8 +154,18 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource(AppProperties properties) {
+        Set<String> origins = new LinkedHashSet<>();
+        if (properties.allowedOrigins() != null) {
+            properties.allowedOrigins().stream()
+                .filter(origin -> origin != null && !origin.isBlank() && !origin.contains("localhost"))
+                .map(origin -> origin.replaceAll("/+$", ""))
+                .forEach(origins::add);
+        }
+        origins.add("https://koreapick.duckdns.org");
+        origins.add("https://koreapick.vercel.app");
+
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(properties.allowedOrigins());
+        configuration.setAllowedOrigins(new ArrayList<>(origins));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-XSRF-TOKEN"));
         configuration.setExposedHeaders(List.of("Set-Cookie"));
