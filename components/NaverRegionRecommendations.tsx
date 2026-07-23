@@ -16,7 +16,7 @@ async function parseResponse(response: Response): Promise<Payload> {
   catch { throw new Error("추천 데이터를 읽지 못했습니다. 잠시 후 다시 시도해 주세요."); }
 }
 
-export default function NaverRegionRecommendations() {
+export default function NaverRegionRecommendations({ apiOrigin = "" }: { apiOrigin?: string }) {
   const [region,setRegion] = useState<(typeof regions)[number]>("서울");
   const [category,setCategory] = useState<(typeof categories)[number]>("전체");
   const [items,setItems] = useState<Item[]>([]);
@@ -31,7 +31,9 @@ export default function NaverRegionRecommendations() {
       setLoading(true); setError("");
       try {
         const qs = new URLSearchParams({region,category,t:String(Date.now())});
-        const response = await fetch(`/local-data/region-recommendations?${qs}`, {cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
+        const base = apiOrigin.replace(/\/$/, "");
+        const endpoint = `${base}/local-data/region-recommendations?${qs}`;
+        const response = await fetch(endpoint, {cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal,mode:"cors"});
         const payload = await parseResponse(response);
         if (!response.ok) throw new Error(payload.error || "추천 장소를 불러오지 못했습니다.");
         if (!payload.items?.length) throw new Error("선택한 조건의 장소를 찾지 못했습니다.");
@@ -45,7 +47,7 @@ export default function NaverRegionRecommendations() {
     }
     void load();
     return () => controller.abort();
-  },[region,category,retry]);
+  },[region,category,retry,apiOrigin]);
 
   const mapAllUrl = useMemo(() => {
     const keyword = category === "전체" ? "가볼만한 곳" : category;
