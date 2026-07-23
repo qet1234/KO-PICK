@@ -23,9 +23,7 @@ const regionCoordinates: Record<string, { latitude: number; longitude: number }>
   제주: { latitude: 33.4996, longitude: 126.5312 },
 };
 
-const nationwideRegions = Object.entries(regionCoordinates).filter(
-  ([region]) => region !== "전국",
-);
+const nationwideRegions = Object.entries(regionCoordinates).filter(([region]) => region !== "전국");
 
 function weatherLabel(code: number) {
   if (code === 0) return "맑음";
@@ -51,19 +49,36 @@ function weatherIcon(code: number) {
 }
 
 function indoorWeather(code: number, precipitationProbability = 0) {
-  return precipitationProbability >= 50 || [
-    61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99,
-  ].includes(code);
+  return precipitationProbability >= 50 || [61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99].includes(code);
 }
 
-async function fetchOpenMeteo(params: URLSearchParams) {
-  const response = await fetch(
-    `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
-    { next: { revalidate: 600 } },
-  );
-
+async function fetchJson(url: string, revalidate = 600) {
+  const response = await fetch(url, { next: { revalidate } });
   if (!response.ok) throw new Error(`Weather API ${response.status}`);
   return response.json();
+}
+
+async function resolveCoordinates(region: string, district: string) {
+  if (!district || district === "전체") {
+    return { ...regionCoordinates[region], name: region };
+  }
+
+  const query = encodeURIComponent(`${district} ${region} 대한민국`);
+  const payload = await fetchJson(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=ko&format=json&countryCode=KR`,
+    86400,
+  );
+  const results = Array.isArray(payload.results) ? payload.results : [];
+  const match = results.find((item: { name?: string; admin1?: string; admin2?: string }) =>
+    [item.name, item.admin1, item.admin2].some((value) => value?.includes(district)),
+  ) ?? results[0];
+
+  if (!match) return { ...regionCoordinates[region], name: `${region} ${district}` };
+  return {
+    latitude: Number(match.latitude),
+    longitude: Number(match.longitude),
+    name: `${region} ${district}`,
+  };
 }
 
 async function nationwideWeather() {
@@ -74,14 +89,11 @@ async function nationwideWeather() {
     forecast_days: "1",
     current: "temperature_2m,apparent_temperature,weather_code,precipitation,wind_speed_10m",
   });
-
-  const payload = await fetchOpenMeteo(params);
+  const payload = await fetchJson(`https://api.open-meteo.com/v1/forecast?${params}`);
   const locations = Array.isArray(payload) ? payload : [payload];
-
   return nationwideRegions.map(([region], index) => {
     const current = locations[index]?.current ?? {};
     const code = Number(current.weather_code ?? 0);
-
     return {
       region,
       icon: weatherIcon(code),
@@ -101,68 +113,93 @@ export async function GET(request: NextRequest) {
 
   try {
     if (scope === "all") {
-      return NextResponse.json({
-        updatedAt: new Date().toISOString(),
-        regions: await nationwideWeather(),
-      });
+      return NextResponse.json({ updatedAt: new Date().toISOString(), regions: await nationwideWeather() });
     }
 
     const region = request.nextUrl.searchParams.get("region") || "서울";
+    const district = request.nextUrl.searchParams.get("district") || "전체";
     const requestedDate = request.nextUrl.searchParams.get("date") || "";
-    const coordinates = regionCoordinates[region] ?? regionCoordinates.서울;
+    const location = await resolveCoordinates(region, district);
 
     const params = new URLSearchParams({
-      latitude: String(coordinates.latitude),
-      longitude: String(coordinates.longitude),
+      latitude: String(location.latitude),
+      longitude: String(location.longitude),
       timezone: "Asia/Seoul",
-      forecast_days: "16",
-      current: "temperature_2m,apparent_temperature,weather_code,precipitation,wind_speed_10m",
-      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+      forecast_days: "7",
+      current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m",
+      hourly: "temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m",
+      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
     });
 
-    const payload = await fetchOpenMeteo(params);
+    const payload = await fetchJson(`https://api.open-meteo.com/v1/forecast?${params}`);
     const dates: string[] = payload.daily?.time ?? [];
-    const index = requestedDate ? dates.indexOf(requestedDate) : 0;
-    const selectedIndex = index >= 0 ? index : 0;
-    const code = Number(
-      payload.daily?.weather_code?.[selectedIndex] ?? payload.current?.weather_code ?? 0,
-    );
-    const precipitation = Number(
-      payload.daily?.precipitation_probability_max?.[selectedIndex] ?? 0,
-    );
-    const max = Number(
-      payload.daily?.temperature_2m_max?.[selectedIndex] ?? payload.current?.temperature_2m ?? 0,
-    );
-    const min = Number(
-      payload.daily?.temperature_2m_min?.[selectedIndex] ?? payload.current?.temperature_2m ?? 0,
-    );
-    const indoorRecommended = indoorWeather(code, precipitation);
+    const dateIndex = requestedDate ? dates.indexOf(requestedDate) : 0;
+    const selectedIndex = dateIndex >= 0 ? dateIndex : 0;
+    const current = payload.current ?? {};
+    const currentTime = String(current.time ?? "");
+    const currentHourIndex = Math.max(0, (payload.hourly?.time ?? []).indexOf(currentTime));
+    const code = Number(payload.daily?.weather_code?.[selectedIndex] ?? current.weather_code ?? 0);
+    const precipitationProbability = Number(payload.daily?.precipitation_probability_max?.[selectedIndex] ?? 0);
+    const indoorRecommended = indoorWeather(code, precipitationProbability);
+
+    const hourly = (payload.hourly?.time ?? [])
+      .slice(currentHourIndex, currentHourIndex + 12)
+      .map((time: string, index: number) => {
+        const offset = currentHourIndex + index;
+        const hourlyCode = Number(payload.hourly?.weather_code?.[offset] ?? 0);
+        return {
+          time,
+          icon: weatherIcon(hourlyCode),
+          condition: weatherLabel(hourlyCode),
+          temperature: Math.round(Number(payload.hourly?.temperature_2m?.[offset] ?? 0)),
+          apparentTemperature: Math.round(Number(payload.hourly?.apparent_temperature?.[offset] ?? 0)),
+          precipitationProbability: Number(payload.hourly?.precipitation_probability?.[offset] ?? 0),
+          windSpeed: Math.round(Number(payload.hourly?.wind_speed_10m?.[offset] ?? 0)),
+        };
+      });
+
+    const daily = dates.map((date, index) => {
+      const dailyCode = Number(payload.daily?.weather_code?.[index] ?? 0);
+      return {
+        date,
+        icon: weatherIcon(dailyCode),
+        condition: weatherLabel(dailyCode),
+        maxTemperature: Math.round(Number(payload.daily?.temperature_2m_max?.[index] ?? 0)),
+        minTemperature: Math.round(Number(payload.daily?.temperature_2m_min?.[index] ?? 0)),
+        precipitationProbability: Number(payload.daily?.precipitation_probability_max?.[index] ?? 0),
+        sunrise: payload.daily?.sunrise?.[index] ?? null,
+        sunset: payload.daily?.sunset?.[index] ?? null,
+      };
+    });
 
     return NextResponse.json({
       region,
+      district,
+      locationName: location.name,
+      latitude: location.latitude,
+      longitude: location.longitude,
       date: dates[selectedIndex] ?? requestedDate,
       updatedAt: new Date().toISOString(),
-      icon: weatherIcon(code),
-      condition: weatherLabel(code),
-      temperature: Math.round(Number(payload.current?.temperature_2m ?? max)),
-      apparentTemperature: Math.round(
-        Number(payload.current?.apparent_temperature ?? max),
-      ),
-      maxTemperature: Math.round(max),
-      minTemperature: Math.round(min),
-      precipitationProbability: precipitation,
-      currentPrecipitation: Number(payload.current?.precipitation ?? 0),
-      windSpeed: Math.round(Number(payload.current?.wind_speed_10m ?? 0)),
+      icon: weatherIcon(Number(current.weather_code ?? code)),
+      condition: weatherLabel(Number(current.weather_code ?? code)),
+      temperature: Math.round(Number(current.temperature_2m ?? 0)),
+      apparentTemperature: Math.round(Number(current.apparent_temperature ?? 0)),
+      humidity: Math.round(Number(current.relative_humidity_2m ?? 0)),
+      currentPrecipitation: Number(current.precipitation ?? 0),
+      windSpeed: Math.round(Number(current.wind_speed_10m ?? 0)),
+      windDirection: Math.round(Number(current.wind_direction_10m ?? 0)),
+      maxTemperature: Math.round(Number(payload.daily?.temperature_2m_max?.[selectedIndex] ?? 0)),
+      minTemperature: Math.round(Number(payload.daily?.temperature_2m_min?.[selectedIndex] ?? 0)),
+      precipitationProbability,
       indoorRecommended,
       recommendation: indoorRecommended
         ? "비나 눈 가능성이 있어 실내 카페·전시·맛집을 추천해요."
         : "야외 관광지·축제·산책 장소를 둘러보기 좋은 날씨예요.",
+      hourly,
+      daily,
     });
   } catch (error) {
     console.error("weather forecast failed", error);
-    return NextResponse.json(
-      { error: "날씨 정보를 불러오지 못했습니다." },
-      { status: 502 },
-    );
+    return NextResponse.json({ error: "날씨 정보를 불러오지 못했습니다." }, { status: 502 });
   }
 }
