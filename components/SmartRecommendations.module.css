@@ -1,0 +1,383 @@
+.section {
+  padding: 96px 0;
+  color: #fff;
+  background:
+    radial-gradient(circle at 86% 8%, rgba(202, 255, 44, 0.17), transparent 26%),
+    #101010;
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: 0.78fr 1.22fr;
+  gap: 56px;
+}
+
+.intro {
+  align-self: start;
+  position: sticky;
+  top: 105px;
+}
+
+.intro > p {
+  margin: 0;
+  color: #caff2c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.17em;
+}
+
+.intro h2 {
+  margin: 20px 0 24px;
+  font-size: clamp(44px, 5vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.075em;
+}
+
+.intro > span {
+  max-width: 390px;
+  display: block;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.controls {
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+}
+
+.choiceGroup {
+  margin: 0 0 23px;
+  padding: 0;
+  border: 0;
+}
+
+.choiceGroup legend {
+  margin-bottom: 11px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.choiceGroup > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choiceGroup button {
+  min-height: 39px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: #fff;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 900;
+  transition:
+    transform 170ms ease,
+    color 170ms ease,
+    border-color 170ms ease,
+    background-color 170ms ease;
+}
+
+.choiceGroup button:hover {
+  border-color: #caff2c;
+  transform: translateY(-2px);
+}
+
+.choiceGroup button:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.choiceGroup button.active {
+  border-color: #caff2c;
+  color: #101010;
+  background: #caff2c;
+}
+
+.recommendButton {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: 15px;
+  color: #fff;
+  background: #ff3b36;
+  box-shadow: 0 12px 30px rgba(255, 59, 54, 0.25);
+  font-size: 13px;
+  font-weight: 900;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.recommendButton:hover:not(:disabled) {
+  box-shadow: 0 17px 36px rgba(255, 59, 54, 0.34);
+  transform: translateY(-3px);
+}
+
+.recommendButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.recommendButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.error {
+  margin: 13px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 126, 112, 0.32);
+  border-radius: 12px;
+  color: #ffd7d2;
+  background: rgba(255, 59, 54, 0.12);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.results {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  animation: reveal 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.resultHeader {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.resultHeader small,
+.resultHeader strong {
+  display: block;
+}
+
+.resultHeader small {
+  color: #caff2c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.resultHeader strong {
+  margin-top: 8px;
+  font-size: 21px;
+  letter-spacing: -0.035em;
+}
+
+.resultHeader > button {
+  min-height: 39px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #fff;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.resultHeader > button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 20px;
+  color: #101010;
+  background: #f7f7f4;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 220ms ease;
+}
+
+.card:hover {
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.34);
+  transform: translateY(-6px);
+}
+
+.image {
+  height: 176px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background:
+    radial-gradient(circle at 72% 20%, rgba(255, 255, 255, 0.35), transparent 27%),
+    linear-gradient(145deg, #ff6e65, #ff3b36);
+  background-position: center;
+  background-size: cover;
+}
+
+.image::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.25));
+  content: "";
+}
+
+.image > span {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  z-index: 1;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(16, 16, 16, 0.68);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.image > strong {
+  z-index: 1;
+  color: #fff;
+  font-size: 58px;
+  text-shadow: 0 7px 24px rgba(0, 0, 0, 0.2);
+}
+
+.cardCopy {
+  min-height: 163px;
+  padding: 19px 18px 14px;
+}
+
+.cardCopy small {
+  color: #ff3b36;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cardCopy h3 {
+  margin: 8px 0 9px;
+  overflow: hidden;
+  font-size: 20px;
+  letter-spacing: -0.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardCopy p {
+  min-height: 34px;
+  margin: 0;
+  overflow: hidden;
+  color: #6f6f6b;
+  font-size: 10px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cardCopy > span {
+  margin-top: 12px;
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.cardActions {
+  padding: 0 14px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.cardActions button {
+  min-height: 39px;
+  border: 1px solid #101010;
+  border-radius: 999px;
+  color: #101010;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cardActions button:first-child {
+  color: #fff;
+  background: #101010;
+}
+
+.cardActions button:hover {
+  transform: translateY(-2px);
+}
+
+.exploreLink {
+  width: fit-content;
+  margin: 22px 0 0 auto;
+  display: block;
+  color: #caff2c !important;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .intro {
+    position: static;
+  }
+
+  .results {
+    grid-column: auto;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .image {
+    height: 220px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 72px 0;
+  }
+
+  .panel {
+    gap: 30px;
+  }
+
+  .controls {
+    padding: 22px 17px;
+  }
+
+  .resultHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .resultHeader > button {
+    width: 100%;
+  }
+
+  .cardActions {
+    grid-template-columns: 1fr;
+  }
+}
