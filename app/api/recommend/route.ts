@@ -134,75 +134,117 @@ function recommendationReason(score: number, params: URLSearchParams) {
   return "현재 선택한 범위와 상황을 고려했을 때 부담 없이 선택하기 좋아요.";
 }
 
-export async function GET(request: NextRequest) {
-  const clientId = process.env.NAVER_CLIENT_ID;
-  const clientSecret = process.env.NAVER_CLIENT_SECRET;
+async function fetchNaverItems(query: string, clientId: string, clientSecret: string): Promise<NaverItem[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6500);
 
-  if (!clientId || !clientSecret) {
+  try {
+    const url = new URL("https://openapi.naver.com/v1/search/local.json");
+    url.searchParams.set("query", query);
+    url.searchParams.set("display", "5");
+    url.searchParams.set("sort", "comment");
+
+    const response = await fetch(url, {
+      headers: {
+        "X-Naver-Client-Id": clientId,
+        "X-Naver-Client-Secret": clientSecret,
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return [];
+    const data = (await response.json()) as { items?: NaverItem[] };
+    return Array.isArray(data.items) ? data.items : [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchInBatches(queries: string[], clientId: string, clientSecret: string) {
+  const results: NaverItem[][] = [];
+  const batchSize = 4;
+
+  for (let index = 0; index < queries.length; index += batchSize) {
+    const batch = queries.slice(index, index + batchSize);
+    const settled = await Promise.allSettled(
+      batch.map((query) => fetchNaverItems(query, clientId, clientSecret))
+    );
+
+    for (const result of settled) {
+      results.push(result.status === "fulfilled" ? result.value : []);
+    }
+  }
+
+  return results;
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const clientId = process.env.NAVER_CLIENT_ID;
+    const clientSecret = process.env.NAVER_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return NextResponse.json(
+        { error: "네이버 장소 검색 설정이 완료되지 않았습니다." },
+        { status: 503 }
+      );
+    }
+
+    const params = request.nextUrl.searchParams;
+    const requestedCount = Math.min(48, Math.max(3, Number.parseInt(params.get("resultCount") || "12", 10) || 12));
+    const queries = buildQueries(params);
+    const responses = await fetchInBatches(queries, clientId, clientSecret);
+
+    const seen = new Set<string>();
+    const candidates: Candidate[] = [];
+    let index = 0;
+
+    for (const item of responses.flat()) {
+      const name = stripHtml(item.title);
+      const address = item.roadAddress || item.address;
+      const key = `${name}-${address}`;
+      if (!name || !address || seen.has(key)) continue;
+      seen.add(key);
+
+      const score = scoreItem(item, index++, params);
+      const mapQuery = encodeURIComponent(`${name} ${address}`);
+
+      candidates.push({
+        id: key,
+        name,
+        category: item.category || params.get("category") || "장소",
+        address,
+        description: stripHtml(item.description),
+        mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
+        reservationUrl: `https://map.naver.com/p/search/${mapQuery}`,
+        score,
+        reason: recommendationReason(score, params),
+      });
+    }
+
+    candidates.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ko"));
+
+    if (candidates.length === 0) {
+      return NextResponse.json(
+        { error: "현재 조건에서 장소를 찾지 못했습니다. 카테고리나 성향을 조금 바꿔보세요." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      scope: params.get("scope") || "내 지역",
+      totalCount: candidates.length,
+      items: candidates.slice(0, requestedCount),
+      partial: responses.some((items) => items.length === 0),
+    });
+  } catch (error) {
+    console.error("recommend API error", error);
     return NextResponse.json(
-      { error: "NAVER_CLIENT_ID 또는 NAVER_CLIENT_SECRET이 설정되지 않았습니다." },
+      { error: "추천 장소를 불러오는 중 일시적인 오류가 발생했습니다. 다시 시도해주세요." },
       { status: 500 }
     );
   }
-
-  const params = request.nextUrl.searchParams;
-  const requestedCount = Math.min(48, Math.max(3, Number.parseInt(params.get("resultCount") || "12", 10) || 12));
-  const queries = buildQueries(params);
-  const display = params.get("scope") === "전국" ? "5" : "5";
-
-  const responses = await Promise.all(
-    queries.map(async (query) => {
-      const url = new URL("https://openapi.naver.com/v1/search/local.json");
-      url.searchParams.set("query", query);
-      url.searchParams.set("display", display);
-      url.searchParams.set("sort", "comment");
-
-      const response = await fetch(url, {
-        headers: {
-          "X-Naver-Client-Id": clientId,
-          "X-Naver-Client-Secret": clientSecret,
-        },
-        cache: "no-store",
-      });
-
-      if (!response.ok) return [] as NaverItem[];
-      const data = (await response.json()) as { items?: NaverItem[] };
-      return data.items || [];
-    })
-  );
-
-  const seen = new Set<string>();
-  const candidates: Candidate[] = [];
-  let index = 0;
-
-  for (const item of responses.flat()) {
-    const name = stripHtml(item.title);
-    const address = item.roadAddress || item.address;
-    const key = `${name}-${address}`;
-    if (!name || !address || seen.has(key)) continue;
-    seen.add(key);
-
-    const score = scoreItem(item, index++, params);
-    const mapQuery = encodeURIComponent(`${name} ${address}`);
-
-    candidates.push({
-      id: key,
-      name,
-      category: item.category || params.get("category") || "장소",
-      address,
-      description: stripHtml(item.description),
-      mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
-      reservationUrl: `https://map.naver.com/p/search/${mapQuery}`,
-      score,
-      reason: recommendationReason(score, params),
-    });
-  }
-
-  candidates.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ko"));
-  return NextResponse.json({
-    scope: params.get("scope") || "내 지역",
-    queries,
-    totalCount: candidates.length,
-    items: candidates.slice(0, requestedCount),
-  });
 }
