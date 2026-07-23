@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class OAuthLoginSuccessHandler implements AuthenticationSuccessHandler {
+    private static final String PRODUCTION_FRONTEND = "https://koreapick.duckdns.org";
+
     private final UserService users;
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
@@ -51,19 +53,23 @@ public class OAuthLoginSuccessHandler implements AuthenticationSuccessHandler {
         RefreshTokenService.IssuedRefreshToken refresh = refreshTokens.issue(user);
         String accessToken = jwt.issueAccessToken(user);
 
-        // The frontend and API currently use different registrable domains. Mobile Safari
-        // blocks the API session cookie in that third-party context, so hand off bearer
-        // credentials in the URL fragment. Fragments are not sent in HTTP requests and the
-        // frontend removes them immediately after storing the tokens in sessionStorage.
         String fragment = "access_token=" + encode(accessToken)
             + "&refresh_token=" + encode(refresh.raw())
             + "&expires_in=" + jwt.accessExpiresInSeconds();
-        response.sendRedirect(properties.frontendUrl() + "/?login=success#" + fragment);
+        response.sendRedirect(frontendUrl() + "/?login=success#" + fragment);
     }
 
     public void onFailure(HttpServletResponse response, Exception error) throws IOException {
         String message = encode("소셜 로그인에 실패했습니다.");
-        response.sendRedirect(properties.frontendUrl() + "/login?auth_error=" + message);
+        response.sendRedirect(frontendUrl() + "/login?auth_error=" + message);
+    }
+
+    private String frontendUrl() {
+        String configured = properties.frontendUrl();
+        if (configured == null || configured.isBlank() || configured.contains("localhost")) {
+            return PRODUCTION_FRONTEND;
+        }
+        return configured.replaceAll("/+$", "");
     }
 
     private static String encode(String value) {
