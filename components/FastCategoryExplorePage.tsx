@@ -8,6 +8,8 @@ type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
 interface FastCategoryExplorePageProps {
   initialCategory: CategoryValue;
+  initialDetail?: string;
+  journey?: string;
 }
 
 type CachedResponse = {
@@ -50,6 +52,8 @@ function responseFromCache(cached: CachedResponse) {
 
 export default function FastCategoryExplorePage({
   initialCategory,
+  initialDetail = "전체",
+  journey = "",
 }: FastCategoryExplorePageProps) {
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
@@ -129,5 +133,35 @@ export default function FastCategoryExplorePage({
     };
   }, []);
 
-  return <CategoryExplorePage initialCategory={initialCategory} />;
+  useEffect(() => {
+    if (!initialDetail || initialDetail === "전체") return;
+
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      const buttons = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(
+          ".kp-explore-detail-buttons button",
+        ),
+      );
+      const target = buttons.find(
+        (button) => button.textContent?.trim() === initialDetail,
+      );
+
+      if (target) {
+        target.click();
+        window.clearInterval(timer);
+      } else if (attempts >= 20) {
+        window.clearInterval(timer);
+      }
+    }, 100);
+
+    return () => window.clearInterval(timer);
+  }, [initialDetail, initialCategory]);
+
+  return (
+    <div data-journey={journey || undefined}>
+      <CategoryExplorePage initialCategory={initialCategory} />
+    </div>
+  );
 }
