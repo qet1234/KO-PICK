@@ -26,12 +26,38 @@ type Candidate = {
 
 const stripHtml = (value = "") => value.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&");
 
+function preferenceKeywords(params: URLSearchParams) {
+  const values = [
+    params.get("pace"),
+    params.get("crowd"),
+    params.get("discovery"),
+    params.get("activity"),
+    params.get("foodStyle"),
+  ].filter(Boolean);
+
+  const map: Record<string, string> = {
+    "여유롭게": "여유로운",
+    "알차게": "볼거리 많은",
+    "한적한 곳": "조용한 한적한",
+    "사람 많은 곳": "핫플 인기",
+    "검증된 인기 장소": "인기 유명",
+    "새로운 숨은 장소": "숨은 명소 이색",
+    "휴식 중심": "편안한 휴식",
+    "체험 중심": "체험 액티비티",
+    "익숙한 취향": "대표 메뉴",
+    "새로운 맛 도전": "이색 메뉴",
+  };
+
+  return values.map((value) => map[value as string] || value).join(" ");
+}
+
 function buildQueries(params: URLSearchParams) {
   const region = params.get("region") || "서울";
   const relationship = params.get("relationship") || "개인";
   const category = params.get("category") || "카페";
   const mood = params.get("mood") || "조용한";
   const indoor = params.get("indoor") === "실내" ? "실내" : "";
+  const preference = preferenceKeywords(params);
 
   const relationshipKeyword: Record<string, string> = {
     개인: "혼자 가기 좋은",
@@ -41,8 +67,8 @@ function buildQueries(params: URLSearchParams) {
   };
 
   return [
-    `${region} ${relationshipKeyword[relationship] || ""} ${mood} ${indoor} ${category}`.trim(),
-    `${region} ${mood} ${category}`.trim(),
+    `${region} ${relationshipKeyword[relationship] || ""} ${mood} ${indoor} ${preference} ${category}`.trim(),
+    `${region} ${preference} ${mood} ${category}`.trim(),
     `${region} 인기 ${category}`.trim(),
   ];
 }
@@ -53,7 +79,7 @@ function scoreItem(item: NaverItem, index: number, params: URLSearchParams) {
   const mood = params.get("mood") || "조용한";
   const indoor = params.get("indoor") || "실내";
   const category = params.get("category") || "카페";
-  let score = 100 - index * 4;
+  let score = 76 - index * 2;
 
   const relationTerms: Record<string, string[]> = {
     개인: ["혼밥", "혼자", "조용"],
@@ -62,12 +88,38 @@ function scoreItem(item: NaverItem, index: number, params: URLSearchParams) {
     가족: ["가족", "아이", "공원"],
   };
 
-  if (text.includes(category)) score += 18;
-  if (text.includes(mood.replace("한", ""))) score += 12;
-  if (indoor === "실내" && /(카페|식당|박물관|전시|쇼핑)/.test(text)) score += 8;
-  if ((relationTerms[relationship] || []).some((term) => text.includes(term))) score += 15;
+  const preferenceTerms: Record<string, string[]> = {
+    "여유롭게": ["여유", "산책", "정원", "휴식"],
+    "알차게": ["체험", "복합", "테마", "볼거리"],
+    "한적한 곳": ["조용", "한적", "숨은", "정원"],
+    "사람 많은 곳": ["핫플", "인기", "유명", "대표"],
+    "검증된 인기 장소": ["인기", "유명", "대표", "명소"],
+    "새로운 숨은 장소": ["이색", "숨은", "신상", "독특"],
+    "휴식 중심": ["휴식", "카페", "공원", "산책"],
+    "체험 중심": ["체험", "액티비티", "전시", "축제"],
+    "익숙한 취향": ["대표", "전통", "한식", "유명"],
+    "새로운 맛 도전": ["이색", "퓨전", "세계", "신메뉴"],
+  };
 
-  return Math.min(100, score);
+  if (text.includes(category)) score += 8;
+  if (text.includes(mood.replace("한", ""))) score += 6;
+  if (indoor === "실내" && /(카페|식당|박물관|전시|쇼핑)/.test(text)) score += 5;
+  if ((relationTerms[relationship] || []).some((term) => text.includes(term))) score += 6;
+
+  for (const key of ["pace", "crowd", "discovery", "activity", "foodStyle"]) {
+    const selected = params.get(key) || "";
+    if ((preferenceTerms[selected] || []).some((term) => text.includes(term))) score += 3;
+  }
+
+  return Math.max(65, Math.min(100, score));
+}
+
+function recommendationReason(score: number, params: URLSearchParams) {
+  const discovery = params.get("discovery") || "검증된 인기 장소";
+  const crowd = params.get("crowd") || "한적한 곳";
+  if (score >= 92) return `${crowd}과 ${discovery} 성향에 가장 잘 맞는 장소예요.`;
+  if (score >= 84) return "저장한 취향과 오늘의 분위기가 고르게 잘 맞아요.";
+  return "현재 위치와 상황을 고려했을 때 부담 없이 선택하기 좋아요.";
 }
 
 export async function GET(request: NextRequest) {
@@ -116,7 +168,6 @@ export async function GET(request: NextRequest) {
 
     const score = scoreItem(item, index++, request.nextUrl.searchParams);
     const mapQuery = encodeURIComponent(`${name} ${address}`);
-    const reason = score >= 90 ? "선택한 상황과 분위기에 가장 잘 맞아요." : score >= 80 ? "거리와 목적 조건이 잘 맞는 장소예요." : "현재 조건에서 균형 있게 추천되는 장소예요.";
 
     candidates.push({
       id: key,
@@ -127,7 +178,7 @@ export async function GET(request: NextRequest) {
       mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
       reservationUrl: `https://map.naver.com/p/search/${mapQuery}`,
       score,
-      reason,
+      reason: recommendationReason(score, request.nextUrl.searchParams),
     });
   }
 
