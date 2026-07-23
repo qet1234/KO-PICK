@@ -2,15 +2,15 @@ const relationshipJourneys = [
   {
     label: "혼자",
     title: "내 취향대로 가볍게",
-    description: "혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소를 찾아보세요.",
-    href: "/explore?category=카페&detail=조용한카페&journey=혼자",
+    description: "혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소만 모아보세요.",
+    href: "/explore?category=전체&journey=혼자",
     icon: "01",
   },
   {
     label: "커플",
     title: "데이트 장소 찾기",
-    description: "분위기 좋은 맛집부터 산책·전시·카페까지 함께 찾아보세요.",
-    href: "/explore?category=카페&detail=감성카페&journey=커플",
+    description: "카페, 데이트 관광지, 축제와 음식 장소를 한 지도에서 찾아보세요.",
+    href: "/explore?category=전체&journey=커플",
     icon: "02",
   },
   {
