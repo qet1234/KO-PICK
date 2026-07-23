@@ -2,8 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm ci",
-  "buildCommand": "NEXT_PUBLIC_SPRING_API_URL=https://kopick-api.onrender.com npm run build",
+  "buildCommand": "NEXT_PUBLIC_SPRING_API_URL=/backend npm run build",
   "env": {
-    "NEXT_PUBLIC_SPRING_API_URL": "https://kopick-api.onrender.com"
-  }
+    "NEXT_PUBLIC_SPRING_API_URL": "/backend"
+  },
+  "rewrites": [
+    {
+      "source": "/backend/:path*",
+      "destination": "https://kopick-api.onrender.com/:path*"
+    }
+  ]
 }
