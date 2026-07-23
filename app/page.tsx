@@ -9,6 +9,7 @@ import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
 import "./home-catch-search.css";
+import "./home-clarity.css";
 
 export const dynamic = "force-dynamic";
 
