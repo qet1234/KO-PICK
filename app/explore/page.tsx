@@ -20,16 +20,20 @@ const categoryAliases: Record<string, AllowedCategory> = {
 interface ExplorePageProps {
   searchParams: Promise<{
     category?: string | string[];
+    detail?: string | string[];
+    journey?: string | string[];
   }>;
+}
+
+function firstValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export default async function ExplorePage({
   searchParams,
 }: ExplorePageProps) {
   const params = await searchParams;
-  const rawCategory = Array.isArray(params.category)
-    ? params.category[0]
-    : params.category;
+  const rawCategory = firstValue(params.category);
   const normalizedCategory = rawCategory
     ? categoryAliases[rawCategory] ?? rawCategory
     : "전체";
@@ -40,5 +44,11 @@ export default async function ExplorePage({
     ? (normalizedCategory as AllowedCategory)
     : "전체";
 
-  return <FastCategoryExplorePage initialCategory={initialCategory} />;
+  return (
+    <FastCategoryExplorePage
+      initialCategory={initialCategory}
+      initialDetail={firstValue(params.detail) ?? "전체"}
+      journey={firstValue(params.journey) ?? ""}
+    />
+  );
 }
