@@ -1,4 +1,4 @@
-# Deployment sync: deploy TourAPI database persistence
+# Deployment sync: nationwide preference recommendations
 services:
   - type: web
     name: kopick-api
