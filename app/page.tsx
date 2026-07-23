@@ -16,7 +16,7 @@ export default function Home() {
         <div className="kp-container kp-header-inner">
           <a className="kp-brand" href="#top"><span className="kp-brand-mark">K</span><span>코리아픽</span></a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
-            <a href="/recommend">오늘 어디 갈까?</a><a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#regions">지역 찾기</a><a href="/spaces">함께 공간</a><a href="/reservations">함께 예약</a>
+            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#regions">지역 찾기</a><a href="/spaces">함께 공간</a><a href="/reservations">함께 예약</a>
           </nav>
           <AuthHeader />
         </div>
@@ -27,8 +27,7 @@ export default function Home() {
           <article className="kp-hero-main">
             <p className="kp-overline kp-overline-light">KOREA PICK CURATION</p>
             <h1>검색 없이<br />오늘 갈 곳 결정</h1>
-            <p className="kp-hero-description">누구와, 언제, 어떤 기분인지 알려주면 이용자 성향에 맞는 장소를 자동으로 골라드려요.</p>
-            <a className="kp-auto-recommend-link" href="/recommend">자동 추천 시작하기 →</a>
+            <p className="kp-hero-description">전국의 맛집, 카페, 축제와 관광지를 검색하거나 원하는 지역에서 직접 찾아보세요.</p>
             <HeroSearch />
           </article>
         </div>
