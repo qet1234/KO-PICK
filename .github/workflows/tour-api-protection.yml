@@ -1,0 +1,39 @@
+name: TourAPI Protection
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  protect-tour-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify protected TourAPI files
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            "backend/src/main/java/com/kopick/tour/TourApiService.java"
+            "backend/src/main/java/com/kopick/tour/PlaceSearchService.java"
+            "backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java"
+            "components/CategoryExplorePage.tsx"
+          )
+          for file in "${required[@]}"; do
+            test -s "$file" || { echo "Protected TourAPI file missing or empty: $file"; exit 1; }
+          done
+
+      - name: Verify canonical TourAPI source rule
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'public boolean hasData()' backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java
+          grep -A2 'public boolean hasData()' backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java | grep -q 'return false;'
+          grep -q 'tourApi.search(query)' backend/src/main/java/com/kopick/tour/PlaceSearchService.java
+          grep -q '/api/public/tour/places' components/CategoryExplorePage.tsx
+
+      - name: Build backend
+        working-directory: backend
+        run: ./mvnw -q -DskipTests package
