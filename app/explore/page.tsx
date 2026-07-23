@@ -1,5 +1,6 @@
 import FastCategoryExplorePage from "@/components/FastCategoryExplorePage";
 import "./explore.css";
+import "./journey-explore.css";
 
 const allowedCategories = [
   "전체",
