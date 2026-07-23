@@ -8,6 +8,7 @@ import "./home.css";
 import "./home-recommend.css";
 import "./home-navigation.css";
 import "./home-discovery.css";
+import "./home-catch-search.css";
 
 export const dynamic = "force-dynamic";
 
