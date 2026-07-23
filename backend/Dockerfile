@@ -3,6 +3,8 @@ WORKDIR /workspace
 COPY pom.xml .
 RUN mvn -q -DskipTests dependency:go-offline
 COPY src src
+COPY build-tools build-tools
+RUN java build-tools/TourApiBuildPatch.java
 RUN mvn -q clean package
 
 FROM eclipse-temurin:17-jre
