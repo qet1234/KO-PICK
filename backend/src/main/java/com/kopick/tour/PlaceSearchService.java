@@ -32,6 +32,11 @@ public class PlaceSearchService {
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
         boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
+
+        if (!bookingOnly && isJourneySearch(query)) {
+            return journeySearch(query);
+        }
+
         Map<String, Object> tourResult;
 
         if (bookingOnly) {
@@ -64,6 +69,127 @@ public class PlaceSearchService {
         result.put("pagination", pagination);
         result.put("sources", List.of(sourceName(tourResult), "KAKAO_LOCAL"));
         return result;
+    }
+
+    private Map<String, Object> journeySearch(MultiValueMap<String, String> query) {
+        int page = Math.min(positive(first(query, "page", "1"), 1), 3);
+        int pageSize = Math.min(positive(first(query, "pageSize", "12"), 12), 24);
+        String region = first(query, "region", "전국");
+        String city = resolveCity(region, first(query, "sigunguCode", ""));
+        String journey = first(query, "journey", "");
+        String selectedType = first(query, "journeyType", "전체");
+
+        List<JourneyPreset> presets = journeyPresets(journey).stream()
+            .filter(preset -> "전체".equals(selectedType) || preset.label().equals(selectedType))
+            .toList();
+
+        if (presets.isEmpty()) {
+            return emptyJourneyResult(page, pageSize, journey, selectedType);
+        }
+
+        int perPresetLimit = "전체".equals(selectedType)
+            ? Math.max(3, (int) Math.ceil((double) pageSize / presets.size()))
+            : pageSize;
+        List<Map<String, Object>> merged = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (JourneyPreset preset : presets) {
+            List<Map<String, Object>> found = kakaoLocal.configured()
+                ? kakaoLocal.searchPlaces(
+                    region,
+                    city,
+                    preset.category(),
+                    preset.keyword(),
+                    page,
+                    perPresetLimit
+                )
+                : fallbackJourneyPlaces(query, preset, page, perPresetLimit);
+
+            for (Map<String, Object> place : found) {
+                Map<String, Object> enriched = new LinkedHashMap<>(place);
+                enriched.put("category", preset.category());
+                enriched.put("detailCategory", preset.label());
+                enriched.put("journey", journey);
+                add(enriched, merged, seen, pageSize);
+            }
+        }
+
+        Map<String, Object> pagination = new LinkedHashMap<>();
+        pagination.put("pageNo", page);
+        pagination.put("numOfRows", pageSize);
+        pagination.put("totalCount", merged.size());
+        pagination.put("totalPages", merged.isEmpty() ? 1 : 3);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", merged);
+        result.put("pagination", pagination);
+        result.put("source", kakaoLocal.configured() ? "KAKAO_LOCAL_JOURNEY" : "TOUR_FALLBACK_JOURNEY");
+        result.put("journey", journey);
+        result.put("journeyType", selectedType);
+        result.put("journeyTypes", presets.stream().map(JourneyPreset::label).toList());
+        return result;
+    }
+
+    private List<Map<String, Object>> fallbackJourneyPlaces(
+        MultiValueMap<String, String> original,
+        JourneyPreset preset,
+        int page,
+        int pageSize
+    ) {
+        MultiValueMap<String, String> presetQuery = new LinkedMultiValueMap<>();
+        presetQuery.set("page", String.valueOf(page));
+        presetQuery.set("pageSize", String.valueOf(pageSize));
+        presetQuery.set("region", first(original, "region", "전국"));
+        presetQuery.set("category", preset.category());
+        presetQuery.set("detailType", preset.fallbackDetail());
+        String sigunguCode = first(original, "sigunguCode", "");
+        if (!sigunguCode.isBlank()) presetQuery.set("sigunguCode", sigunguCode);
+        return places(searchWithFallbacks(presetQuery));
+    }
+
+    private Map<String, Object> emptyJourneyResult(
+        int page,
+        int pageSize,
+        String journey,
+        String selectedType
+    ) {
+        Map<String, Object> pagination = new LinkedHashMap<>();
+        pagination.put("pageNo", page);
+        pagination.put("numOfRows", pageSize);
+        pagination.put("totalCount", 0);
+        pagination.put("totalPages", 1);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", List.of());
+        result.put("pagination", pagination);
+        result.put("source", "EMPTY_JOURNEY");
+        result.put("journey", journey);
+        result.put("journeyType", selectedType);
+        return result;
+    }
+
+    private List<JourneyPreset> journeyPresets(String journey) {
+        if ("혼자".equals(journey)) {
+            return List.of(
+                new JourneyPreset("혼밥", "음식", "혼밥", "간편식"),
+                new JourneyPreset("조용한 카페", "카페", "조용한 카페", "조용한카페"),
+                new JourneyPreset("혼자 둘러보기", "관광지", "혼자 가기 좋은 관광지", "공원")
+            );
+        }
+        if ("커플".equals(journey)) {
+            return List.of(
+                new JourneyPreset("카페", "카페", "데이트 카페", "감성카페"),
+                new JourneyPreset("데이트 관광지", "관광지", "데이트 명소", "공원"),
+                new JourneyPreset("축제", "축제", "데이트 축제", "전체"),
+                new JourneyPreset("음식", "음식", "데이트 맛집", "전체")
+            );
+        }
+        return List.of();
+    }
+
+    private boolean isJourneySearch(MultiValueMap<String, String> query) {
+        String journey = first(query, "journey", "");
+        return "혼자".equals(journey) || "커플".equals(journey);
     }
 
     private Map<String, Object> searchWithFallbacks(MultiValueMap<String, String> query) {
@@ -221,4 +347,11 @@ public class PlaceSearchService {
     private String normalize(String value) {
         return value == null ? "" : value.replaceAll("[^0-9A-Za-z가-힣]", "").toLowerCase();
     }
+
+    private record JourneyPreset(
+        String label,
+        String category,
+        String keyword,
+        String fallbackDetail
+    ) {}
 }
