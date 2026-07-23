@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
       latitude: String(location.latitude),
       longitude: String(location.longitude),
       timezone: "Asia/Seoul",
-      forecast_days: "7",
+      forecast_days: "14",
       current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,precipitation,wind_speed_10m,wind_direction_10m",
       hourly: "temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m",
       daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
