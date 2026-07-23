@@ -11,14 +11,12 @@ import "./home-naver-region.css";
 
 export const dynamic = "force-dynamic";
 
-function vercelOrigin() {
-  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || "";
-  if (!host) return "";
-  return host.startsWith("http://") || host.startsWith("https://") ? host : `https://${host}`;
-}
+type HomeSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-export default function Home() {
-  const recommendationApiOrigin = vercelOrigin();
+export default async function Home({ searchParams }: { searchParams: HomeSearchParams }) {
+  const params = await searchParams;
+  const region = typeof params.region === "string" ? params.region : "서울";
+  const category = typeof params.category === "string" ? params.category : "전체";
 
   return (
     <main className="korea-pick-home">
@@ -46,53 +44,31 @@ export default function Home() {
 
       <section className="kp-category-section" id="categories">
         <div className="kp-container">
-          <div className="kp-section-heading">
-            <div>
-              <p className="kp-overline">WHAT TO FIND</p>
-              <h2>무엇을 찾고 있나요?</h2>
-              <p>맛집, 카페, 축제와 관광지 중 원하는 장소 종류를 먼저 선택해 보세요.</p>
-            </div>
-          </div>
+          <div className="kp-section-heading"><div><p className="kp-overline">WHAT TO FIND</p><h2>무엇을 찾고 있나요?</h2><p>맛집, 카페, 축제와 관광지 중 원하는 장소 종류를 먼저 선택해 보세요.</p></div></div>
           <CategoryCards />
         </div>
       </section>
 
       <section className="kp-popular-section" id="popular">
         <div className="kp-container">
-          <div className="kp-popular-heading">
-            <div>
-              <h2 className="kp-popular-title">지금 인기 있는 추천<span className="kp-popular-star" aria-hidden="true">★</span></h2>
-              <p>조회·상세보기·지도 이동·찜 활동을 반영해 지금 관심이 높은 장소를 보여드립니다.</p>
-            </div>
-          </div>
+          <div className="kp-popular-heading"><div><h2 className="kp-popular-title">지금 인기 있는 추천<span className="kp-popular-star" aria-hidden="true">★</span></h2><p>조회·상세보기·지도 이동·찜 활동을 반영해 지금 관심이 높은 장소를 보여드립니다.</p></div></div>
           <LiveRecommendations />
         </div>
       </section>
 
       <section className="kp-region-live-section" id="regions">
         <div className="kp-container">
-          <div className="kp-region-live-heading">
-            <p className="kp-overline">WHERE TO FIND</p>
-            <h2>원하는 지역의<br />추천 장소를 바로 확인하세요.</h2>
-            <p>실시간 오늘의 픽과 네이버 지역 검색 기반 추천 리스트를 한 화면에서 확인할 수 있습니다.</p>
-          </div>
-
+          <div className="kp-region-live-heading"><p className="kp-overline">WHERE TO FIND</p><h2>원하는 지역의<br />추천 장소를 바로 확인하세요.</h2><p>실시간 오늘의 픽과 네이버 지역 검색 기반 추천 리스트를 한 화면에서 확인할 수 있습니다.</p></div>
           <div className="kp-region-live-grid">
-            <div className="kp-region-live-pick">
-              <HeroLivePick />
-            </div>
-            <NaverRegionRecommendations apiOrigin={recommendationApiOrigin} />
+            <div className="kp-region-live-pick"><HeroLivePick /></div>
+            <NaverRegionRecommendations region={region} category={category} />
           </div>
         </div>
       </section>
 
       <footer className="kp-footer" id="privacy">
         <div className="kp-container kp-privacy-panel">
-          <div className="kp-privacy-heading">
-            <p className="kp-overline kp-overline-light">PRIVACY &amp; SAFETY</p>
-            <h2>개인정보를 소중하게 보호합니다.</h2>
-            <p>서비스 제공에 필요한 최소한의 정보만 처리하고, 이용 목적이 끝난 정보는 안전하게 삭제합니다.</p>
-          </div>
+          <div className="kp-privacy-heading"><p className="kp-overline kp-overline-light">PRIVACY &amp; SAFETY</p><h2>개인정보를 소중하게 보호합니다.</h2><p>서비스 제공에 필요한 최소한의 정보만 처리하고, 이용 목적이 끝난 정보는 안전하게 삭제합니다.</p></div>
           <div className="kp-privacy-grid">
             <article><span>01</span><strong>필요한 정보만 처리</strong><p>소셜 로그인 계정 식별자, 이메일 및 공개 프로필 정보는 회원 식별과 서비스 제공 목적으로만 사용합니다.</p></article>
             <article><span>02</span><strong>공간 정보 비공개</strong><p>개인·커플·친구·가족 공간의 일정과 기록은 해당 공간의 구성원만 확인할 수 있도록 접근 권한을 제한합니다.</p></article>
