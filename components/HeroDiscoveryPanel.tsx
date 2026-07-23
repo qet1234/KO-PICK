@@ -3,28 +3,28 @@ const relationshipJourneys = [
     label: "혼자",
     title: "내 취향대로 가볍게",
     description: "혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소를 찾아보세요.",
-    href: "/explore?category=전체&keyword=혼자+가기+좋은+곳",
+    href: "/explore?category=카페&detail=조용한카페&journey=혼자",
     icon: "01",
   },
   {
     label: "커플",
     title: "데이트 장소 찾기",
     description: "분위기 좋은 맛집부터 산책·전시·카페까지 함께 찾아보세요.",
-    href: "/explore?category=전체&keyword=데이트+장소",
+    href: "/explore?category=카페&detail=감성카페&journey=커플",
     icon: "02",
   },
   {
     label: "친구",
     title: "모임에 맞는 장소",
     description: "여럿이 방문하기 좋은 맛집, 축제와 즐길 거리를 확인하세요.",
-    href: "/explore?category=전체&keyword=친구+모임",
+    href: "/explore?category=음식&detail=전체&journey=친구",
     icon: "03",
   },
   {
     label: "가족",
     title: "온 가족이 함께",
     description: "아이와 부모님까지 편하게 즐길 수 있는 장소를 찾아보세요.",
-    href: "/explore?category=전체&keyword=가족과+가기+좋은+곳",
+    href: "/explore?category=관광지&detail=공원&journey=가족",
     icon: "04",
   },
 ];
@@ -48,7 +48,7 @@ export default function HeroDiscoveryPanel() {
             <small>{journey.label}</small>
             <strong>{journey.title}</strong>
             <p>{journey.description}</p>
-            <b>장소 찾기 →</b>
+            <b>지도에서 찾기 →</b>
           </a>
         ))}
       </div>
