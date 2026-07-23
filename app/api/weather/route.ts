@@ -137,13 +137,18 @@ export async function GET(request: NextRequest) {
     const selectedIndex = dateIndex >= 0 ? dateIndex : 0;
     const current = payload.current ?? {};
     const currentTime = String(current.time ?? "");
-    const currentHourIndex = Math.max(0, (payload.hourly?.time ?? []).indexOf(currentTime));
+    const hourlyTimes: string[] = payload.hourly?.time ?? [];
+    const currentHourKey = currentTime.slice(0, 13);
+    const matchedHourIndex = hourlyTimes.findIndex(
+      (time) => String(time).slice(0, 13) === currentHourKey,
+    );
+    const currentHourIndex = matchedHourIndex >= 0 ? matchedHourIndex : 0;
     const code = Number(payload.daily?.weather_code?.[selectedIndex] ?? current.weather_code ?? 0);
     const precipitationProbability = Number(payload.daily?.precipitation_probability_max?.[selectedIndex] ?? 0);
     const indoorRecommended = indoorWeather(code, precipitationProbability);
 
-    const hourly = (payload.hourly?.time ?? [])
-      .slice(currentHourIndex, currentHourIndex + 12)
+    const hourly = hourlyTimes
+      .slice(currentHourIndex, currentHourIndex + 24)
       .map((time: string, index: number) => {
         const offset = currentHourIndex + index;
         const hourlyCode = Number(payload.hourly?.weather_code?.[offset] ?? 0);
