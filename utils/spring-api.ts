@@ -21,6 +21,12 @@ let refreshPromise: Promise<string | null> | null = null;
 const ACCESS_TOKEN_KEY = "kopick_access_token";
 const REFRESH_TOKEN_KEY = "kopick_refresh_token";
 const ACCESS_EXPIRES_AT_KEY = "kopick_access_expires_at";
+const OAUTH_URL_TOKEN_KEYS = [
+  "access_token",
+  "refresh_token",
+  "expires_in",
+  "token_type",
+] as const;
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const API_WARMUP_TIMEOUT_MS = 3_000;
@@ -68,26 +74,43 @@ function clearBrowserTokens() {
 }
 
 function acceptOAuthTokensFromUrl() {
-  if (typeof window === "undefined" || !window.location.hash) return;
-  const fragment = new URLSearchParams(window.location.hash.slice(1));
-  const nextAccessToken = fragment.get("access_token");
-  const nextRefreshToken = fragment.get("refresh_token");
-  const expiresIn = Number(fragment.get("expires_in") ?? "0");
+  if (typeof window === "undefined") return;
+
+  const currentUrl = new URL(window.location.href);
+  const fragment = new URLSearchParams(currentUrl.hash.replace(/^#/, ""));
+  const nextAccessToken =
+    fragment.get("access_token") ?? currentUrl.searchParams.get("access_token");
+  const nextRefreshToken =
+    fragment.get("refresh_token") ?? currentUrl.searchParams.get("refresh_token");
+  const expiresIn = Number(
+    fragment.get("expires_in") ??
+      currentUrl.searchParams.get("expires_in") ??
+      "0",
+  );
+
+  const containsLoginCredentials = OAUTH_URL_TOKEN_KEYS.some(
+    (key) => fragment.has(key) || currentUrl.searchParams.has(key),
+  );
+
+  // Capture OAuth credentials first, then remove them synchronously so copying
+  // or sharing the address never transfers the signed-in account to someone else.
+  if (containsLoginCredentials) {
+    currentUrl.hash = "";
+    OAUTH_URL_TOKEN_KEYS.forEach((key) => currentUrl.searchParams.delete(key));
+    currentUrl.searchParams.delete("login");
+    window.history.replaceState(
+      {},
+      "",
+      currentUrl.pathname + currentUrl.search,
+    );
+  }
+
   if (!nextAccessToken || !nextRefreshToken) return;
 
   storeBrowserTokens(
     nextAccessToken,
     nextRefreshToken,
     Number.isFinite(expiresIn) ? expiresIn : 0,
-  );
-
-  const cleanUrl = new URL(window.location.href);
-  cleanUrl.hash = "";
-  cleanUrl.searchParams.delete("login");
-  window.history.replaceState(
-    {},
-    "",
-    cleanUrl.pathname + cleanUrl.search,
   );
 }
 
