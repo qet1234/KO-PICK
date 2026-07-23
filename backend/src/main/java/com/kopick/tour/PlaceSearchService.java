@@ -32,9 +32,13 @@ public class PlaceSearchService {
 
     public Map<String, Object> search(MultiValueMap<String, String> query) {
         boolean bookingOnly = Boolean.parseBoolean(first(query, "bookingOnly", "false"));
-        Map<String, Object> tourResult = bookingOnly
-            ? tourApi.search(query)
-            : searchWithDatabaseFallback(query);
+        Map<String, Object> tourResult;
+
+        if (bookingOnly) {
+            tourResult = tourApi.search(query);
+        } else {
+            tourResult = searchWithFallbacks(query);
+        }
 
         if (bookingOnly
             || !isFranchiseCafe(query)
@@ -62,7 +66,7 @@ public class PlaceSearchService {
         return result;
     }
 
-    private Map<String, Object> searchWithDatabaseFallback(MultiValueMap<String, String> query) {
+    private Map<String, Object> searchWithFallbacks(MultiValueMap<String, String> query) {
         try {
             if (placeStore.hasData()) {
                 Map<String, Object> stored = placeStore.search(query);
@@ -72,9 +76,50 @@ public class PlaceSearchService {
             log.warn("Tour place database query failed. Falling back to TourAPI.", error);
         }
 
-        Map<String, Object> live = tourApi.search(query);
-        if (!live.containsKey("source")) live.put("source", "TOUR_API");
-        return live;
+        try {
+            Map<String, Object> live = tourApi.search(query);
+            if (!live.containsKey("source")) live.put("source", "TOUR_API");
+            return live;
+        } catch (RuntimeException error) {
+            log.warn("TourAPI place query failed. Falling back to Kakao Local.", error);
+        }
+
+        if (isSubregionMode(query)) {
+            return Map.of("subregions", List.of(), "source", "EMPTY_FALLBACK");
+        }
+
+        return kakaoFallback(query);
+    }
+
+    private Map<String, Object> kakaoFallback(MultiValueMap<String, String> query) {
+        int page = positive(first(query, "page", "1"), 1);
+        int pageSize = Math.min(positive(first(query, "pageSize", "15"), 15), 15);
+        String region = first(query, "region", "전국");
+        String category = first(query, "category", "전체");
+        String detail = first(query, "detailType", "전체");
+        String city = "";
+
+        List<Map<String, Object>> fallbackPlaces = kakaoLocal.searchPlaces(
+            region,
+            city,
+            category,
+            detail,
+            page,
+            pageSize
+        );
+
+        Map<String, Object> pagination = new LinkedHashMap<>();
+        pagination.put("pageNo", page);
+        pagination.put("numOfRows", pageSize);
+        pagination.put("totalCount", fallbackPlaces.size());
+        pagination.put("totalPages", fallbackPlaces.isEmpty() ? 1 : 3);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("places", fallbackPlaces);
+        result.put("pagination", pagination);
+        result.put("source", "KAKAO_LOCAL");
+        result.put("fallback", true);
+        return result;
     }
 
     private boolean isSubregionMode(MultiValueMap<String, String> query) {
@@ -98,7 +143,7 @@ public class PlaceSearchService {
         MultiValueMap<String, String> subregionQuery = new LinkedMultiValueMap<>();
         subregionQuery.set("mode", "subregions");
         subregionQuery.set("region", region);
-        Map<String, Object> source = searchWithDatabaseFallback(subregionQuery);
+        Map<String, Object> source = searchWithFallbacks(subregionQuery);
         Object raw = source.get("subregions");
         if (!(raw instanceof List<?> list)) return "";
 
