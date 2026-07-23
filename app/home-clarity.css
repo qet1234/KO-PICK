@@ -218,7 +218,6 @@
 
 /* Main section headings and descriptions */
 .kp-section-heading h2,
-.kp-popular-heading h2,
 .kp-region-content h2,
 .kp-region-journey-intro h2 {
   color: #111;
@@ -226,13 +225,36 @@
 }
 
 .kp-section-heading p:not(.kp-overline),
-.kp-popular-heading p,
 .kp-region-content > p:not(.kp-overline),
 .kp-region-journey-intro p:last-child {
   color: #454541;
   font-size: 14px;
   font-weight: 650;
   line-height: 1.7;
+}
+
+/* Popular section uses a dark background, so keep all heading text bright. */
+.kp-popular-section .kp-popular-title,
+.kp-popular-section .kp-popular-heading h2 {
+  color: #fff !important;
+  font-weight: 950;
+}
+
+.kp-popular-section .kp-popular-heading p {
+  color: #d4d4cf !important;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.kp-popular-section .kp-popular-live-status {
+  color: #d4d4cf !important;
+}
+
+.kp-popular-section .kp-popular-live-status strong,
+.kp-popular-section .kp-popular-star,
+.kp-popular-section .kp-popular-live-dot {
+  color: var(--kp-lime) !important;
 }
 
 /* Category cards */
@@ -352,8 +374,8 @@
   }
 
   .kp-section-heading p:not(.kp-overline),
-  .kp-popular-heading p,
-  .kp-region-journey-intro p:last-child {
+  .kp-region-journey-intro p:last-child,
+  .kp-popular-section .kp-popular-heading p {
     font-size: 13px;
   }
 }
