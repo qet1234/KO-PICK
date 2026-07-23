@@ -1,4 +1,4 @@
-# Render backend deployment trigger: TourAPI service-key encoding fix 2026-07-24
+# Render backend deployment trigger: normalized TourAPI key + snapshot fallback 2026-07-24
 services:
   - type: web
     name: kopick-api
