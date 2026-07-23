@@ -41,6 +41,16 @@ public class TourPlaceStoreService {
             return Map.of("subregions", subregions, "source", "DATABASE_SNAPSHOT");
         }
 
+        // The snapshot does not store verified reservation guidance. Never use
+        // ordinary snapshot rows as a substitute for bookingOnly=true results.
+        if (Boolean.parseBoolean(first(query, "bookingOnly", "false"))) {
+            return Map.of(
+                "places", List.of(),
+                "pagination", Map.of("pageNo", 1, "numOfRows", 0, "totalCount", 0, "totalPages", 1),
+                "source", "DATABASE_SNAPSHOT"
+            );
+        }
+
         int requestedPage = positive(first(query, "page", "1"), 1);
         int pageSize = Math.min(positive(first(query, "pageSize", "100"), 100), 100);
         String category = normalizeCategory(first(query, "category", "전체"));
