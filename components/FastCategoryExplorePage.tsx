@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
 import { springApiUrl } from "@/utils/spring-api";
+import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 
@@ -79,6 +80,20 @@ function responseFromCache(cached: CachedResponse) {
   });
 }
 
+function jsonResponse(payload: unknown, source?: Response) {
+  const headers = new Headers(source?.headers);
+  headers.set("Content-Type", "application/json; charset=utf-8");
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    statusText: "OK",
+    headers,
+  });
+}
+
+function normalize(value: unknown) {
+  return String(value ?? "").replace(/\s+/g, "").toLowerCase();
+}
+
 export default function FastCategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
@@ -88,6 +103,7 @@ export default function FastCategoryExplorePage({
   const [selectedJourneyType, setSelectedJourneyType] = useState("전체");
   const [menuHost, setMenuHost] = useState<HTMLElement | null>(null);
   const journeyTypeRef = useRef(selectedJourneyType);
+  const districtRef = useRef("전체");
   journeyTypeRef.current = selectedJourneyType;
 
   useEffect(() => {
@@ -103,11 +119,50 @@ export default function FastCategoryExplorePage({
       const parsedUrl = new URL(originalUrl, window.location.origin);
       const isSubregionRequest = parsedUrl.searchParams.get("mode") === "subregions";
 
-      if (journey && !isSubregionRequest) {
+      if (isSubregionRequest) {
+        const region = parsedUrl.searchParams.get("region") ?? "";
+        const fallbackDistricts = koreaRegionDistricts[region] ?? [];
+        let upstream: Response | undefined;
+        let payload: { subregions?: Array<{ code?: string; name?: string }> } = {};
+
+        try {
+          upstream = await originalFetch(originalUrl, init);
+          if (upstream.ok) payload = await upstream.clone().json().catch(() => ({}));
+        } catch {
+          upstream = undefined;
+        }
+
+        const serverItems = Array.isArray(payload.subregions) ? payload.subregions : [];
+        const serverByName = new Map(
+          serverItems
+            .filter((item) => item?.name)
+            .map((item) => [String(item.name), item]),
+        );
+        const merged = fallbackDistricts.map((name) => ({
+          code: String(serverByName.get(name)?.code ?? ""),
+          name,
+        }));
+
+        for (const item of serverItems) {
+          const name = String(item?.name ?? "").trim();
+          if (name && !merged.some((entry) => entry.name === name)) {
+            merged.push({ code: String(item.code ?? ""), name });
+          }
+        }
+
+        return jsonResponse({ subregions: merged }, upstream);
+      }
+
+      if (journey) {
         parsedUrl.searchParams.set("journey", journey);
         parsedUrl.searchParams.set("journeyType", journeyTypeRef.current);
         parsedUrl.searchParams.set("category", "전체");
         parsedUrl.searchParams.delete("detailType");
+      }
+
+      const activeDistrict = districtRef.current;
+      if (activeDistrict !== "전체") {
+        parsedUrl.searchParams.set("clientDistrict", activeDistrict);
       }
 
       const url = parsedUrl.toString();
@@ -143,17 +198,51 @@ export default function FastCategoryExplorePage({
         signal: controller.signal,
       })
         .then(async (response) => {
-          if (response.ok) {
-            const body = await response.clone().text();
+          let finalResponse = response;
+
+          if (response.ok && activeDistrict !== "전체") {
+            const payload = await response.clone().json().catch(() => null) as
+              | {
+                  places?: Array<Record<string, unknown>>;
+                  pagination?: Record<string, unknown>;
+                }
+              | null;
+
+            if (payload && Array.isArray(payload.places)) {
+              const target = normalize(activeDistrict);
+              const filtered = payload.places.filter((place) =>
+                [place.city, place.address, place.name].some((value) =>
+                  normalize(value).includes(target),
+                ),
+              );
+              finalResponse = jsonResponse(
+                {
+                  ...payload,
+                  places: filtered,
+                  pagination: {
+                    ...(payload.pagination ?? {}),
+                    pageNo: 1,
+                    totalCount: filtered.length,
+                    totalPages: 1,
+                  },
+                  clientDistrictFilter: activeDistrict,
+                },
+                response,
+              );
+            }
+          }
+
+          if (finalResponse.ok) {
+            const body = await finalResponse.clone().text();
             responseCache.set(url, {
               expiresAt: Date.now() + CACHE_TTL_MS,
-              status: response.status,
-              statusText: response.statusText,
-              headers: Array.from(response.headers.entries()),
+              status: finalResponse.status,
+              statusText: finalResponse.statusText,
+              headers: Array.from(finalResponse.headers.entries()),
               body,
             });
           }
-          return response;
+          return finalResponse;
         })
         .finally(() => {
           pendingRequests.delete(url);
@@ -173,6 +262,29 @@ export default function FastCategoryExplorePage({
       activeControllers.clear();
     };
   }, [journey]);
+
+  useEffect(() => {
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      const select = document.querySelector<HTMLSelectElement>(
+        ".kp-explore-region-selects label:nth-child(2) select",
+      );
+      if (select) {
+        const update = () => {
+          districtRef.current = select.value || "전체";
+        };
+        update();
+        select.addEventListener("change", update);
+        window.clearInterval(timer);
+        return () => select.removeEventListener("change", update);
+      }
+      if (attempts >= 40) window.clearInterval(timer);
+      return undefined;
+    }, 50);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!journey) {
