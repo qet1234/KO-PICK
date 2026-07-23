@@ -33,6 +33,63 @@ public class KakaoLocalService {
         return properties.configured();
     }
 
+    public List<Map<String, Object>> searchPlaces(
+        String region,
+        String city,
+        String category,
+        String detail,
+        int page,
+        int requestedSize
+    ) {
+        if (!configured()) return List.of();
+
+        int kakaoPage = Math.max(1, Math.min(page, 3));
+        int targetSize = Math.max(1, Math.min(requestedSize, 15));
+        String location = "전국".equals(region)
+            ? ""
+            : String.join(" ", List.of(region, city == null ? "" : city)).trim();
+        String keyword = searchKeyword(category, detail);
+        String query = (location + " " + keyword).trim();
+        String categoryGroupCode = categoryGroupCode(category);
+        JsonNode payload = request(query, kakaoPage, categoryGroupCode);
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (JsonNode document : payload.path("documents")) {
+            String id = text(document, "id");
+            String name = text(document, "place_name");
+            if (id.isBlank() || name.isBlank() || !seen.add(id)) continue;
+
+            String address = firstNonBlank(
+                text(document, "road_address_name"),
+                text(document, "address_name")
+            );
+            if (!matchesLocation(address, region, city)) continue;
+
+            double latitude = number(document, "y");
+            double longitude = number(document, "x");
+            if (!Double.isFinite(latitude) || !Double.isFinite(longitude)) continue;
+
+            Map<String, Object> place = new LinkedHashMap<>();
+            place.put("id", "kakao:" + id);
+            place.put("name", name);
+            place.put("region", firstWord(address, region));
+            place.put("city", secondWord(address));
+            place.put("category", firstNonBlank(text(document, "category_name"), category));
+            place.put("detailCategory", detail);
+            place.put("address", address.isBlank() ? null : address);
+            place.put("latitude", latitude);
+            place.put("longitude", longitude);
+            place.put("imageUrl", null);
+            place.put("placeUrl", text(document, "place_url"));
+            place.put("source", "KAKAO_LOCAL");
+            result.add(place);
+
+            if (result.size() >= targetSize) break;
+        }
+        return result;
+    }
+
     public List<Map<String, Object>> franchiseCafes(
         String region,
         String city,
@@ -50,7 +107,7 @@ public class KakaoLocalService {
         for (String brand : FRANCHISE_BRANDS) {
             if (result.size() >= targetSize) break;
             String query = (location + " " + brand).trim();
-            JsonNode payload = request(query, kakaoPage);
+            JsonNode payload = request(query, kakaoPage, "CE7");
             for (JsonNode document : payload.path("documents")) {
                 String id = text(document, "id");
                 String name = text(document, "place_name");
@@ -89,16 +146,16 @@ public class KakaoLocalService {
         return result;
     }
 
-    private JsonNode request(String query, int page) {
-        URI uri = UriComponentsBuilder.fromHttpUrl(KEYWORD_URL)
+    private JsonNode request(String query, int page, String categoryGroupCode) {
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(KEYWORD_URL)
             .queryParam("query", query)
-            .queryParam("category_group_code", "CE7")
             .queryParam("page", page)
             .queryParam("size", 15)
-            .queryParam("sort", "accuracy")
-            .build()
-            .encode()
-            .toUri();
+            .queryParam("sort", "accuracy");
+        if (categoryGroupCode != null && !categoryGroupCode.isBlank()) {
+            uriBuilder.queryParam("category_group_code", categoryGroupCode);
+        }
+        URI uri = uriBuilder.build().encode().toUri();
 
         try {
             JsonNode payload = restClient.get()
@@ -106,10 +163,32 @@ public class KakaoLocalService {
                 .header(HttpHeaders.AUTHORIZATION, "KakaoAK " + properties.restApiKey().trim())
                 .retrieve()
                 .body(JsonNode.class);
-            return payload == null ? com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode() : payload;
+            return payload == null
+                ? com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode()
+                : payload;
         } catch (RuntimeException error) {
             return com.fasterxml.jackson.databind.node.JsonNodeFactory.instance.objectNode();
         }
+    }
+
+    private String searchKeyword(String category, String detail) {
+        if (detail != null && !detail.isBlank() && !"전체".equals(detail)) return detail;
+        return switch (category) {
+            case "음식", "맛집" -> "맛집";
+            case "카페" -> "카페";
+            case "축제" -> "축제 행사";
+            case "관광지", "여행지" -> "관광지 명소";
+            default -> "가볼만한 곳";
+        };
+    }
+
+    private String categoryGroupCode(String category) {
+        return switch (category) {
+            case "음식", "맛집" -> "FD6";
+            case "카페" -> "CE7";
+            case "관광지", "여행지" -> "AT4";
+            default -> "";
+        };
     }
 
     private boolean containsBrand(String name, String brand) {
