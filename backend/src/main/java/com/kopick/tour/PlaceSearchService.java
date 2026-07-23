@@ -37,38 +37,43 @@ public class PlaceSearchService {
             return journeySearch(query);
         }
 
-        Map<String, Object> tourResult;
+        /*
+         * Standard category browsing must always use Korea Tourism Organization data.
+         * Kakao Local is intentionally excluded here because its 15-item search limit
+         * made the UI display a false nationwide total such as "15 places / 3 pages".
+         */
+        return searchTourData(query);
+    }
 
-        if (bookingOnly) {
-            tourResult = tourApi.search(query);
-        } else {
-            tourResult = searchWithFallbacks(query);
+    private Map<String, Object> searchTourData(MultiValueMap<String, String> query) {
+        try {
+            Map<String, Object> live = tourApi.search(query);
+            if (!live.containsKey("source")) live.put("source", "TOUR_API");
+            live.put("authoritative", true);
+            return live;
+        } catch (RuntimeException liveError) {
+            log.warn("TourAPI query failed. Trying the protected TourAPI database snapshot.", liveError);
+
+            try {
+                if (placeStore.hasData()) {
+                    Map<String, Object> stored = new LinkedHashMap<>(placeStore.search(query));
+                    if (isSubregionMode(query) || !places(stored).isEmpty()) {
+                        stored.put("source", "TOUR_API_SNAPSHOT");
+                        stored.put("authoritative", true);
+                        stored.put("stale", true);
+                        return stored;
+                    }
+                }
+            } catch (RuntimeException storeError) {
+                liveError.addSuppressed(storeError);
+                log.warn("Protected TourAPI snapshot query also failed.", storeError);
+            }
+
+            throw new IllegalStateException(
+                "한국관광공사 장소 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+                liveError
+            );
         }
-
-        if (bookingOnly
-            || !isFranchiseCafe(query)
-            || !kakaoLocal.configured()) return tourResult;
-
-        int page = positive(first(query, "page", "1"), 1);
-        int pageSize = Math.min(positive(first(query, "pageSize", "12"), 12), 100);
-        String region = first(query, "region", "전국");
-        String city = resolveCity(region, first(query, "sigunguCode", ""));
-
-        List<Map<String, Object>> tourPlaces = places(tourResult);
-        List<Map<String, Object>> kakaoPlaces = kakaoLocal.franchiseCafes(region, city, page, pageSize);
-        List<Map<String, Object>> merged = merge(tourPlaces, kakaoPlaces, pageSize);
-
-        Map<String, Object> pagination = new LinkedHashMap<>();
-        pagination.put("pageNo", page);
-        pagination.put("numOfRows", pageSize);
-        pagination.put("totalCount", Math.max(merged.size(), totalCount(tourResult)));
-        pagination.put("totalPages", Math.max(1, totalPages(tourResult)));
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("places", merged);
-        result.put("pagination", pagination);
-        result.put("sources", List.of(sourceName(tourResult), "KAKAO_LOCAL"));
-        return result;
     }
 
     private Map<String, Object> journeySearch(MultiValueMap<String, String> query) {
@@ -123,7 +128,7 @@ public class PlaceSearchService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("places", merged);
         result.put("pagination", pagination);
-        result.put("source", kakaoLocal.configured() ? "KAKAO_LOCAL_JOURNEY" : "TOUR_FALLBACK_JOURNEY");
+        result.put("source", kakaoLocal.configured() ? "KAKAO_LOCAL_JOURNEY" : "TOUR_API_JOURNEY");
         result.put("journey", journey);
         result.put("journeyType", selectedType);
         result.put("journeyTypes", presets.stream().map(JourneyPreset::label).toList());
@@ -144,7 +149,7 @@ public class PlaceSearchService {
         presetQuery.set("detailType", preset.fallbackDetail());
         String sigunguCode = first(original, "sigunguCode", "");
         if (!sigunguCode.isBlank()) presetQuery.set("sigunguCode", sigunguCode);
-        return places(searchWithFallbacks(presetQuery));
+        return places(searchTourData(presetQuery));
     }
 
     private Map<String, Object> emptyJourneyResult(
@@ -192,75 +197,8 @@ public class PlaceSearchService {
         return "혼자".equals(journey) || "커플".equals(journey);
     }
 
-    private Map<String, Object> searchWithFallbacks(MultiValueMap<String, String> query) {
-        try {
-            if (placeStore.hasData()) {
-                Map<String, Object> stored = placeStore.search(query);
-                if (isSubregionMode(query) || !places(stored).isEmpty()) return stored;
-            }
-        } catch (RuntimeException error) {
-            log.warn("Tour place database query failed. Falling back to TourAPI.", error);
-        }
-
-        try {
-            Map<String, Object> live = tourApi.search(query);
-            if (!live.containsKey("source")) live.put("source", "TOUR_API");
-            return live;
-        } catch (RuntimeException error) {
-            log.warn("TourAPI place query failed. Falling back to Kakao Local.", error);
-        }
-
-        if (isSubregionMode(query)) {
-            return Map.of("subregions", List.of(), "source", "EMPTY_FALLBACK");
-        }
-
-        return kakaoFallback(query);
-    }
-
-    private Map<String, Object> kakaoFallback(MultiValueMap<String, String> query) {
-        int page = positive(first(query, "page", "1"), 1);
-        int pageSize = Math.min(positive(first(query, "pageSize", "15"), 15), 15);
-        String region = first(query, "region", "전국");
-        String category = first(query, "category", "전체");
-        String detail = first(query, "detailType", "전체");
-        String city = "";
-
-        List<Map<String, Object>> fallbackPlaces = kakaoLocal.searchPlaces(
-            region,
-            city,
-            category,
-            detail,
-            page,
-            pageSize
-        );
-
-        Map<String, Object> pagination = new LinkedHashMap<>();
-        pagination.put("pageNo", page);
-        pagination.put("numOfRows", pageSize);
-        pagination.put("totalCount", fallbackPlaces.size());
-        pagination.put("totalPages", fallbackPlaces.isEmpty() ? 1 : 3);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("places", fallbackPlaces);
-        result.put("pagination", pagination);
-        result.put("source", "KAKAO_LOCAL");
-        result.put("fallback", true);
-        return result;
-    }
-
     private boolean isSubregionMode(MultiValueMap<String, String> query) {
         return "subregions".equals(first(query, "mode", "places"));
-    }
-
-    private String sourceName(Map<String, Object> result) {
-        Object source = result.get("source");
-        return source == null ? "TOUR_API" : String.valueOf(source);
-    }
-
-    private boolean isFranchiseCafe(MultiValueMap<String, String> query) {
-        return "카페".equals(first(query, "category", ""))
-            && "프랜차이즈".equals(first(query, "detailType", ""))
-            && !"subregions".equals(first(query, "mode", "places"));
     }
 
     private String resolveCity(String region, String sigunguCode) {
@@ -269,7 +207,7 @@ public class PlaceSearchService {
         MultiValueMap<String, String> subregionQuery = new LinkedMultiValueMap<>();
         subregionQuery.set("mode", "subregions");
         subregionQuery.set("region", region);
-        Map<String, Object> source = searchWithFallbacks(subregionQuery);
+        Map<String, Object> source = searchTourData(subregionQuery);
         Object raw = source.get("subregions");
         if (!(raw instanceof List<?> list)) return "";
 
@@ -280,19 +218,6 @@ public class PlaceSearchService {
             }
         }
         return "";
-    }
-
-    private List<Map<String, Object>> merge(
-        List<Map<String, Object>> tourPlaces,
-        List<Map<String, Object>> kakaoPlaces,
-        int limit
-    ) {
-        List<Map<String, Object>> result = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-
-        for (Map<String, Object> place : tourPlaces) add(place, result, seen, limit);
-        for (Map<String, Object> place : kakaoPlaces) add(place, result, seen, limit);
-        return result;
     }
 
     private void add(
@@ -313,21 +238,6 @@ public class PlaceSearchService {
     private List<Map<String, Object>> places(Map<String, Object> result) {
         Object value = result.get("places");
         return value instanceof List<?> ? (List<Map<String, Object>>) value : List.of();
-    }
-
-    private int totalCount(Map<String, Object> result) {
-        return paginationNumber(result, "totalCount", places(result).size());
-    }
-
-    private int totalPages(Map<String, Object> result) {
-        return paginationNumber(result, "totalPages", 1);
-    }
-
-    private int paginationNumber(Map<String, Object> result, String key, int fallback) {
-        Object pagination = result.get("pagination");
-        if (!(pagination instanceof Map<?, ?> map)) return fallback;
-        Object value = map.get(key);
-        return value instanceof Number number ? number.intValue() : fallback;
     }
 
     private String first(MultiValueMap<String, String> map, String key, String fallback) {
