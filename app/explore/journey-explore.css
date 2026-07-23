@@ -3,116 +3,180 @@
   background: #f7f7f4;
 }
 
+.kp-journey-menu-host {
+  margin-top: 18px;
+}
+
 .kp-journey-category-menu {
-  padding: 18px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  border-bottom: 1px solid #d9d9d2;
-  background: #111;
-  color: #fff;
+  padding: 18px;
+  border: 1px solid rgba(255, 59, 54, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 0%, #fff8f6 100%);
+  box-shadow: 0 12px 30px rgba(17, 17, 17, 0.06);
 }
 
 .kp-journey-category-copy {
-  min-width: 260px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: start;
 }
 
-.kp-journey-category-copy small {
+.kp-journey-category-copy > div small {
   display: block;
-  color: #ff5a54;
+  color: #ff3b36;
   font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 0.16em;
+  font-weight: 950;
+  letter-spacing: 0.15em;
 }
 
-.kp-journey-category-copy strong {
+.kp-journey-category-copy > div strong {
   margin-top: 5px;
   display: block;
-  font-size: 20px;
+  font-size: 18px;
   letter-spacing: -0.035em;
 }
 
-.kp-journey-category-copy p {
-  margin: 6px 0 0;
-  color: #aaa;
+.kp-journey-category-copy > span {
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: #fff;
+  background: #111;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.kp-journey-category-copy > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #74746f;
   font-size: 10px;
   line-height: 1.55;
 }
 
 .kp-journey-category-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
 }
 
 .kp-journey-category-buttons button {
-  min-height: 38px;
-  padding: 0 15px;
-  border: 1px solid #393939;
-  border-radius: 999px;
-  color: #ddd;
-  background: #1b1b1b;
-  font-size: 11px;
-  font-weight: 900;
+  min-height: 74px;
+  padding: 11px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #deded7;
+  border-radius: 14px;
+  color: #20201d;
+  background: #fff;
+  text-align: left;
   cursor: pointer;
-  transition: transform 160ms ease, border-color 160ms ease,
-    color 160ms ease, background 160ms ease;
+  transition: transform 180ms ease, border-color 180ms ease,
+    background 180ms ease, box-shadow 180ms ease;
 }
 
-.kp-journey-category-buttons button:hover,
-.kp-journey-category-buttons button:focus-visible {
-  border-color: #ff5a54;
+.kp-journey-category-buttons button > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
   color: #fff;
-  transform: translateY(-2px);
+  background: #ff5b56;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.kp-journey-category-buttons button > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.kp-journey-category-buttons button strong {
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.kp-journey-category-buttons button small {
+  overflow: hidden;
+  color: #85857f;
+  font-size: 8px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kp-journey-category-buttons button.is-active {
-  border-color: #ff3b36;
+  border-color: #111;
   color: #fff;
+  background: #111;
+  box-shadow: 0 10px 22px rgba(17, 17, 17, 0.16);
+}
+
+.kp-journey-category-buttons button.is-active > span {
   background: #ff3b36;
-  box-shadow: 0 7px 18px rgba(255, 59, 54, 0.25);
 }
 
-.kp-journey-explore .kp-explore-workspace {
-  height: calc(100vh - 66px - 94px);
+.kp-journey-category-buttons button.is-active small {
+  color: #bdbdb8;
 }
 
-.kp-journey-explore[data-journey="혼자"] .kp-explore-eyebrow::after {
-  content: " · 혼밥 / 조용한 카페 / 혼자 둘러보기";
+.kp-journey-explore .kp-explore-category-buttons {
+  display: none;
 }
 
-.kp-journey-explore[data-journey="커플"] .kp-explore-eyebrow::after {
-  content: " · 카페 / 데이트 관광지 / 축제 / 음식";
+.kp-journey-explore .kp-explore-filter-section > p:last-of-type {
+  max-width: 330px;
 }
 
-@media (max-width: 900px) {
-  .kp-journey-category-menu {
-    padding: 16px;
-    align-items: flex-start;
-    flex-direction: column;
+.kp-journey-explore .kp-explore-map-label {
+  min-width: 175px;
+  border: 0;
+  background: rgba(17, 17, 17, 0.92);
+  color: #fff;
+  box-shadow: 0 14px 32px rgba(17, 17, 17, 0.2);
+}
+
+.kp-journey-explore .kp-explore-map-label small {
+  color: #ff6c67;
+}
+
+.kp-journey-explore .kp-explore-map-label span {
+  color: #d0d0ca;
+}
+
+.kp-journey-explore .kp-explore-summary {
+  border-color: rgba(17, 17, 17, 0.12);
+  background: #fff;
+}
+
+.kp-journey-explore .kp-explore-summary::before {
+  background: #111;
+}
+
+@media (hover: hover) {
+  .kp-journey-category-buttons button:hover {
+    border-color: #ff5b56;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(17, 17, 17, 0.08);
   }
+}
 
-  .kp-journey-category-copy {
-    min-width: 0;
+@media (max-width: 520px) {
+  .kp-journey-category-menu {
+    padding: 14px;
   }
 
   .kp-journey-category-buttons {
-    width: 100%;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
+    grid-template-columns: 1fr;
   }
 
   .kp-journey-category-buttons button {
-    flex: 0 0 auto;
-  }
-
-  .kp-journey-explore .kp-explore-workspace {
-    height: auto;
+    min-height: 66px;
   }
 }
 
