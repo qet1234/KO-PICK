@@ -17,7 +17,6 @@ type Place = {
 
 type FormState = {
   scope: string;
-  resultCount: string;
   region: string;
   relationship: string;
   when: string;
@@ -38,8 +37,7 @@ type PreferenceState = {
 
 const initialForm: FormState = {
   scope: "내 지역",
-  resultCount: "12곳",
-  region: "수원 인계동",
+  region: "경기",
   relationship: "커플",
   when: "오늘 저녁",
   category: "카페",
@@ -57,9 +55,12 @@ const initialPreferences: PreferenceState = {
   foodStyle: "익숙한 취향",
 };
 
+const regionChoices = [
+  "전국", "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+  "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
+] as const;
+
 const choices = {
-  scope: ["내 지역", "전국"],
-  resultCount: ["3곳", "12곳", "24곳", "48곳"],
   relationship: ["개인", "커플", "친구", "가족"],
   when: ["지금", "오늘 저녁", "주말"],
   category: ["맛집", "카페", "축제", "관광지"],
@@ -78,6 +79,7 @@ const preferenceChoices = {
 } as const;
 
 const PREFERENCE_KEY = "kopick-recommend-preferences";
+const RECOMMENDATION_LIMIT = 12;
 
 export default function RecommendPage() {
   const [form, setForm] = useState<FormState>(initialForm);
@@ -86,7 +88,6 @@ export default function RecommendPage() {
   const [places, setPlaces] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
@@ -104,19 +105,26 @@ export default function RecommendPage() {
     }
   }, []);
 
-  const requestedCount = Number.parseInt(form.resultCount, 10) || 12;
-  const visiblePlaces = useMemo(() => {
-    if (!places.length) return [];
-    if (requestedCount === 3) {
-      return Array.from({ length: Math.min(3, places.length) }, (_, index) => places[(offset + index) % places.length]);
-    }
-    return places.slice(0, requestedCount);
-  }, [places, offset, requestedCount]);
+  const visiblePlaces = useMemo(
+    () => places.slice(0, RECOMMENDATION_LIMIT),
+    [places],
+  );
 
-  const profileSummary = useMemo(() => Object.values(preferences).join(" · "), [preferences]);
+  const profileSummary = useMemo(
+    () => Object.values(preferences).join(" · "),
+    [preferences],
+  );
 
   const update = (key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const selectRegion = (region: string) => {
+    setForm((prev) => ({
+      ...prev,
+      region,
+      scope: region === "전국" ? "전국" : "내 지역",
+    }));
   };
 
   const updatePreference = (key: keyof PreferenceState, value: string) => {
@@ -132,11 +140,14 @@ export default function RecommendPage() {
     setLoading(true);
     setError("");
     setSelected(null);
-    setOffset(0);
 
     try {
       localStorage.setItem(PREFERENCE_KEY, JSON.stringify(preferences));
-      const query = new URLSearchParams({ ...form, ...preferences });
+      const query = new URLSearchParams({
+        ...form,
+        ...preferences,
+        resultCount: String(RECOMMENDATION_LIMIT),
+      });
       const response = await fetch(`/api/recommend?${query.toString()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "추천 장소를 불러오지 못했습니다.");
@@ -163,7 +174,7 @@ export default function RecommendPage() {
 
   if (!profileLoaded) return null;
 
-  const scopeLabel = form.scope === "전국" ? "전국" : form.region;
+  const scopeLabel = form.region;
 
   return (
     <main className="recommend-page">
@@ -175,7 +186,7 @@ export default function RecommendPage() {
       <section className="recommend-hero">
         <p className="recommend-eyebrow">KO-PICK PERSONAL CURATION</p>
         <h1>내 취향에 맞는 전국 장소</h1>
-        <p>내 주변의 몇 곳만 추천받거나, 전국의 장소를 성향 적합도순으로 넓게 살펴볼 수 있어요.</p>
+        <p>원하는 지역을 직접 선택하면 저장된 성향과 오늘 조건에 잘 맞는 장소를 추천해 드려요.</p>
       </section>
 
       <nav className="recommend-steps" aria-label="추천 단계">
@@ -206,15 +217,12 @@ export default function RecommendPage() {
             <button type="button" onClick={() => setStep("preferences")}>성향 다시 설정</button>
           </div>
 
-          <Choice label="어느 범위에서 찾을까요?" values={choices.scope} selected={form.scope} onSelect={(value) => update("scope", value)} />
-          <Choice label="몇 곳을 확인할까요?" values={choices.resultCount} selected={form.resultCount} onSelect={(value) => update("resultCount", value)} />
-
-          {form.scope === "내 지역" && (
-            <label className="region-field">
-              <span>어디에서 찾을까요?</span>
-              <input value={form.region} onChange={(event) => update("region", event.target.value)} placeholder="예: 수원 인계동" />
-            </label>
-          )}
+          <Choice
+            label="어디에서 찾을까요?"
+            values={regionChoices}
+            selected={form.region}
+            onSelect={selectRegion}
+          />
 
           {form.scope === "전국" && (
             <div className="nationwide-notice">
@@ -235,7 +243,7 @@ export default function RecommendPage() {
           </div>
 
           <button className="recommend-submit" onClick={recommend} disabled={loading}>
-            {loading ? "전국에서 내 취향에 맞는 장소를 찾는 중..." : `${scopeLabel} 맞춤 장소 ${form.resultCount} 보기 →`}
+            {loading ? `${scopeLabel}에서 내 취향에 맞는 장소를 찾는 중...` : `${scopeLabel} 맞춤 장소 추천받기 →`}
           </button>
           {error && <p className="recommend-error">{error}</p>}
         </section>
@@ -251,13 +259,10 @@ export default function RecommendPage() {
             </div>
             <div className="result-controls">
               <button onClick={() => setStep("situation")}>조건 수정</button>
-              {requestedCount === 3 && places.length > 3 && (
-                <button onClick={() => setOffset((value) => (value + 3) % places.length)}>다른 곳 추천 ↻</button>
-              )}
             </div>
           </div>
 
-          <div className={`place-grid ${requestedCount > 3 ? "is-list-mode" : ""}`}>
+          <div className="place-grid is-list-mode">
             {visiblePlaces.map((place, index) => (
               <article className={`place-card ${selected === place.id ? "is-selected" : ""}`} key={`${place.id}-${index}`}>
                 <div className="place-rank">{String(index + 1).padStart(2, "0")}</div>
