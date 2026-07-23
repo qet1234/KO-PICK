@@ -1,4 +1,4 @@
-# Render backend deployment: Northflank automatic deployment remains disabled
+# Render backend deployment trigger: 2026-07-23
 services:
   - type: web
     name: kopick-api
