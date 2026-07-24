@@ -68,20 +68,6 @@ as $$
       case when k.source = 'search' then 5::numeric else 3::numeric end as weight
     from public.keyword_search_events k
     where k.created_at >= now() - interval '24 hours'
-
-    union all
-
-    select
-      concat_ws(' ', nullif(p.region, '전국'), p.category) as keyword,
-      p.created_at,
-      case p.event_type
-        when 'favorite' then 4::numeric
-        when 'outbound' then 3::numeric
-        when 'detail' then 2::numeric
-        else 1::numeric
-      end as weight
-    from public.place_activity p
-    where p.created_at >= now() - interval '24 hours'
   ),
   all_keywords as (
     select d.keyword, d.fallback_order from defaults d

@@ -1,19 +1,24 @@
-name: Migration CI
+name: Supabase Migration CI
 
 on:
   pull_request:
   push:
     branches:
       - main
-      - agent/spring-security-migration
+      - agent/migrate-all-to-supabase
 
 permissions:
   contents: read
 
 jobs:
-  frontend:
-    name: React build
+  application:
+    name: Next.js validation
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      NEXT_PUBLIC_KAKAO_MAP_KEY: ci-placeholder
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -23,31 +28,114 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install frontend dependencies
-        run: npm --prefix frontend ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Build frontend
-        run: npm --prefix frontend run build
+      - name: Type check
+        run: npm run typecheck
 
-  backend:
-    name: Spring Boot tests
+      - name: Build Next.js
+        run: npm run build
+
+  edge-function:
+    name: Supabase Edge Function check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
         with:
-          distribution: temurin
-          java-version: "17"
-          cache: maven
-          cache-dependency-path: backend/pom.xml
+          deno-version: v2.x
 
-      - name: Run backend tests
-        run: ./mvnw --batch-mode test
+      - name: Check Edge Functions
+        id: deno-check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "=== kopick-api ==="
+            deno check --node-modules-dir=auto supabase/functions/kopick-api/index.ts
+            first=$?
+            echo
+            echo "=== naver-userinfo ==="
+            deno check --node-modules-dir=auto supabase/functions/naver-userinfo/index.ts
+            second=$?
+            echo
+            echo "kopick_api_status=$first"
+            echo "naver_userinfo_status=$second"
+          } > edge-function-check.log 2>&1
+          if [ "$first" -eq 0 ] && [ "$second" -eq 0 ]; then
+            echo 0 > edge-function-check.status
+          else
+            echo 1 > edge-function-check.status
+          fi
+          cat edge-function-check.log
+
+      - name: Upload Edge Function diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-function-check
+          path: |
+            edge-function-check.log
+            edge-function-check.status
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Require successful Edge Function checks
+        shell: bash
+        run: test "$(cat edge-function-check.status)" = "0"
+
+  database:
+    name: Supabase database migration check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local database and capture migration output
+        id: database-start
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          supabase db start > database-check.log 2>&1
+          status=$?
+          echo "$status" > database-check.status
+          cat database-check.log
+
+      - name: Upload database diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-check
+          path: |
+            database-check.log
+            database-check.status
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Require successful database start
+        shell: bash
+        run: test "$(cat database-check.status)" = "0"
+
+      - name: Reapply all migrations from a clean database
+        run: supabase db reset
+
+      - name: Lint database schema
+        run: supabase db lint --level warning
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup

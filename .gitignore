@@ -10,9 +10,16 @@
 .env.local
 .env.*.local
 
-# Supabase / secrets
+# Supabase / secrets / local state
 *.pem
 *.key
+supabase/.temp/
+supabase/.branches/
+supabase/.env*
+!supabase/.env.example
+migration-data/
+*.dump
+*.backup
 
 # logs
 *.log
@@ -38,7 +45,7 @@ next-env.d.ts
 !backend/.env.example
 !frontend/.env.example
 
-# Spring Boot
+# Legacy Spring/Vite build output retained only for rollback reference
 backend/target/
 frontend/dist/
 frontend/node_modules/
