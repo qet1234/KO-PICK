@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 15
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_PROJECT_ID: vbwaruzncfaxnjyybudm
       KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
       KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
       NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=()
-          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET; do
+          for key in SUPABASE_ACCESS_TOKEN KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET; do
             test -n "${!key:-}" || missing+=("$key")
           done
           if [ "${#missing[@]}" -gt 0 ]; then
