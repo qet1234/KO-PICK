@@ -45,48 +45,56 @@ jobs:
         with:
           version: latest
 
-      - name: Verify required secrets
+      - name: Verify Supabase token
         shell: bash
         run: |
           set -euo pipefail
-          missing=()
-          for key in SUPABASE_ACCESS_TOKEN TOUR_API_SERVICE_KEY; do
-            test -n "${!key:-}" || missing+=("$key")
-          done
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing GitHub Secrets: %s\n' "${missing[*]}"
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"
             exit 1
           fi
 
-      - name: Store place API secrets
+      - name: Store place API secrets when available
+        if: env.TOUR_API_SERVICE_KEY != '' || env.TOUR_API_MOBILE_APP != '' || env.KAKAO_REST_API_KEY != ''
         shell: bash
         run: |
           set -euo pipefail
-          args=(TOUR_API_SERVICE_KEY="$TOUR_API_SERVICE_KEY")
+          args=()
+          if [ -n "${TOUR_API_SERVICE_KEY:-}" ]; then
+            args+=(TOUR_API_SERVICE_KEY="$TOUR_API_SERVICE_KEY")
+          fi
           if [ -n "${TOUR_API_MOBILE_APP:-}" ]; then
             args+=(TOUR_API_MOBILE_APP="$TOUR_API_MOBILE_APP")
-          else
-            args+=(TOUR_API_MOBILE_APP="KoreaPick")
           fi
           if [ -n "${KAKAO_REST_API_KEY:-}" ]; then
             args+=(KAKAO_REST_API_KEY="$KAKAO_REST_API_KEY")
           fi
-          supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
+          if [ "${#args[@]}" -gt 0 ]; then
+            supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
+          fi
 
       - name: Deploy place API function
         run: supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Verify health and places
+        id: verify
         shell: bash
         run: |
           set -euo pipefail
           base="https://${PROJECT_REF}.supabase.co/functions/v1/kopick-api"
           curl --fail --silent --show-error --max-time 20 "$base/actuator/health" | tee /tmp/health.json
           jq -e '.status == "UP"' /tmp/health.json >/dev/null
-          curl --fail --silent --show-error --max-time 30 \
-            "$base/api/public/tour/places?page=1&pageSize=3&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4" \
-            | tee /tmp/places.json
-          jq -e '.places | type == "array"' /tmp/places.json >/dev/null
+
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 30 --output "$response_file" --write-out '%{http_code}' \
+            "$base/api/public/tour/places?page=1&pageSize=3&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4")"
+          echo "Place endpoint HTTP status: $status"
+          cat "$response_file"
+          echo
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            exit 1
+          fi
+          jq -e '.places | type == "array"' "$response_file" >/dev/null
 
       - name: Report deployment result
         if: always()
@@ -99,7 +107,7 @@ jobs:
             description='TourAPI place function deployed and verified'
           else
             state=failure
-            description='TourAPI place deployment failed; open run logs'
+            description='Place API deployed but TourAPI verification failed; open logs'
           fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$state" \
