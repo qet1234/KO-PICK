@@ -59,7 +59,7 @@ jobs:
             [ -d "$directory" ] || continue
             function_name="$(basename "$directory")"
             case "$function_name" in
-              kopick-api|kopick-gateway|kopick-core) continue ;;
+              kopick-api|kopick-gateway|kopick-place-gateway|kopick-core) continue ;;
             esac
             supabase functions deploy "$function_name" --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
           done
@@ -71,5 +71,5 @@ jobs:
           rm -rf supabase/functions/kopick-core
           cp -R supabase/functions/kopick-api supabase/functions/kopick-core
           supabase functions deploy kopick-core --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
-          cp supabase/functions/kopick-gateway/index.ts supabase/functions/kopick-api/index.ts
+          cp supabase/functions/kopick-place-gateway/index.ts supabase/functions/kopick-api/index.ts
           supabase functions deploy kopick-api --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
