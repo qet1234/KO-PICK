@@ -94,7 +94,7 @@ jobs:
   database:
     name: Supabase database migration check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -104,15 +104,38 @@ jobs:
         with:
           version: latest
 
-      - name: Start local Supabase database
-        run: supabase db start
+      - name: Start local Supabase and capture migration output
+        id: database-start
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          supabase start > database-check.log 2>&1
+          status=$?
+          echo "$status" > database-check.status
+          cat database-check.log
 
-      - name: Apply all migrations from a clean database
+      - name: Upload database diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-check
+          path: |
+            database-check.log
+            database-check.status
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Require successful database start
+        shell: bash
+        run: test "$(cat database-check.status)" = "0"
+
+      - name: Reapply all migrations from a clean database
         run: supabase db reset
 
       - name: Lint database schema
         run: supabase db lint --level warning
 
-      - name: Stop local Supabase database
+      - name: Stop local Supabase
         if: always()
         run: supabase stop --no-backup
