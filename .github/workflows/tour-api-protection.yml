@@ -46,10 +46,10 @@ jobs:
           test ! -e render.yaml
           test ! -e .github/workflows/keep-render-awake.yml
 
-      - name: Check TourAPI Edge Function
+      - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
 
-      - name: Deno check
-        run: deno check supabase/functions/kopick-api/index.ts
+      - name: Check TourAPI Edge Function
+        run: deno check --node-modules-dir=auto supabase/functions/kopick-api/index.ts
