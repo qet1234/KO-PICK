@@ -51,5 +51,42 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Check Edge Function
-        run: deno check supabase/functions/kopick-api/index.ts
+      - name: Check Edge Functions
+        id: deno-check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "=== kopick-api ==="
+            deno check supabase/functions/kopick-api/index.ts
+            first=$?
+            echo
+            echo "=== naver-userinfo ==="
+            deno check supabase/functions/naver-userinfo/index.ts
+            second=$?
+            echo
+            echo "kopick_api_status=$first"
+            echo "naver_userinfo_status=$second"
+          } > edge-function-check.log 2>&1
+          if [ "$first" -eq 0 ] && [ "$second" -eq 0 ]; then
+            echo 0 > edge-function-check.status
+          else
+            echo 1 > edge-function-check.status
+          fi
+          cat edge-function-check.log
+
+      - name: Upload Edge Function diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-function-check
+          path: |
+            edge-function-check.log
+            edge-function-check.status
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Require successful Edge Function checks
+        shell: bash
+        run: test "$(cat edge-function-check.status)" = "0"
