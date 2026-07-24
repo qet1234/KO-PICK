@@ -1,0 +1,44 @@
+name: Verify Naver Client ID
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verify-naver-client-id.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+      EXPECTED_SHA256: 87646e543b1c39af43b72544cfb6df48a0118d59ea0d2608fd9614ceea8012a7
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Compare Naver Client ID without exposing it
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${NAVER_CLIENT_ID:-}" ]; then
+            state=failure
+            description='NAVER_CLIENT_ID secret is missing'
+          else
+            actual="$(printf '%s' "$NAVER_CLIENT_ID" | sha256sum | awk '{print $1}')"
+            if [ "$actual" = "$EXPECTED_SHA256" ]; then
+              state=success
+              description='Naver Client ID matches developer console'
+            else
+              state=failure
+              description='Naver Client ID does not match developer console'
+            fi
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Naver Client ID Match' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          test "$state" = success
