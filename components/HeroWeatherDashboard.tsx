@@ -5,9 +5,12 @@ import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 
 const regions = Object.keys(koreaRegionDistricts);
 
+type WeatherVisualState = "sunny" | "cloudy" | "rainy";
+
 type HourlyWeather = {
   time: string;
   icon: string;
+  visualState: WeatherVisualState;
   condition: string;
   temperature: number;
   apparentTemperature: number;
@@ -18,6 +21,7 @@ type HourlyWeather = {
 type DailyWeather = {
   date: string;
   icon: string;
+  visualState: WeatherVisualState;
   condition: string;
   maxTemperature: number;
   minTemperature: number;
@@ -30,11 +34,13 @@ type WeatherDashboardData = {
   locationName: string;
   updatedAt: string;
   icon: string;
+  visualState: WeatherVisualState;
   condition: string;
   temperature: number;
   apparentTemperature: number;
   humidity: number;
   currentPrecipitation: number;
+  currentPrecipitationProbability: number;
   windSpeed: number;
   windDirection: number;
   maxTemperature: number;
@@ -114,12 +120,36 @@ function formatWeekDay(value: string, todayKey: string) {
   return value === todayKey ? `오늘 · ${monthDay}` : `${weekday} · ${monthDay}`;
 }
 
+function WeatherScene({
+  state,
+  label,
+  compact = false,
+}: {
+  state: WeatherVisualState;
+  label: string;
+  compact?: boolean;
+}) {
+  return (
+    <span
+      className={`kp-weather-scene is-${state}${compact ? " is-compact" : ""}`}
+      role="img"
+      aria-label={label}
+    >
+      <i className="kp-weather-scene-sun" />
+      <i className="kp-weather-scene-cloud kp-weather-scene-cloud-main" />
+      <i className="kp-weather-scene-cloud kp-weather-scene-cloud-small" />
+      <i className="kp-weather-scene-rain"><b /><b /><b /></i>
+    </span>
+  );
+}
+
 export default function HeroWeatherDashboard() {
   const [region, setRegion] = useState("서울");
   const [district, setDistrict] = useState("전체");
   const [weather, setWeather] = useState<WeatherDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedHourIndex, setSelectedHourIndex] = useState(0);
   const hourlyListRef = useRef<HTMLDivElement>(null);
 
   const districts = koreaRegionDistricts[region] ?? [];
@@ -132,6 +162,15 @@ export default function HeroWeatherDashboard() {
     ),
     [weekRange.endKey, weekRange.startKey, weather?.daily],
   );
+
+  const activeHourly = weather?.hourly[selectedHourIndex] ?? weather?.hourly[0];
+  const activeVisualState = activeHourly?.visualState ?? weather?.visualState ?? "sunny";
+  const activeTemperature = activeHourly?.temperature ?? weather?.temperature ?? 0;
+  const activeApparentTemperature = activeHourly?.apparentTemperature ?? weather?.apparentTemperature ?? 0;
+  const activeCondition = activeHourly?.condition ?? weather?.condition ?? "날씨 확인";
+  const activePrecipitationProbability = activeHourly?.precipitationProbability
+    ?? weather?.currentPrecipitationProbability
+    ?? 0;
 
   useEffect(() => {
     setDistrict("전체");
@@ -152,6 +191,7 @@ export default function HeroWeatherDashboard() {
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error ?? "날씨 조회 실패");
         setWeather(payload as WeatherDashboardData);
+        setSelectedHourIndex(0);
       } catch (requestError) {
         if (!controller.signal.aborted) {
           setWeather(null);
@@ -193,12 +233,12 @@ export default function HeroWeatherDashboard() {
   };
 
   return (
-    <article className="kp-weather-dashboard" aria-label="전국 실시간 날씨">
+    <article className={`kp-weather-dashboard is-${activeVisualState}`} aria-label="전국 실시간 날씨">
       <header className="kp-weather-dashboard-header">
         <div>
           <small>LIVE KOREA WEATHER</small>
           <h1>전국 실시간 날씨</h1>
-          <p>시·도를 선택한 뒤 시·군·구를 골라 상세 날씨를 확인하세요.</p>
+          <p>시간대별 강수확률에 따라 해·구름·비 화면이 자동으로 전환됩니다.</p>
         </div>
         <span className="kp-weather-live"><i />10분 자동 갱신</span>
       </header>
@@ -225,19 +265,21 @@ export default function HeroWeatherDashboard() {
         <div className="kp-weather-dashboard-state is-error">{error || "날씨를 불러오지 못했습니다."}</div>
       ) : (
         <>
-          <section className="kp-weather-now">
+          <section className={`kp-weather-now is-${activeVisualState}`}>
             <div className="kp-weather-now-primary">
-              <span className="kp-weather-now-icon" aria-hidden="true">{weather.icon}</span>
+              <WeatherScene state={activeVisualState} label={activeCondition} />
               <div>
-                <small>{weather.locationName}</small>
-                <strong>{weather.temperature}°</strong>
-                <p>{weather.condition} · 체감 {weather.apparentTemperature}°</p>
+                <small>
+                  {weather.locationName} · {selectedHourIndex === 0 ? "현재" : `${formatHour(activeHourly?.time ?? "")} 예보`}
+                </small>
+                <strong>{activeTemperature}°</strong>
+                <p>{activeCondition} · 체감 {activeApparentTemperature}° · 강수 {activePrecipitationProbability}%</p>
               </div>
             </div>
             <div className="kp-weather-now-metrics">
+              <span><small>강수확률</small><strong>{activePrecipitationProbability}%</strong></span>
               <span><small>습도</small><strong>{weather.humidity}%</strong></span>
-              <span><small>강수</small><strong>{weather.currentPrecipitation}mm</strong></span>
-              <span><small>풍속</small><strong>{weather.windSpeed}km/h</strong></span>
+              <span><small>풍속</small><strong>{selectedHourIndex === 0 ? weather.windSpeed : activeHourly?.windSpeed ?? weather.windSpeed}km/h</strong></span>
               <span><small>오늘</small><strong>{weather.maxTemperature}° / {weather.minTemperature}°</strong></span>
             </div>
           </section>
@@ -246,7 +288,7 @@ export default function HeroWeatherDashboard() {
             <div className="kp-weather-section-title kp-weather-hourly-title">
               <div>
                 <strong>시간대별 예보</strong>
-                <span>현재부터 24시간 · 강수확률 포함</span>
+                <span>0~29% 해 · 30~59% 구름 · 60% 이상 비</span>
               </div>
               <div className="kp-weather-hourly-controls" aria-label="시간대별 예보 이동">
                 <button type="button" onClick={() => moveHourlyForecast(-1)} aria-label="이전 시간대 보기">←</button>
@@ -255,12 +297,21 @@ export default function HeroWeatherDashboard() {
             </div>
             <div className="kp-weather-hourly-list" ref={hourlyListRef} tabIndex={0} aria-label="현재부터 24시간 예보">
               {weather.hourly.map((item, index) => (
-                <article key={item.time} className={index === 0 ? "is-current" : ""}>
+                <button
+                  type="button"
+                  key={item.time}
+                  className={`${index === 0 ? "is-current " : ""}${index === selectedHourIndex ? "is-selected " : ""}is-${item.visualState}`}
+                  onClick={() => setSelectedHourIndex(index)}
+                  onFocus={() => setSelectedHourIndex(index)}
+                  onMouseEnter={() => setSelectedHourIndex(index)}
+                  aria-pressed={index === selectedHourIndex}
+                  aria-label={`${index === 0 ? "현재" : formatHour(item.time)} ${item.condition}, ${item.temperature}도, 강수확률 ${item.precipitationProbability}%`}
+                >
                   <small>{index === 0 ? "현재" : formatHour(item.time)}</small>
-                  <span aria-hidden="true">{item.icon}</span>
+                  <WeatherScene state={item.visualState} label={item.condition} compact />
                   <strong>{item.temperature}°</strong>
                   <em>강수 {item.precipitationProbability}%</em>
-                </article>
+                </button>
               ))}
             </div>
           </section>
@@ -272,7 +323,7 @@ export default function HeroWeatherDashboard() {
             </div>
             <div className="kp-weather-weekly-list">
               {remainingWeekForecast.map((item) => (
-                <article key={item.date}>
+                <article key={item.date} className={`is-${item.visualState}`}>
                   <small>{formatWeekDay(item.date, todayKey)}</small>
                   <span aria-hidden="true">{item.icon}</span>
                   <strong>{item.maxTemperature}°</strong>
