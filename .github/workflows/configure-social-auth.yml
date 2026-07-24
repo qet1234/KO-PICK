@@ -38,7 +38,8 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state=pending \
             -f context='Supabase Social Login' \
-            -f description='Configuring Kakao and Naver login'
+            -f description='Configuring Kakao and Naver login' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Check out repository
         uses: actions/checkout@v4
@@ -54,6 +55,7 @@ jobs:
             test -n "${!key:-}" || missing+=("$key")
           done
           if [ "${#missing[@]}" -gt 0 ]; then
+            echo "SOCIAL_AUTH_MISSING_KEYS=${missing[*]}" >> "$GITHUB_ENV"
             printf 'Missing GitHub Secrets: %s\n' "${missing[*]}"
             exit 1
           fi
@@ -149,9 +151,16 @@ jobs:
         shell: bash
         env:
           RESULT_STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
-          RESULT_DESCRIPTION: ${{ job.status == 'success' && 'Kakao and Naver login configured' || 'Social login configuration needs credentials' }}
         run: |
+          if [ "$RESULT_STATE" = "success" ]; then
+            description='Kakao and Naver login configured'
+          elif [ -n "${SOCIAL_AUTH_MISSING_KEYS:-}" ]; then
+            description="Missing: ${SOCIAL_AUTH_MISSING_KEYS}"
+          else
+            description='Social login configuration failed; open run logs'
+          fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$RESULT_STATE" \
             -f context='Supabase Social Login' \
-            -f description="$RESULT_DESCRIPTION"
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
