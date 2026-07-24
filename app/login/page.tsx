@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 type SocialProvider = "google" | "kakao" | "naver" | "apple";
-type SupabaseOAuthProvider = "google" | "kakao" | "custom:naver";
+type SupabaseOAuthProvider = "google" | "kakao";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   const handleSocialLogin = async (
     provider: SupabaseOAuthProvider,
-    activeKey: Exclude<SocialProvider, "apple">,
+    activeKey: Exclude<SocialProvider, "apple" | "naver">,
     providerLabel: string,
   ) => {
     if (loading) return;
@@ -29,7 +29,7 @@ export default function LoginPage() {
 
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider as never,
+        provider,
         options: {
           redirectTo: callback.toString(),
           skipBrowserRedirect: true,
@@ -48,6 +48,15 @@ export default function LoginPage() {
       setLoading(false);
       setActiveProvider(null);
     }
+  };
+
+  const handleNaverLogin = () => {
+    if (loading) return;
+
+    setLoading(true);
+    setActiveProvider("naver");
+    setMessage("네이버 로그인 페이지로 이동하고 있어요.");
+    window.location.assign("/auth/naver");
   };
 
   useEffect(() => {
@@ -131,7 +140,7 @@ export default function LoginPage() {
           <div className="quick-login-options" aria-label="간편 로그인 선택">
             <button
               type="button"
-              onClick={() => void handleSocialLogin("custom:naver", "naver", "네이버")}
+              onClick={handleNaverLogin}
               disabled={loading}
               aria-label="네이버로 로그인"
             >
