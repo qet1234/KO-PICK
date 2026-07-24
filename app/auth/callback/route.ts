@@ -40,12 +40,9 @@ export async function GET(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet, headersToSet) {
+      setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
           successResponse.cookies.set(name, value, options);
-        });
-        Object.entries(headersToSet ?? {}).forEach(([name, value]) => {
-          successResponse.headers.set(name, value);
         });
       },
     },
