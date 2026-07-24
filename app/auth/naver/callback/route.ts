@@ -15,24 +15,14 @@ import {
 
 export const runtime = "nodejs";
 
-type NaverTokenResponse = {
-  access_token?: string;
+type NaverProfile = {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  nickname?: string | null;
+  profile_image?: string | null;
   error?: string;
   error_description?: string;
-};
-
-type NaverProfile = {
-  id: string;
-  email?: string;
-  name?: string;
-  nickname?: string;
-  profile_image?: string;
-};
-
-type NaverProfileResponse = {
-  resultcode: string;
-  message: string;
-  response?: NaverProfile;
 };
 
 function statesMatch(received: string, expected: string) {
@@ -80,9 +70,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const clientId = process.env.NAVER_CLIENT_ID?.trim();
-    const clientSecret =
-      process.env.NAVER_CLIENT_SECRET?.trim();
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
     const supabasePublishableKey =
@@ -90,84 +77,42 @@ export async function GET(request: NextRequest) {
     const serviceRoleKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-    if (
-      !clientId ||
-      !clientSecret ||
-      !supabaseUrl ||
-      !supabasePublishableKey ||
-      !serviceRoleKey
-    ) {
-      console.error("네이버 로그인용 서버 환경변수가 없습니다.");
+    if (!supabaseUrl || !supabasePublishableKey || !serviceRoleKey) {
+      console.error("네이버 로그인용 Supabase 환경변수가 없습니다.");
       return createNaverErrorRedirect(
         request.url,
         "네이버 로그인 서버 설정이 완료되지 않았습니다.",
       );
     }
 
-    const tokenRequest = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      state,
-    });
-    const tokenResponse = await fetch(
-      "https://nid.naver.com/oauth2.0/token",
+    const profileResponse = await fetch(
+      `${supabaseUrl}/functions/v1/naver-userinfo`,
       {
         method: "POST",
         headers: {
-          "Content-Type":
-            "application/x-www-form-urlencoded;charset=utf-8",
+          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: serviceRoleKey,
+          "Content-Type": "application/json",
         },
-        body: tokenRequest,
+        body: JSON.stringify({ code, state }),
         cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(15_000),
       },
     );
-    const tokenResult =
-      (await tokenResponse.json()) as NaverTokenResponse;
+    const profile = (await profileResponse.json().catch(() => null)) as
+      | NaverProfile
+      | null;
 
-    if (!tokenResponse.ok || !tokenResult.access_token) {
-      console.error("네이버 접근 토큰 발급 오류:", {
-        status: tokenResponse.status,
-        error: tokenResult.error,
-        description: tokenResult.error_description,
-      });
-      return createNaverErrorRedirect(
-        request.url,
-        "네이버 인증 정보를 확인하지 못했습니다.",
-      );
-    }
-
-    const profileResponse = await fetch(
-      "https://openapi.naver.com/v1/nid/me",
-      {
-        headers: {
-          Authorization: `Bearer ${tokenResult.access_token}`,
-          "X-Naver-Client-Id": clientId,
-          "X-Naver-Client-Secret": clientSecret,
-        },
-        cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
-    const profileResult =
-      (await profileResponse.json()) as NaverProfileResponse;
-    const profile = profileResult.response;
-
-    if (
-      !profileResponse.ok ||
-      profileResult.resultcode !== "00" ||
-      !profile?.id
-    ) {
-      console.error("네이버 프로필 조회 오류:", {
+    if (!profileResponse.ok || !profile?.id) {
+      console.error("네이버 인증 교환 오류:", {
         status: profileResponse.status,
-        resultCode: profileResult.resultcode,
-        message: profileResult.message,
+        error: profile?.error,
+        description: profile?.error_description,
       });
       return createNaverErrorRedirect(
         request.url,
-        "네이버 회원 정보를 확인하지 못했습니다.",
+        profile?.error_description ||
+          "네이버 인증 정보를 확인하지 못했습니다.",
       );
     }
 
