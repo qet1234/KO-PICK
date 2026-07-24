@@ -1,3 +1,5 @@
+import { createClient } from "./supabase/client";
+
 export type SpringUser = {
   id: string;
   email: string | null;
@@ -7,344 +9,199 @@ export type SpringUser = {
   role: "USER" | "ADMIN";
 };
 
-const configuredApiUrl = process.env.NEXT_PUBLIC_SPRING_API_URL?.trim();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()?.replace(/\/$/, "") ?? "";
+const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
 
-export const springApiUrl = (
-  configuredApiUrl || "http://localhost:8080"
-).replace(/\/$/, "");
+// 기존 컴포넌트가 사용하는 이름은 유지하지만 실제 대상은 Supabase Edge Function입니다.
+export const springApiUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/kopick-api` : "";
 
-let csrfToken: string | null = null;
-let accessToken: string | null = null;
-let browserRefreshToken: string | null = null;
-let refreshPromise: Promise<string | null> | null = null;
-
-const ACCESS_TOKEN_KEY = "kopick_access_token";
-const REFRESH_TOKEN_KEY = "kopick_refresh_token";
-const ACCESS_EXPIRES_AT_KEY = "kopick_access_expires_at";
-const OAUTH_URL_TOKEN_KEYS = [
-  "access_token",
-  "refresh_token",
-  "expires_in",
-  "token_type",
-] as const;
-
-const REQUEST_TIMEOUT_MS = 20_000;
-const API_WARMUP_TIMEOUT_MS = 3_000;
-
-function sessionValue(key: string) {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
+function browserClient() {
+  return createClient();
 }
 
-function storeBrowserTokens(
-  nextAccessToken: string,
-  refreshToken: string,
-  expiresIn: number,
-) {
-  accessToken = nextAccessToken;
-  browserRefreshToken = refreshToken;
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(ACCESS_TOKEN_KEY, nextAccessToken);
-    window.sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    window.sessionStorage.setItem(
-      ACCESS_EXPIRES_AT_KEY,
-      String(Date.now() + Math.max(0, expiresIn) * 1000),
-    );
-  } catch {
-    // In-memory access still works when private browsing blocks sessionStorage.
-  }
+function displayNameFromMetadata(metadata: Record<string, unknown> | undefined, email: string | null) {
+  const value =
+    metadata?.display_name ?? metadata?.full_name ?? metadata?.name ??
+    metadata?.user_name ?? metadata?.preferred_username ?? metadata?.nickname;
+  if (typeof value === "string" && value.trim()) return value.trim();
+  return email?.split("@")[0] || "사용자";
 }
 
-function clearBrowserTokens() {
-  accessToken = null;
-  browserRefreshToken = null;
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-    window.sessionStorage.removeItem(ACCESS_EXPIRES_AT_KEY);
-  } catch {
-    // Nothing else to clear when browser storage is unavailable.
-  }
+function imageFromMetadata(metadata: Record<string, unknown> | undefined) {
+  const value = metadata?.avatar_url ?? metadata?.picture ?? metadata?.profile_image;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function acceptOAuthTokensFromUrl() {
-  if (typeof window === "undefined") return;
-
-  const currentUrl = new URL(window.location.href);
-  const fragment = new URLSearchParams(currentUrl.hash.replace(/^#/, ""));
-  const nextAccessToken =
-    fragment.get("access_token") ?? currentUrl.searchParams.get("access_token");
-  const nextRefreshToken =
-    fragment.get("refresh_token") ?? currentUrl.searchParams.get("refresh_token");
-  const expiresIn = Number(
-    fragment.get("expires_in") ??
-      currentUrl.searchParams.get("expires_in") ??
-      "0",
-  );
-
-  const containsLoginCredentials = OAUTH_URL_TOKEN_KEYS.some(
-    (key) => fragment.has(key) || currentUrl.searchParams.has(key),
-  );
-
-  // Capture OAuth credentials first, then remove them synchronously so copying
-  // or sharing the address never transfers the signed-in account to someone else.
-  if (containsLoginCredentials) {
-    currentUrl.hash = "";
-    OAUTH_URL_TOKEN_KEYS.forEach((key) => currentUrl.searchParams.delete(key));
-    currentUrl.searchParams.delete("login");
-    window.history.replaceState(
-      {},
-      "",
-      currentUrl.pathname + currentUrl.search,
-    );
-  }
-
-  if (!nextAccessToken || !nextRefreshToken) return;
-
-  storeBrowserTokens(
-    nextAccessToken,
-    nextRefreshToken,
-    Number.isFinite(expiresIn) ? expiresIn : 0,
-  );
+function normalizedProvider(value: unknown) {
+  const provider = typeof value === "string" ? value : "supabase";
+  return provider.startsWith("custom:") ? provider.slice("custom:".length) : provider;
 }
 
-function currentAccessToken() {
-  acceptOAuthTokensFromUrl();
-  if (!accessToken) accessToken = sessionValue(ACCESS_TOKEN_KEY);
-  return accessToken;
+function parseBody(init: RequestInit) {
+  if (!init.body) return {} as Record<string, unknown>;
+  if (typeof init.body === "string") {
+    try { return JSON.parse(init.body) as Record<string, unknown>; }
+    catch { throw new Error("요청 데이터를 읽지 못했습니다."); }
+  }
+  throw new Error("JSON 요청만 지원합니다.");
+}
+
+function errorMessage(error: { message?: string } | null | undefined, fallback: string) {
+  return error?.message?.trim() || fallback;
+}
+
+async function rpcJson<T>(name: string, args: Record<string, unknown> = {}) {
+  const { data, error } = await browserClient().rpc(name, args);
+  if (error) throw new Error(errorMessage(error, "Supabase 요청을 처리하지 못했습니다."));
+  if (data && typeof data === "object" && !Array.isArray(data) && "error" in data) {
+    const message = (data as { error?: unknown }).error;
+    if (typeof message === "string" && message.trim()) throw new Error(message);
+  }
+  return data as T;
+}
+
+async function edgeHeaders(extra?: HeadersInit) {
+  const headers = new Headers(extra);
+  if (publishableKey) headers.set("apikey", publishableKey);
+  const { data } = await browserClient().auth.getSession();
+  const token = data.session?.access_token;
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  return headers;
 }
 
 export function warmSpringApi() {
-  if (typeof window === "undefined") return;
-
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(
-    () => controller.abort(),
-    API_WARMUP_TIMEOUT_MS,
-  );
-
+  if (typeof window === "undefined" || !springApiUrl) return;
   void fetch(`${springApiUrl}/actuator/health`, {
     cache: "no-store",
-    credentials: "omit",
-    mode: "no-cors",
-    signal: controller.signal,
-  })
-    .catch(() => {
-      // The direct OAuth navigation will continue waking Render if needed.
-    })
-    .finally(() => {
-      window.clearTimeout(timeoutId);
-    });
-}
-
-// Remove OAuth credentials from the address bar before React renders or any
-// deferred third-party map script can execute.
-acceptOAuthTokensFromUrl();
-
-async function refreshBrowserAccessToken() {
-  if (refreshPromise) return refreshPromise;
-  const refreshToken = browserRefreshToken ?? sessionValue(REFRESH_TOKEN_KEY);
-  if (!refreshToken) return null;
-
-  refreshPromise = (async () => {
-    const response = await fetchWithTimeout(
-      `${springApiUrl}/api/auth/refresh-token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      },
-    );
-    if (!response.ok) {
-      clearBrowserTokens();
-      return null;
-    }
-    const result = (await response.json()) as {
-      accessToken: string;
-      refreshToken: string;
-      expiresIn: number;
-    };
-    storeBrowserTokens(
-      result.accessToken,
-      result.refreshToken,
-      result.expiresIn,
-    );
-    return result.accessToken;
-  })().finally(() => {
-    refreshPromise = null;
+    headers: publishableKey ? { apikey: publishableKey } : undefined,
+  }).catch(() => {
+    // Edge Function 예열 실패는 로그인 버튼이나 화면 렌더링을 막지 않습니다.
   });
-
-  return refreshPromise;
 }
 
-async function fetchWithTimeout(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-) {
-  const controller = new AbortController();
-  const upstreamSignal = init.signal;
-  const abortFromUpstream = () => controller.abort(upstreamSignal?.reason);
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  if (upstreamSignal?.aborted) {
-    abortFromUpstream();
-  } else {
-    upstreamSignal?.addEventListener("abort", abortFromUpstream, { once: true });
-  }
-
-  try {
-    return await fetch(input, { ...init, signal: controller.signal });
-  } catch (error) {
-    if (controller.signal.aborted && !upstreamSignal?.aborted) {
-      throw new Error("서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.");
-    }
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutId);
-    upstreamSignal?.removeEventListener("abort", abortFromUpstream);
-  }
+export function socialLoginUrl() {
+  return "/login";
 }
 
-async function loadCsrfToken() {
-  const response = await fetchWithTimeout(`${springApiUrl}/api/auth/csrf`, {
-    credentials: "include",
-  });
-  if (!response.ok) {
-    throw new Error("로그인 보안 토큰을 가져오지 못했습니다.");
-  }
-  const result = (await response.json()) as { token: string };
-  csrfToken = result.token;
-  return result.token;
-}
-
-export async function springFetch(
-  path: string,
-  init: RequestInit = {},
-) {
-  const method = (init.method ?? "GET").toUpperCase();
-  const headers = new Headers(init.headers);
-  const browserAccessToken = currentAccessToken();
-
-  if (browserAccessToken && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${browserAccessToken}`);
-  }
-
-  if (init.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (
-    !browserAccessToken &&
-    !["GET", "HEAD", "OPTIONS"].includes(method)
-  ) {
-    headers.set("X-XSRF-TOKEN", csrfToken ?? (await loadCsrfToken()));
-  }
-
-  let response = await fetchWithTimeout(`${springApiUrl}${path}`, {
-    ...init,
-    method,
-    headers,
-    credentials: "include",
-  });
-
-  if (response.status === 401 && browserAccessToken) {
-    const refreshedAccessToken = await refreshBrowserAccessToken();
-    if (refreshedAccessToken) {
-      headers.set("Authorization", `Bearer ${refreshedAccessToken}`);
-      response = await fetchWithTimeout(`${springApiUrl}${path}`, {
-        ...init,
-        method,
-        headers,
-        credentials: "include",
-      });
-    }
-  }
-
-  if (
-    response.status === 403 &&
-    !browserAccessToken &&
-    !["GET", "HEAD", "OPTIONS"].includes(method)
-  ) {
-    csrfToken = null;
-    headers.set("X-XSRF-TOKEN", await loadCsrfToken());
-    response = await fetchWithTimeout(`${springApiUrl}${path}`, {
-      ...init,
-      method,
-      headers,
-      credentials: "include",
-    });
-  }
-
-  return response;
-}
-
-export async function springJson<T>(path: string, init: RequestInit = {}) {
-  const response = await springFetch(path, init);
-  const result = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | null;
-  if (!response.ok) {
-    throw new Error(result?.error ?? "서버 요청을 처리하지 못했습니다.");
-  }
-  return result as T;
-}
-
-export function socialLoginUrl(provider: "google" | "kakao" | "naver") {
-  return `${springApiUrl}/oauth2/authorization/${provider}`;
-}
-
-export async function getCurrentUser() {
-  const response = await springFetch("/api/auth/me");
-  if (response.status === 401 || response.status === 403) return null;
-  if (!response.ok) throw new Error("로그인 정보를 확인하지 못했습니다.");
-  return (await response.json()) as SpringUser;
+export async function getCurrentUser(): Promise<SpringUser | null> {
+  const { data, error } = await browserClient().auth.getUser();
+  if (error || !data.user) return null;
+  const provider = normalizedProvider(
+    data.user.app_metadata?.provider ?? data.user.identities?.[0]?.provider,
+  );
+  return {
+    id: data.user.id,
+    email: data.user.email ?? null,
+    displayName: displayNameFromMetadata(data.user.user_metadata, data.user.email ?? null),
+    imageUrl: imageFromMetadata(data.user.user_metadata),
+    provider,
+    role: data.user.app_metadata?.role === "ADMIN" ? "ADMIN" : "USER",
+  };
 }
 
 export async function logoutFromSpring() {
-  const refreshToken = browserRefreshToken ?? sessionValue(REFRESH_TOKEN_KEY);
-  try {
-    if (refreshToken) {
-      await fetchWithTimeout(`${springApiUrl}/api/auth/logout-token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-    } else {
-      await springJson<{ success: boolean }>("/api/auth/logout", { method: "POST" });
-    }
-  } finally {
-    clearBrowserTokens();
-  }
+  const { error } = await browserClient().auth.signOut({ scope: "local" });
+  if (error) throw new Error(errorMessage(error, "로그아웃에 실패했습니다."));
 }
 
-export async function issueApiToken() {
-  const existingAccessToken = currentAccessToken();
-  if (existingAccessToken) {
-    const expiresAt = Number(sessionValue(ACCESS_EXPIRES_AT_KEY) ?? "0");
-    return {
-      accessToken: existingAccessToken,
-      tokenType: "Bearer" as const,
-      expiresIn: Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)),
-    };
-  }
-  const result = await springJson<{
-    accessToken: string;
-    tokenType: "Bearer";
-    expiresIn: number;
-  }>("/api/auth/token", { method: "POST" });
-  accessToken = result.accessToken;
-  return result;
+export async function springFetch(path: string, init: RequestInit = {}) {
+  if (!springApiUrl) throw new Error("NEXT_PUBLIC_SUPABASE_URL 환경변수가 없습니다.");
+  const headers = await edgeHeaders(init.headers);
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  return fetch(`${springApiUrl}${path}`, { ...init, headers });
 }
 
-export async function springJwtFetch(path: string, init: RequestInit = {}) {
-  if (!accessToken) await issueApiToken();
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${accessToken}`);
-  return springFetch(path, { ...init, headers });
+export async function springJson<T>(path: string, init: RequestInit = {}) {
+  const method = (init.method ?? "GET").toUpperCase();
+  const body = parseBody(init);
+  const url = new URL(path, "https://kopick.local");
+  const pathname = url.pathname;
+
+  if (pathname === "/api/web/spaces" && method === "GET") {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("로그인이 필요합니다.");
+    return rpcJson<T>("list_my_spaces", { p_display_name: user.displayName });
+  }
+  if (pathname === "/api/web/spaces" && method === "POST") {
+    return rpcJson<T>("create_shared_space", {
+      p_type: body.type,
+      p_name: body.name,
+      p_display_name: body.displayName,
+    });
+  }
+  if (pathname === "/api/web/spaces/join" && method === "POST") {
+    return rpcJson<T>("join_shared_space", {
+      p_invite_code: body.inviteCode,
+      p_display_name: body.displayName,
+    });
+  }
+  const inviteMatch = pathname.match(/^\/api\/web\/spaces\/([^/]+)\/invite$/);
+  if (inviteMatch && method === "POST") {
+    return rpcJson<T>("refresh_space_invite", { p_space_id: decodeURIComponent(inviteMatch[1]) });
+  }
+  const spaceMatch = pathname.match(/^\/api\/web\/spaces\/([^/]+)$/);
+  if (spaceMatch && method === "DELETE") {
+    const success = await rpcJson<boolean>("leave_shared_space", { p_space_id: decodeURIComponent(spaceMatch[1]) });
+    return { success } as T;
+  }
+
+  if (pathname === "/api/web/reservations" && method === "GET") {
+    return rpcJson<T>("list_my_reservations", {
+      p_space_id: url.searchParams.get("spaceId") || null,
+    });
+  }
+  if (pathname === "/api/web/reservations" && method === "POST") {
+    return rpcJson<T>("create_reservation_plan", {
+      p_space_id: body.spaceId,
+      p_title: body.title,
+      p_purpose: body.purpose,
+      p_reservation_date: body.reservationDate,
+      p_party_size: body.partySize,
+      p_budget_per_person: body.budgetPerPerson ?? null,
+      p_note: body.note ?? null,
+    });
+  }
+  const candidateCreateMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/candidates$/);
+  if (candidateCreateMatch && method === "POST") {
+    return rpcJson<T>("add_reservation_candidate", {
+      p_plan_id: decodeURIComponent(candidateCreateMatch[1]),
+      p_place_source: body.placeSource ?? "manual",
+      p_place_id: body.placeId ?? null,
+      p_place_name: body.placeName,
+      p_category: body.category ?? null,
+      p_address: body.address ?? null,
+      p_starts_at: body.startsAt,
+      p_external_reservation_url: body.externalReservationUrl ?? null,
+    });
+  }
+  const voteMatch = pathname.match(/^\/api\/web\/reservations\/candidates\/([^/]+)\/vote$/);
+  if (voteMatch && method === "POST") {
+    return rpcJson<T>("toggle_reservation_vote", { p_candidate_id: decodeURIComponent(voteMatch[1]) });
+  }
+  const finalizeMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/finalize$/);
+  if (finalizeMatch && method === "POST") {
+    return rpcJson<T>("finalize_reservation_plan", {
+      p_plan_id: decodeURIComponent(finalizeMatch[1]),
+      p_candidate_id: body.candidateId,
+    });
+  }
+  const statusMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/status$/);
+  if (statusMatch && method === "PATCH") {
+    return rpcJson<T>("update_reservation_status", {
+      p_plan_id: decodeURIComponent(statusMatch[1]),
+      p_status: body.status,
+    });
+  }
+  const planMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)$/);
+  if (planMatch && method === "DELETE") {
+    const success = await rpcJson<boolean>("delete_reservation_plan", {
+      p_plan_id: decodeURIComponent(planMatch[1]),
+    });
+    return { success } as T;
+  }
+
+  const response = await springFetch(path, init);
+  const payload = await response.json().catch(() => null) as (T & { error?: string }) | null;
+  if (!response.ok) throw new Error(payload?.error || "Supabase Edge Function 요청에 실패했습니다.");
+  return payload as T;
 }
