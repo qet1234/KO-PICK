@@ -32,7 +32,6 @@ jobs:
     timeout-minutes: 35
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: vbwaruzncfaxnjyybudm
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -54,47 +53,38 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"; exit 1; }
-          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo "Missing GitHub Secret: SUPABASE_DB_PASSWORD"; exit 1; }
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Link production database
-        id: link
+      - name: Apply TourAPI snapshot schema
+        id: schema
         shell: bash
         run: |
-          set +e
-          output="$(supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" 2>&1)"
-          status=$?
-          printf '%s\n' "$output"
-          if [ "$status" -ne 0 ]; then
-            summary="$(printf '%s\n' "$output" | tail -n 1 | tr '\n' ' ' | cut -c1-110)"
-            echo "DB_ERROR_SUMMARY=link: ${summary}" >> "$GITHUB_ENV"
-            exit "$status"
-          fi
+          set -euo pipefail
+          migration="supabase/migrations/20260724134500_create_tour_places_snapshot.sql"
+          test -f "$migration"
+          jq -Rs '{query: ., read_only: false}' "$migration" > /tmp/database-query.json
 
-      - name: Inspect migration state
-        shell: bash
-        run: |
-          set +e
-          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" 2>&1 | tail -n 80
-          exit 0
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 120 \
+            --output "$response_file" --write-out '%{http_code}' \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'content-type: application/json' \
+            --data-binary @/tmp/database-query.json \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query")"
 
-      - name: Apply TourAPI snapshot migration
-        id: migrate
-        shell: bash
-        run: |
-          set +e
-          output="$(supabase db push --linked --include-all --password "$SUPABASE_DB_PASSWORD" 2>&1)"
-          status=$?
-          printf '%s\n' "$output"
-          if [ "$status" -ne 0 ]; then
-            summary="$(printf '%s\n' "$output" | tail -n 1 | tr '\n' ' ' | cut -c1-110)"
-            echo "DB_ERROR_SUMMARY=push: ${summary}" >> "$GITHUB_ENV"
-            exit "$status"
+          echo "Database schema HTTP status: $status"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            cat "$response_file"
+            summary="$(jq -r '.message // .error // .code // "database schema request failed"' "$response_file" 2>/dev/null | tr '\n' ' ' | cut -c1-110)"
+            echo "DB_ERROR_SUMMARY=schema: ${summary}" >> "$GITHUB_ENV"
+            exit 1
           fi
+          echo "TourAPI snapshot schema is ready."
 
       - name: Deploy snapshot synchronization function
         id: deploy
