@@ -38,7 +38,7 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state=pending \
             -f context='Supabase Social Login' \
-            -f description='Configuring Kakao and Naver login' \
+            -f description='Configuring Kakao login' \
             -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Check out repository
@@ -46,18 +46,26 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Verify required credentials
+      - name: Verify Kakao credentials
+        id: credentials
         shell: bash
         run: |
           set -euo pipefail
           missing=()
-          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET NAVER_CLIENT_ID NAVER_CLIENT_SECRET; do
+          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET; do
             test -n "${!key:-}" || missing+=("$key")
           done
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "SOCIAL_AUTH_MISSING_KEYS=${missing[*]}" >> "$GITHUB_ENV"
             printf 'Missing GitHub Secrets: %s\n' "${missing[*]}"
             exit 1
+          fi
+
+          if [ -n "${NAVER_CLIENT_ID:-}" ] && [ -n "${NAVER_CLIENT_SECRET:-}" ]; then
+            echo "naver_ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "naver_ready=false" >> "$GITHUB_OUTPUT"
+            echo "Naver credentials are not registered yet. Kakao setup will continue independently."
           fi
 
       - name: Configure Kakao provider and redirect URLs
@@ -108,12 +116,14 @@ jobs:
           console.log(`Provider callback: https://${ref}.supabase.co/auth/v1/callback`);
           NODE
 
-      - name: Set up Supabase CLI
+      - name: Set up Supabase CLI for Naver
+        if: steps.credentials.outputs.naver_ready == 'true'
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Store Naver provider secrets
+        if: steps.credentials.outputs.naver_ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -126,11 +136,13 @@ jobs:
             --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Deploy Naver OAuth functions
+        if: steps.credentials.outputs.naver_ready == 'true'
         run: |
           supabase functions deploy naver-userinfo --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
           supabase functions deploy configure-social-auth --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
 
       - name: Create or update Naver provider
+        if: steps.credentials.outputs.naver_ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -151,14 +163,18 @@ jobs:
         shell: bash
         env:
           RESULT_STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+          NAVER_READY: ${{ steps.credentials.outputs.naver_ready }}
         run: |
-          if [ "$RESULT_STATE" = "success" ]; then
+          if [ "$RESULT_STATE" = "success" ] && [ "$NAVER_READY" = "true" ]; then
             description='Kakao and Naver login configured'
+          elif [ "$RESULT_STATE" = "success" ]; then
+            description='Kakao login configured; Naver credentials pending'
           elif [ -n "${SOCIAL_AUTH_MISSING_KEYS:-}" ]; then
             description="Missing: ${SOCIAL_AUTH_MISSING_KEYS}"
           else
-            description='Social login configuration failed; open run logs'
+            description='Kakao login configuration failed; open run logs'
           fi
+
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$RESULT_STATE" \
             -f context='Supabase Social Login' \
