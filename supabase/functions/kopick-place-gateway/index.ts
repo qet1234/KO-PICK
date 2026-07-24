@@ -94,11 +94,16 @@ async function proxyCore(request: Request, url: URL) {
   });
 }
 
-async function searchKakao(query: string, restApiKey: string, categoryGroup: string) {
+async function searchKakao(
+  query: string,
+  restApiKey: string,
+  categoryGroup: string,
+  page: number,
+) {
   const endpoint = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
   endpoint.searchParams.set("query", query);
   endpoint.searchParams.set("size", "15");
-  endpoint.searchParams.set("page", "1");
+  endpoint.searchParams.set("page", String(Math.max(1, Math.min(3, page))));
   endpoint.searchParams.set("sort", "accuracy");
   if (categoryGroup) endpoint.searchParams.set("category_group_code", categoryGroup);
 
@@ -135,20 +140,30 @@ async function kakaoFallback(url: URL, fallbackReason: string) {
   const detailType = url.searchParams.get("detailType") || "전체";
   const city = url.searchParams.get("sigunguCode") || "";
   const requestedPage = Math.max(1, Number(url.searchParams.get("page") || 1));
-  const pageSize = Math.max(1, Math.min(12, Number(url.searchParams.get("pageSize") || 12)));
+  const pageSize = Math.max(1, Math.min(30, Number(url.searchParams.get("pageSize") || 12)));
   const keyword = detailType !== "전체" ? detailType : (categoryKeywords[category] || categoryKeywords.전체);
   const group = categoryGroups[category] || "";
 
+  const regionsPerPage = 3;
+  const totalPages = region === "전국"
+    ? Math.ceil(nationwideRegions.length / regionsPerPage)
+    : 3;
+  const effectivePage = Math.min(requestedPage, totalPages);
+  const kakaoPage = region === "전국" ? 1 : effectivePage;
   const targets = region === "전국"
-    ? Array.from({ length: 3 }, (_, index) => nationwideRegions[((requestedPage - 1) * 3 + index) % nationwideRegions.length])
+    ? nationwideRegions.slice(
+      (effectivePage - 1) * regionsPerPage,
+      effectivePage * regionsPerPage,
+    )
     : [region];
+
   const queries = targets.flatMap((target) => {
     const base = [target, city, keyword].filter(Boolean).join(" ");
     return [base, `${target} 인기 ${keyword}`];
   });
 
   const settled = await Promise.allSettled(
-    queries.slice(0, 6).map((query) => searchKakao(query, restApiKey, group)),
+    queries.slice(0, 6).map((query) => searchKakao(query, restApiKey, group, kakaoPage)),
   );
   const errors = settled
     .filter((result): result is PromiseRejectedResult => result.status === "rejected")
@@ -195,10 +210,12 @@ async function kakaoFallback(url: URL, fallbackReason: string) {
   return json({
     places,
     pagination: {
-      page: requestedPage,
+      page: effectivePage,
       pageSize,
-      totalCount: places.length,
-      totalPages: 1,
+      totalCount: Math.max(places.length, pageSize * totalPages),
+      totalPages,
+      hasNext: effectivePage < totalPages,
+      hasPrevious: effectivePage > 1,
     },
     bookingOnly: false,
     scannedCount: rawDocuments.length,
