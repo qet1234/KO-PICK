@@ -1,0 +1,54 @@
+name: Diagnose Legacy Tour Snapshot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-render-tour-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      ENDPOINT: https://kopick-api.onrender.com/api/public/tour/places?page=1&pageSize=1&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inspect legacy snapshot
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --location --max-time 120 --output "$response_file" --write-out '%{http_code}' "$ENDPOINT")"
+          echo "HTTP status: $status"
+          cat "$response_file"
+          echo
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          test "$status" -ge 200 -a "$status" -lt 300
+          jq -e '.pagination.totalCount > 1000' "$response_file" >/dev/null
+
+      - name: Report result
+        if: always()
+        env:
+          RESULT: ${{ steps.inspect.outcome }}
+          HTTP_STATUS: ${{ steps.inspect.outputs.status }}
+        shell: bash
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            state=success
+            description='Legacy TourAPI snapshot is available for migration'
+          else
+            state=failure
+            description="Legacy snapshot unavailable (HTTP ${HTTP_STATUS:-unknown})"
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Legacy Tour Snapshot' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
