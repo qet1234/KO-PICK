@@ -70,6 +70,7 @@ jobs:
           set -euo pipefail
           rm -rf supabase/functions/kopick-core
           cp -R supabase/functions/kopick-api supabase/functions/kopick-core
+          sed -i 's|const marker = "/kopick-api";|const marker = "/kopick-core";|' supabase/functions/kopick-core/index.ts
           supabase functions deploy kopick-core --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
           cp supabase/functions/kopick-place-gateway/index.ts supabase/functions/kopick-api/index.ts
           supabase functions deploy kopick-api --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
