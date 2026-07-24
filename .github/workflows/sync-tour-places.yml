@@ -1,0 +1,164 @@
+name: Sync Full TourAPI Snapshot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/*tour_places_snapshot*.sql"
+      - "supabase/functions/sync-tour-places/**"
+      - "supabase/functions/kopick-place-gateway/**"
+      - ".github/workflows/sync-tour-places.yml"
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: Start a new full synchronization
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: tourapi-full-snapshot-production
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: vbwaruzncfaxnjyybudm
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Mark snapshot synchronization pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='TourAPI Full Snapshot' \
+            -f description='Preparing the full Korea Tourism dataset' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify deployment credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo "Missing GitHub Secret: SUPABASE_DB_PASSWORD"; exit 1; }
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply TourAPI snapshot migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deploy snapshot synchronization function
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          sync_token="$(openssl rand -hex 32)"
+          echo "sync_token=$sync_token" >> "$GITHUB_OUTPUT"
+          supabase secrets set TOUR_SYNC_TOKEN="$sync_token" --project-ref "$PROJECT_REF"
+          supabase functions deploy sync-tour-places --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Deploy snapshot-aware place gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf supabase/functions/kopick-core
+          cp -R supabase/functions/kopick-api supabase/functions/kopick-core
+          supabase functions deploy kopick-core --project-ref "$PROJECT_REF" --no-verify-jwt
+          cp supabase/functions/kopick-place-gateway/index.ts supabase/functions/kopick-api/index.ts
+          supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Continue full TourAPI synchronization
+        id: synchronize
+        shell: bash
+        env:
+          SYNC_TOKEN: ${{ steps.deploy.outputs.sync_token }}
+          RESET_REQUESTED: ${{ github.event_name == 'workflow_dispatch' && inputs.reset || false }}
+        run: |
+          set -euo pipefail
+          endpoint="https://${PROJECT_REF}.supabase.co/functions/v1/sync-tour-places"
+          current="$(curl --fail --silent --show-error --max-time 30 \
+            --header "x-sync-token: $SYNC_TOKEN" "$endpoint")"
+          echo "$current" | jq '{state: .state | {status, next_page, total_pages, total_count, imported_count, last_error}}'
+
+          if [ "$(echo "$current" | jq -r '.state.status // "idle"')" = "complete" ] && [ "$RESET_REQUESTED" != "true" ]; then
+            echo "$current" > /tmp/final-sync-state.json
+            echo "Full snapshot is already complete."
+            exit 0
+          fi
+
+          reset_body=false
+          if [ "$RESET_REQUESTED" = "true" ]; then reset_body=true; fi
+
+          for attempt in 1 2 3 4; do
+            response_file="$(mktemp)"
+            status="$(curl --silent --show-error --max-time 150 \
+              --output "$response_file" --write-out '%{http_code}' \
+              --request POST \
+              --header 'content-type: application/json' \
+              --header "x-sync-token: $SYNC_TOKEN" \
+              --data "{\"maxPages\":5,\"reset\":${reset_body}}" \
+              "$endpoint")"
+            reset_body=false
+            echo "Synchronization request $attempt HTTP status: $status"
+            cat "$response_file" | jq '{success, complete, paused, pagesProcessed, nextPage, totalPages, totalCount, importedCount, error}'
+
+            if [ "$status" -ge 500 ]; then
+              cat "$response_file"
+              exit 1
+            fi
+            if [ "$(jq -r '.complete // false' "$response_file")" = "true" ]; then break; fi
+            if [ "$(jq -r '.paused // false' "$response_file")" = "true" ]; then break; fi
+          done
+
+          curl --fail --silent --show-error --max-time 30 \
+            --header "x-sync-token: $SYNC_TOKEN" "$endpoint" \
+            | tee /tmp/final-sync-state.json \
+            | jq '{state: .state | {status, next_page, total_pages, total_count, imported_count, last_error}}'
+
+      - name: Report snapshot synchronization result
+        if: always()
+        shell: bash
+        env:
+          RESULT: ${{ job.status }}
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            state=success
+            if [ -f /tmp/final-sync-state.json ]; then
+              status="$(jq -r '.state.status // "running"' /tmp/final-sync-state.json)"
+              imported="$(jq -r '.state.imported_count // 0' /tmp/final-sync-state.json)"
+              total="$(jq -r '.state.total_count // 0' /tmp/final-sync-state.json)"
+              description="TourAPI snapshot ${status}: ${imported}/${total} rows"
+            else
+              description='TourAPI snapshot synchronization prepared'
+            fi
+          else
+            state=failure
+            description='TourAPI snapshot setup failed; open workflow logs'
+          fi
+          description="${description:0:140}"
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='TourAPI Full Snapshot' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
