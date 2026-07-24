@@ -1,0 +1,57 @@
+name: Diagnose TourAPI Snapshot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-tour-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: vbwaruzncfaxnjyybudm
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Read snapshot state
+        shell: bash
+        run: |
+          set -euo pipefail
+          query="select (select count(*) from public.tour_places where active) as active_count, status, next_page, total_pages, total_count, imported_count, last_error from public.tour_place_sync_state where singleton = true;"
+          jq -n --arg query "$query" '{query: $query, read_only: true}' > /tmp/query.json
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 60 \
+            --output "$response_file" --write-out '%{http_code}' \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'content-type: application/json' \
+            --data-binary @/tmp/query.json \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query")"
+          echo "HTTP status: $status"
+          cat "$response_file"
+          echo
+          test "$status" -ge 200 -a "$status" -lt 300
+
+          row="$(jq -c 'if type == "array" then .[0] elif (.result | type) == "array" then .result[0] else . end' "$response_file")"
+          active="$(echo "$row" | jq -r '.active_count // 0')"
+          imported="$(echo "$row" | jq -r '.imported_count // 0')"
+          total="$(echo "$row" | jq -r '.total_count // 0')"
+          sync_status="$(echo "$row" | jq -r '.status // "unknown"')"
+          next_page="$(echo "$row" | jq -r '.next_page // 1')"
+          total_pages="$(echo "$row" | jq -r '.total_pages // 1')"
+          echo "Snapshot: active=$active imported=$imported total=$total status=$sync_status page=$next_page/$total_pages"
+
+          context="Tour snapshot ${active}/${total} ${sync_status}"
+          context="${context:0:140}"
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=success \
+            -f context="$context" \
+            -f description="Imported ${imported}; next page ${next_page}/${total_pages}" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
