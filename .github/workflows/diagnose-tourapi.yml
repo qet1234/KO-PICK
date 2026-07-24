@@ -16,24 +16,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      ENDPOINT: https://vbwaruzncfaxnjyybudm.supabase.co/functions/v1/kopick-api/api/public/tour/places?page=1&pageSize=3&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4
+      BASE_ENDPOINT: https://vbwaruzncfaxnjyybudm.supabase.co/functions/v1/kopick-api/api/public/tour/places
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Inspect production place endpoint
+      - name: Inspect production place pagination
         id: inspect
         shell: bash
         run: |
           set -euo pipefail
-          response_file="$(mktemp)"
-          status="$(curl --silent --show-error --max-time 25 --output "$response_file" --write-out '%{http_code}' "$ENDPOINT")"
-          echo "HTTP status: $status"
-          cat "$response_file"
-          echo
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
-            exit 1
-          fi
-          jq -e '.places | type == "array"' "$response_file" >/dev/null
+          page1="$(mktemp)"
+          page2="$(mktemp)"
+          common='pageSize=12&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4'
+
+          status1="$(curl --silent --show-error --max-time 30 --output "$page1" --write-out '%{http_code}' "${BASE_ENDPOINT}?page=1&${common}")"
+          status2="$(curl --silent --show-error --max-time 30 --output "$page2" --write-out '%{http_code}' "${BASE_ENDPOINT}?page=2&${common}")"
+
+          echo "Page 1 HTTP status: $status1"
+          jq '{count: (.places | length), pagination, firstId: .places[0].id, source}' "$page1"
+          echo "Page 2 HTTP status: $status2"
+          jq '{count: (.places | length), pagination, firstId: .places[0].id, source}' "$page2"
+
+          echo "status=$status2" >> "$GITHUB_OUTPUT"
+          test "$status1" -ge 200 -a "$status1" -lt 300
+          test "$status2" -ge 200 -a "$status2" -lt 300
+          jq -e '.places | type == "array" and length > 0' "$page1" >/dev/null
+          jq -e '.places | type == "array" and length > 0' "$page2" >/dev/null
+          jq -e '.pagination.totalPages > 1' "$page1" >/dev/null
+
+          first1="$(jq -r '.places[0].id' "$page1")"
+          first2="$(jq -r '.places[0].id' "$page2")"
+          test "$first1" != "$first2"
 
       - name: Report result
         if: always()
@@ -44,10 +56,10 @@ jobs:
         run: |
           if [ "$RESULT" = "success" ]; then
             state=success
-            description='TourAPI place endpoint is healthy'
+            description='Place pagination returns distinct pages'
           else
             state=failure
-            description="TourAPI place endpoint failed (HTTP ${HTTP_STATUS:-unknown})"
+            description="Place pagination failed (HTTP ${HTTP_STATUS:-unknown})"
           fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$state" \
