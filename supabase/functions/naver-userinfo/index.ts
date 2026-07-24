@@ -174,6 +174,11 @@ Deno.serve(async (request) => {
 
       return json({
         token_hash: linkData.properties.hashed_token,
+        id: profile.id,
+        email: profile.email || null,
+        name: profile.name || null,
+        nickname: profile.nickname || null,
+        profile_image: profile.profile_image || null,
       });
     }
 
