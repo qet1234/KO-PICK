@@ -1,0 +1,121 @@
+name: Diagnose Naver OAuth Redirect
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-naver-redirect.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: vbwaruzncfaxnjyybudm
+      EXPECTED_CLIENT_ID: 2q4Cf2az1due2FFaiXnu
+      EXPECTED_PROVIDER_CALLBACK: https://vbwaruzncfaxnjyybudm.supabase.co/auth/v1/callback
+      APP_CALLBACK: https://koreapick.duckdns.org/auth/callback
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Mark diagnosis pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='Naver OAuth Redirect' \
+            -f description='Inspecting actual client_id and redirect_uri' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Inspect generated Naver authorization request
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const token = process.env.SUPABASE_ACCESS_TOKEN;
+          const ref = process.env.PROJECT_REF;
+          if (!token) throw new Error('SUPABASE_ACCESS_TOKEN is missing');
+
+          const keyResponse = await fetch(
+            `https://api.supabase.com/v1/projects/${ref}/api-keys?reveal=true`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (!keyResponse.ok) {
+            throw new Error(`Unable to read project API keys (${keyResponse.status})`);
+          }
+
+          const keys = await keyResponse.json();
+          const publicKey = keys.find((key) =>
+            key.type === 'publishable' ||
+            key.name === 'anon' ||
+            key.name === 'Legacy anon key'
+          )?.api_key;
+          if (!publicKey) throw new Error('No publishable/anon project key found');
+          console.log(`::add-mask::${publicKey}`);
+
+          const authorizeUrl = new URL(`https://${ref}.supabase.co/auth/v1/authorize`);
+          authorizeUrl.searchParams.set('provider', 'custom:naver');
+          authorizeUrl.searchParams.set('redirect_to', process.env.APP_CALLBACK);
+
+          const response = await fetch(authorizeUrl, {
+            redirect: 'manual',
+            headers: {
+              apikey: publicKey,
+              Authorization: `Bearer ${publicKey}`,
+            },
+          });
+
+          const location = response.headers.get('location');
+          if (!location) {
+            const body = await response.text();
+            throw new Error(`Supabase did not return an OAuth redirect (${response.status}): ${body}`);
+          }
+
+          const providerUrl = new URL(location);
+          const actualClientId = providerUrl.searchParams.get('client_id') || '';
+          const actualRedirectUri = providerUrl.searchParams.get('redirect_uri') || '';
+          const clientMatches = actualClientId === process.env.EXPECTED_CLIENT_ID;
+          const redirectMatches = actualRedirectUri === process.env.EXPECTED_PROVIDER_CALLBACK;
+
+          console.log(`Provider host: ${providerUrl.host}`);
+          console.log(`Actual client_id: ${actualClientId}`);
+          console.log(`Actual redirect_uri: ${actualRedirectUri}`);
+          console.log(`Client ID exact match: ${clientMatches}`);
+          console.log(`Redirect URI exact match: ${redirectMatches}`);
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,
+            `client_matches=${clientMatches}\nredirect_matches=${redirectMatches}\n`);
+
+          if (providerUrl.host !== 'nid.naver.com') {
+            throw new Error(`Unexpected provider host: ${providerUrl.host}`);
+          }
+          if (!clientMatches || !redirectMatches) process.exitCode = 1;
+          NODE
+
+      - name: Report diagnosis
+        if: always()
+        shell: bash
+        env:
+          CLIENT_MATCHES: ${{ steps.inspect.outputs.client_matches }}
+          REDIRECT_MATCHES: ${{ steps.inspect.outputs.redirect_matches }}
+        run: |
+          if [ "$CLIENT_MATCHES" = "true" ] && [ "$REDIRECT_MATCHES" = "true" ]; then
+            state=success
+            description='client_id and redirect_uri exactly match Naver settings'
+          else
+            state=failure
+            description='Naver OAuth request mismatch; open run logs'
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Naver OAuth Redirect' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
