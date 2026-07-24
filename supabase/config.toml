@@ -1,0 +1,6 @@
+project_id = "KO-PICK"
+
+[functions.kopick-api]
+# 장소·인기 조회는 비로그인 사용자도 사용합니다.
+# 회원탈퇴는 함수 내부에서 전달된 Supabase JWT를 다시 검증합니다.
+verify_jwt = false
