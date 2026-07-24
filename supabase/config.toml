@@ -1,4 +1,4 @@
-project_id = "KO-PICK"
+project_id = "ko-pick"
 
 [functions.kopick-api]
 # 장소·인기 조회는 비로그인 사용자도 사용합니다.
