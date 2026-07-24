@@ -8,3 +8,7 @@ verify_jwt = false
 [functions.naver-userinfo]
 # Supabase Auth가 네이버 access token으로 서버 간 호출하는 UserInfo 어댑터입니다.
 verify_jwt = false
+
+[functions.configure-social-auth]
+# GitHub Actions의 일회성 bootstrap token으로만 호출합니다.
+verify_jwt = false
