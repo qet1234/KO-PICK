@@ -1,0 +1,108 @@
+name: Deploy KO-PICK Place API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/kopick-api/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-kopick-api.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: deploy-kopick-api-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: vbwaruzncfaxnjyybudm
+      TOUR_API_SERVICE_KEY: ${{ secrets.TOUR_API_SERVICE_KEY }}
+      TOUR_API_MOBILE_APP: ${{ secrets.TOUR_API_MOBILE_APP }}
+      KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Mark deployment pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='KO-PICK Place API' \
+            -f description='Deploying TourAPI place function' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for key in SUPABASE_ACCESS_TOKEN TOUR_API_SERVICE_KEY; do
+            test -n "${!key:-}" || missing+=("$key")
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing GitHub Secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Store place API secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(TOUR_API_SERVICE_KEY="$TOUR_API_SERVICE_KEY")
+          if [ -n "${TOUR_API_MOBILE_APP:-}" ]; then
+            args+=(TOUR_API_MOBILE_APP="$TOUR_API_MOBILE_APP")
+          else
+            args+=(TOUR_API_MOBILE_APP="KoreaPick")
+          fi
+          if [ -n "${KAKAO_REST_API_KEY:-}" ]; then
+            args+=(KAKAO_REST_API_KEY="$KAKAO_REST_API_KEY")
+          fi
+          supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
+
+      - name: Deploy place API function
+        run: supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Verify health and places
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://${PROJECT_REF}.supabase.co/functions/v1/kopick-api"
+          curl --fail --silent --show-error --max-time 20 "$base/actuator/health" | tee /tmp/health.json
+          jq -e '.status == "UP"' /tmp/health.json >/dev/null
+          curl --fail --silent --show-error --max-time 30 \
+            "$base/api/public/tour/places?page=1&pageSize=3&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4" \
+            | tee /tmp/places.json
+          jq -e '.places | type == "array"' /tmp/places.json >/dev/null
+
+      - name: Report deployment result
+        if: always()
+        env:
+          RESULT: ${{ job.status }}
+        shell: bash
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            state=success
+            description='TourAPI place function deployed and verified'
+          else
+            state=failure
+            description='TourAPI place deployment failed; open run logs'
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='KO-PICK Place API' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
