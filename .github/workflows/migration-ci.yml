@@ -21,7 +21,7 @@ jobs:
       NEXT_PUBLIC_KAKAO_MAP_KEY: ci-placeholder
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Deno
         uses: denoland/setup-deno@v2
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
