@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "supabase/functions/kopick-api/**"
-      - "supabase/functions/kopick-gateway/**"
+      - "supabase/functions/kopick-place-gateway/**"
       - "supabase/config.toml"
       - ".github/workflows/deploy-kopick-api.yml"
   workflow_dispatch:
@@ -27,7 +27,7 @@ jobs:
       PROJECT_REF: vbwaruzncfaxnjyybudm
       TOUR_API_SERVICE_KEY: ${{ secrets.TOUR_API_SERVICE_KEY }}
       TOUR_API_MOBILE_APP: ${{ secrets.TOUR_API_MOBILE_APP }}
-      KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+      KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY || secrets.KAKAO_CLIENT_ID }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Mark deployment pending
@@ -35,7 +35,7 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state=pending \
             -f context='KO-PICK Place API' \
-            -f description='Deploying resilient place gateway' \
+            -f description='Deploying TourAPI and Kakao place gateway' \
             -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Check out repository
@@ -46,7 +46,7 @@ jobs:
         with:
           version: latest
 
-      - name: Verify Supabase token
+      - name: Verify Supabase token and Kakao key
         shell: bash
         run: |
           set -euo pipefail
@@ -54,25 +54,25 @@ jobs:
             echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"
             exit 1
           fi
+          if [ -z "${KAKAO_REST_API_KEY:-}" ]; then
+            echo "Missing GitHub Secret: KAKAO_CLIENT_ID or KAKAO_REST_API_KEY"
+            exit 1
+          fi
 
-      - name: Store place API secrets when available
-        if: env.TOUR_API_SERVICE_KEY != '' || env.TOUR_API_MOBILE_APP != '' || env.KAKAO_REST_API_KEY != ''
+      - name: Store place API secrets
         shell: bash
         run: |
           set -euo pipefail
-          args=()
+          args=(KAKAO_REST_API_KEY="$KAKAO_REST_API_KEY")
           if [ -n "${TOUR_API_SERVICE_KEY:-}" ]; then
             args+=(TOUR_API_SERVICE_KEY="$TOUR_API_SERVICE_KEY")
           fi
           if [ -n "${TOUR_API_MOBILE_APP:-}" ]; then
             args+=(TOUR_API_MOBILE_APP="$TOUR_API_MOBILE_APP")
+          else
+            args+=(TOUR_API_MOBILE_APP="KoreaPick")
           fi
-          if [ -n "${KAKAO_REST_API_KEY:-}" ]; then
-            args+=(KAKAO_REST_API_KEY="$KAKAO_REST_API_KEY")
-          fi
-          if [ "${#args[@]}" -gt 0 ]; then
-            supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
-          fi
+          supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
 
       - name: Deploy core API function
         shell: bash
@@ -86,7 +86,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp supabase/functions/kopick-gateway/index.ts supabase/functions/kopick-api/index.ts
+          cp supabase/functions/kopick-place-gateway/index.ts supabase/functions/kopick-api/index.ts
           supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Verify health and places
@@ -117,10 +117,10 @@ jobs:
         run: |
           if [ "$RESULT" = "success" ]; then
             state=success
-            description='Place API gateway deployed and returning places'
+            description='Place API is returning live places'
           else
             state=failure
-            description='Place API gateway deployment failed; open logs'
+            description='Place API deployment failed; open logs'
           fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$state" \
