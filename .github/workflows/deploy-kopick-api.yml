@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "supabase/functions/kopick-api/**"
+      - "supabase/functions/kopick-gateway/**"
       - "supabase/config.toml"
       - ".github/workflows/deploy-kopick-api.yml"
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state=pending \
             -f context='KO-PICK Place API' \
-            -f description='Deploying TourAPI place function' \
+            -f description='Deploying resilient place gateway' \
             -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Check out repository
@@ -73,8 +74,20 @@ jobs:
             supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
           fi
 
-      - name: Deploy place API function
-        run: supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
+      - name: Deploy core API function
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf supabase/functions/kopick-core
+          cp -R supabase/functions/kopick-api supabase/functions/kopick-core
+          supabase functions deploy kopick-core --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Deploy public gateway as kopick-api
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp supabase/functions/kopick-gateway/index.ts supabase/functions/kopick-api/index.ts
+          supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Verify health and places
         id: verify
@@ -94,7 +107,7 @@ jobs:
           if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
             exit 1
           fi
-          jq -e '.places | type == "array"' "$response_file" >/dev/null
+          jq -e '.places | type == "array" and (.places | length > 0)' "$response_file" >/dev/null
 
       - name: Report deployment result
         if: always()
@@ -104,10 +117,10 @@ jobs:
         run: |
           if [ "$RESULT" = "success" ]; then
             state=success
-            description='TourAPI place function deployed and verified'
+            description='Place API gateway deployed and returning places'
           else
             state=failure
-            description='Place API deployed but TourAPI verification failed; open logs'
+            description='Place API gateway deployment failed; open logs'
           fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="$state" \
