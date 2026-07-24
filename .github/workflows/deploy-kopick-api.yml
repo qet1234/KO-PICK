@@ -80,6 +80,7 @@ jobs:
           set -euo pipefail
           rm -rf supabase/functions/kopick-core
           cp -R supabase/functions/kopick-api supabase/functions/kopick-core
+          sed -i 's|const marker = "/kopick-api";|const marker = "/kopick-core";|' supabase/functions/kopick-core/index.ts
           supabase functions deploy kopick-core --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Deploy public gateway as kopick-api
