@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build:frontend": "npm --prefix frontend run build",
-    "dev:backend": "cd backend && ./mvnw spring-boot:run",
-    "test:backend": "cd backend && ./mvnw test"
+    "typecheck": "tsc --noEmit",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:db:push": "npx supabase db push",
+    "supabase:functions:serve": "npx supabase functions serve kopick-api --no-verify-jwt",
+    "supabase:functions:deploy": "npx supabase functions deploy kopick-api --no-verify-jwt"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -26,6 +28,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "supabase": "^2.75.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
