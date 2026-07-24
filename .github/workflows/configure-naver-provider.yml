@@ -1,0 +1,92 @@
+name: Configure Naver Provider
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/configure-naver-provider.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  configure-naver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: vbwaruzncfaxnjyybudm
+      NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+      NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Mark Naver setup pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='Supabase Naver Provider' \
+            -f description='Creating custom:naver provider' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Verify credentials
+        run: |
+          set -euo pipefail
+          for key in SUPABASE_ACCESS_TOKEN NAVER_CLIENT_ID NAVER_CLIENT_SECRET; do
+            test -n "${!key:-}" || { echo "Missing $key"; exit 1; }
+          done
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Rotate bootstrap token
+        run: |
+          set -euo pipefail
+          token="$(openssl rand -hex 32)"
+          echo "SOCIAL_AUTH_BOOTSTRAP_TOKEN=$token" >> "$GITHUB_ENV"
+          supabase secrets set \
+            NAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
+            NAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
+            SOCIAL_AUTH_BOOTSTRAP_TOKEN="$token" \
+            --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Create custom Naver provider
+        id: create
+        run: |
+          set +e
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error \
+            --output "$response_file" \
+            --write-out '%{http_code}' \
+            --request POST \
+            --header "x-bootstrap-token: $SOCIAL_AUTH_BOOTSTRAP_TOKEN" \
+            "https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/configure-social-auth")"
+          response="$(cat "$response_file")"
+          echo "HTTP $status"
+          echo "$response"
+          echo "http_status=$status" >> "$GITHUB_OUTPUT"
+          printf '%s' "$response" | base64 -w0 > /tmp/naver-response.b64
+          if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+            exit 0
+          fi
+          exit 1
+
+      - name: Report Naver setup result
+        if: always()
+        run: |
+          if [ "${{ steps.create.outcome }}" = "success" ]; then
+            state=success
+            description='custom:naver provider created'
+          else
+            state=failure
+            description='Naver provider creation failed; open logs'
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Supabase Naver Provider' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
