@@ -1,0 +1,157 @@
+name: Configure Social Login
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/configure-social-auth/**"
+      - "supabase/functions/naver-userinfo/**"
+      - "supabase/config.toml"
+      - ".github/workflows/configure-social-auth.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: supabase-social-login-production
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      KAKAO_CLIENT_ID: ${{ secrets.KAKAO_CLIENT_ID }}
+      KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+      NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+      NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+      APP_URL: https://koreapick.duckdns.org
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Mark social login configuration pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='Supabase Social Login' \
+            -f description='Configuring Kakao and Naver login'
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify required credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for key in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_ID KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET NAVER_CLIENT_ID NAVER_CLIENT_SECRET; do
+            test -n "${!key:-}" || missing+=("$key")
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing GitHub Secrets: %s\n' "${missing[*]}"
+            exit 1
+          fi
+
+      - name: Configure Kakao provider and redirect URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const token = process.env.SUPABASE_ACCESS_TOKEN;
+          const ref = process.env.SUPABASE_PROJECT_ID;
+          const appUrl = process.env.APP_URL.replace(/\/$/, '');
+          const endpoint = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
+          const headers = {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          };
+
+          const currentResponse = await fetch(endpoint, { headers });
+          if (!currentResponse.ok) {
+            throw new Error(`Unable to read Supabase Auth config (${currentResponse.status}): ${await currentResponse.text()}`);
+          }
+          const current = await currentResponse.json();
+          const redirects = new Set(
+            String(current.uri_allow_list || '')
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean),
+          );
+          redirects.add(`${appUrl}/auth/callback`);
+          redirects.add(`${appUrl}/**`);
+          redirects.add('http://localhost:3000/auth/callback');
+
+          const updateResponse = await fetch(endpoint, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({
+              site_url: appUrl,
+              uri_allow_list: [...redirects].join(','),
+              external_kakao_enabled: true,
+              external_kakao_client_id: process.env.KAKAO_CLIENT_ID,
+              external_kakao_secret: process.env.KAKAO_CLIENT_SECRET,
+              external_kakao_email_optional: true,
+            }),
+          });
+          if (!updateResponse.ok) {
+            throw new Error(`Unable to configure Kakao (${updateResponse.status}): ${await updateResponse.text()}`);
+          }
+          console.log('Kakao provider enabled.');
+          console.log(`Provider callback: https://${ref}.supabase.co/auth/v1/callback`);
+          NODE
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Store Naver provider secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          bootstrap_token="$(openssl rand -hex 32)"
+          echo "SOCIAL_AUTH_BOOTSTRAP_TOKEN=$bootstrap_token" >> "$GITHUB_ENV"
+          supabase secrets set \
+            NAVER_CLIENT_ID="$NAVER_CLIENT_ID" \
+            NAVER_CLIENT_SECRET="$NAVER_CLIENT_SECRET" \
+            SOCIAL_AUTH_BOOTSTRAP_TOKEN="$bootstrap_token" \
+            --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Deploy Naver OAuth functions
+        run: |
+          supabase functions deploy naver-userinfo --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
+          supabase functions deploy configure-social-auth --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
+
+      - name: Create or update Naver provider
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error \
+            --output "$response_file" \
+            --write-out '%{http_code}' \
+            --request POST \
+            --header "x-bootstrap-token: $SOCIAL_AUTH_BOOTSTRAP_TOKEN" \
+            "https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/configure-social-auth")"
+          cat "$response_file"
+          test "$status" -ge 200 -a "$status" -lt 300
+          echo
+          echo "Naver provider callback: https://${SUPABASE_PROJECT_ID}.supabase.co/auth/v1/callback"
+
+      - name: Report social login configuration result
+        if: always()
+        shell: bash
+        env:
+          RESULT_STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+          RESULT_DESCRIPTION: ${{ job.status == 'success' && 'Kakao and Naver login configured' || 'Social login configuration needs credentials' }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$RESULT_STATE" \
+            -f context='Supabase Social Login' \
+            -f description="$RESULT_DESCRIPTION"
