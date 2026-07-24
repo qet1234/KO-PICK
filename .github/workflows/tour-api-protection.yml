@@ -2,8 +2,11 @@ name: TourAPI Protection
 
 on:
   push:
-    branches: [main]
+    branches: [main, agent/migrate-all-to-supabase]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   protect-tour-api:
@@ -11,29 +14,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify protected TourAPI files
+      - name: Verify canonical Supabase TourAPI files
         shell: bash
         run: |
           set -euo pipefail
           required=(
-            "backend/src/main/java/com/kopick/tour/TourApiService.java"
-            "backend/src/main/java/com/kopick/tour/PlaceSearchService.java"
-            "backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java"
+            "supabase/functions/kopick-api/index.ts"
+            "supabase/config.toml"
             "components/CategoryExplorePage.tsx"
+            "utils/spring-api.ts"
           )
           for file in "${required[@]}"; do
             test -s "$file" || { echo "Protected TourAPI file missing or empty: $file"; exit 1; }
           done
 
-      - name: Verify canonical TourAPI source rule
+      - name: Verify server-side TourAPI source rule
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'public boolean hasData()' backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java
-          grep -A2 'public boolean hasData()' backend/src/main/java/com/kopick/tour/TourPlaceStoreService.java | grep -q 'return false;'
-          grep -q 'tourApi.search(query)' backend/src/main/java/com/kopick/tour/PlaceSearchService.java
+          grep -q 'TOUR_API_SERVICE_KEY' supabase/functions/kopick-api/index.ts
+          grep -q 'apis.data.go.kr/B551011/KorService2' supabase/functions/kopick-api/index.ts
           grep -q '/api/public/tour/places' components/CategoryExplorePage.tsx
+          grep -q '/functions/v1/kopick-api' utils/spring-api.ts
+          ! grep -R --line-number --exclude-dir=node_modules --exclude-dir=.git \
+            'NEXT_PUBLIC_TOUR_API\|NEXT_PUBLIC_.*SERVICE_KEY' app components utils
 
-      - name: Build backend
-        working-directory: backend
-        run: ./mvnw -q -DskipTests package
+      - name: Verify Render is not an active deployment target
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e render.yaml
+          test ! -e .github/workflows/keep-render-awake.yml
+
+      - name: Check TourAPI Edge Function
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Deno check
+        run: deno check supabase/functions/kopick-api/index.ts
