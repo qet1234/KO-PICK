@@ -1,7 +1,11 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
 };
+
+const APP_URL = "https://koreapick.duckdns.org";
 
 type NaverProfile = {
   id?: string;
@@ -19,6 +23,17 @@ type NaverProfileResponse = {
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+async function sha256(value: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 async function fetchProfile(accessToken: string) {
@@ -43,17 +58,10 @@ Deno.serve(async (request) => {
 
   try {
     if (request.method === "POST") {
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      const expectedAuthorization = serviceRoleKey
-        ? `Bearer ${serviceRoleKey}`
-        : null;
-
-      if (!expectedAuthorization || authorization !== expectedAuthorization) {
-        return json({ error: "unauthorized" }, 401);
-      }
-
-      const clientId = Deno.env.get("NAVER_CLIENT_ID");
-      const clientSecret = Deno.env.get("NAVER_CLIENT_SECRET");
+      const clientId = Deno.env.get("NAVER_CLIENT_ID")?.trim();
+      const clientSecret = Deno.env.get("NAVER_CLIENT_SECRET")?.trim();
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
       const body = await request.json().catch(() => null) as
         | { code?: string; state?: string }
         | null;
@@ -61,10 +69,22 @@ Deno.serve(async (request) => {
       const state = body?.state?.trim();
 
       if (!clientId || !clientSecret) {
-        return json({ error: "missing_naver_credentials" }, 500);
+        return json({
+          error: "missing_naver_credentials",
+          error_description: "Supabase의 네이버 인증키가 설정되지 않았습니다.",
+        }, 500);
+      }
+      if (!supabaseUrl || !serviceRoleKey) {
+        return json({
+          error: "missing_supabase_credentials",
+          error_description: "Supabase 관리자 환경이 준비되지 않았습니다.",
+        }, 500);
       }
       if (!code || !state) {
-        return json({ error: "missing_authorization_code" }, 400);
+        return json({
+          error: "missing_authorization_code",
+          error_description: "네이버 인증 코드가 없습니다.",
+        }, 400);
       }
 
       const tokenResponse = await fetch(
@@ -99,20 +119,61 @@ Deno.serve(async (request) => {
           description: tokenPayload?.error_description,
         });
         return json({
-          error: "naver_token_exchange_failed",
+          error: tokenPayload?.error || "naver_token_exchange_failed",
           error_description:
             tokenPayload?.error_description ||
-            "네이버 인증 토큰을 발급받지 못했습니다.",
+            "네이버 Client Secret이 현재 애플리케이션과 일치하지 않습니다.",
         }, 502);
       }
 
       const profile = await fetchProfile(tokenPayload.access_token);
+      const displayName =
+        profile.name?.trim() ||
+        profile.nickname?.trim() ||
+        "네이버 사용자";
+      const subjectHash = await sha256(`naver:${profile.id}`);
+      const email = `naver_${subjectHash}@auth.koreapick.duckdns.org`;
+      const userMetadata = {
+        provider: "naver",
+        name: displayName,
+        full_name: displayName,
+        avatar_url: profile.profile_image || null,
+        picture: profile.profile_image || null,
+        contact_email: profile.email || null,
+        naver_subject_hash: subjectHash,
+      };
+
+      const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { data: linkData, error: linkError } =
+        await adminClient.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+          options: {
+            data: userMetadata,
+            redirectTo: APP_URL,
+          },
+        });
+
+      if (linkError || !linkData.properties.hashed_token) {
+        console.error("Naver Supabase link creation failed", linkError);
+        return json({
+          error: "supabase_link_failed",
+          error_description: "KO-PICK 로그인 세션을 만들지 못했습니다.",
+        }, 500);
+      }
+
+      const { error: metadataError } =
+        await adminClient.auth.admin.updateUserById(linkData.user.id, {
+          user_metadata: userMetadata,
+        });
+      if (metadataError) {
+        console.error("Naver metadata update failed", metadataError);
+      }
+
       return json({
-        id: profile.id,
-        email: profile.email || null,
-        name: profile.name || null,
-        nickname: profile.nickname || null,
-        profile_image: profile.profile_image || null,
+        token_hash: linkData.properties.hashed_token,
       });
     }
 
