@@ -1,0 +1,74 @@
+name: Diagnose Live Naver OAuth
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-live-naver.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EXPECTED_CLIENT_ID: 2q4Cf2az1due2FFaiXnu
+      EXPECTED_REDIRECT_URI: https://koreapick.duckdns.org/auth/naver/callback
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inspect production redirect
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+          location="$(curl --silent --show-error --head --max-time 20 https://koreapick.duckdns.org/auth/naver | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^location:/{sub(/^location:[[:space:]]*/,""); print; exit}')"
+          if [ -z "$location" ]; then
+            echo "No redirect Location header returned"
+            exit 1
+          fi
+          python - "$location" <<'PY'
+          import os, sys, urllib.parse
+          location = sys.argv[1]
+          parsed = urllib.parse.urlparse(location)
+          query = urllib.parse.parse_qs(parsed.query)
+          client_id = query.get('client_id', [''])[0]
+          redirect_uri = query.get('redirect_uri', [''])[0]
+          client_match = client_id == os.environ['EXPECTED_CLIENT_ID']
+          redirect_match = redirect_uri == os.environ['EXPECTED_REDIRECT_URI']
+          print(f"Provider host: {parsed.netloc}")
+          print(f"Client ID match: {str(client_match).lower()}")
+          print(f"Redirect URI: {redirect_uri}")
+          print(f"Redirect URI match: {str(redirect_match).lower()}")
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f"client_match={str(client_match).lower()}\n")
+              f.write(f"redirect_match={str(redirect_match).lower()}\n")
+          if parsed.netloc != 'nid.naver.com' or not client_match or not redirect_match:
+              raise SystemExit(1)
+          PY
+
+      - name: Report result
+        if: always()
+        shell: bash
+        env:
+          CLIENT_MATCH: ${{ steps.inspect.outputs.client_match }}
+          REDIRECT_MATCH: ${{ steps.inspect.outputs.redirect_match }}
+        run: |
+          if [ "$CLIENT_MATCH" = "true" ] && [ "$REDIRECT_MATCH" = "true" ]; then
+            state=success
+            description='Production Naver client_id and callback match'
+          elif [ "$CLIENT_MATCH" != "true" ]; then
+            state=failure
+            description='Vercel NAVER_CLIENT_ID does not match Naver app'
+          else
+            state=failure
+            description='Production Naver callback does not match Naver app'
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Live Naver OAuth' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
