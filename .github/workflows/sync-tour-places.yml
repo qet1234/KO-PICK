@@ -61,12 +61,40 @@ jobs:
         with:
           version: latest
 
-      - name: Apply TourAPI snapshot migration
+      - name: Link production database
+        id: link
         shell: bash
         run: |
-          set -euo pipefail
-          supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+          set +e
+          output="$(supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" 2>&1)"
+          status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then
+            summary="$(printf '%s\n' "$output" | tail -n 1 | tr '\n' ' ' | cut -c1-110)"
+            echo "DB_ERROR_SUMMARY=link: ${summary}" >> "$GITHUB_ENV"
+            exit "$status"
+          fi
+
+      - name: Inspect migration state
+        shell: bash
+        run: |
+          set +e
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD" 2>&1 | tail -n 80
+          exit 0
+
+      - name: Apply TourAPI snapshot migration
+        id: migrate
+        shell: bash
+        run: |
+          set +e
+          output="$(supabase db push --linked --include-all --password "$SUPABASE_DB_PASSWORD" 2>&1)"
+          status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then
+            summary="$(printf '%s\n' "$output" | tail -n 1 | tr '\n' ' ' | cut -c1-110)"
+            echo "DB_ERROR_SUMMARY=push: ${summary}" >> "$GITHUB_ENV"
+            exit "$status"
+          fi
 
       - name: Deploy snapshot synchronization function
         id: deploy
@@ -121,7 +149,7 @@ jobs:
               "$endpoint")"
             reset_body=false
             echo "Synchronization request $attempt HTTP status: $status"
-            cat "$response_file" | jq '{success, complete, paused, pagesProcessed, nextPage, totalPages, totalCount, importedCount, error}'
+            jq '{success, complete, paused, pagesProcessed, nextPage, totalPages, totalCount, importedCount, error}' "$response_file"
 
             if [ "$status" -ge 500 ]; then
               cat "$response_file"
@@ -154,7 +182,7 @@ jobs:
             fi
           else
             state=failure
-            description='TourAPI snapshot setup failed; open workflow logs'
+            description="${DB_ERROR_SUMMARY:-TourAPI snapshot setup failed; open workflow logs}"
           fi
           description="${description:0:140}"
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
