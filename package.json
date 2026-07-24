@@ -8,11 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "supabase:start": "npx supabase start",
-    "supabase:stop": "npx supabase stop",
-    "supabase:db:push": "npx supabase db push",
-    "supabase:functions:serve": "npx supabase functions serve kopick-api --no-verify-jwt",
-    "supabase:functions:deploy": "npx supabase functions deploy kopick-api --no-verify-jwt"
+    "supabase:start": "npx --yes supabase@2.75.0 start",
+    "supabase:stop": "npx --yes supabase@2.75.0 stop",
+    "supabase:db:push": "npx --yes supabase@2.75.0 db push",
+    "supabase:functions:serve": "npx --yes supabase@2.75.0 functions serve kopick-api --no-verify-jwt",
+    "supabase:functions:deploy": "npx --yes supabase@2.75.0 functions deploy kopick-api --no-verify-jwt"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -28,7 +28,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
-    "supabase": "^2.75.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
