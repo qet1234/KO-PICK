@@ -1,0 +1,60 @@
+name: Deploy Naver OAuth Edge Function
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/naver-userinfo/**"
+      - ".github/workflows/deploy-naver-edge.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: vbwaruzncfaxnjyybudm
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Mark deployment pending
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='Naver Edge Function' \
+            -f description='Deploying Naver OAuth exchange function' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Verify Supabase token
+        run: test -n "$SUPABASE_ACCESS_TOKEN"
+
+      - name: Deploy function
+        run: supabase functions deploy naver-userinfo --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Report deployment
+        if: always()
+        env:
+          RESULT: ${{ job.status }}
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            state=success
+            description='Naver OAuth exchange function deployed'
+          else
+            state=failure
+            description='Naver OAuth exchange function deployment failed'
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='Naver Edge Function' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
