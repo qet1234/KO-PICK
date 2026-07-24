@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+type WeatherVisualState = "sunny" | "cloudy" | "rainy";
+
 const regionCoordinates: Record<string, { latitude: number; longitude: number }> = {
   전국: { latitude: 36.5, longitude: 127.8 },
   서울: { latitude: 37.5665, longitude: 126.978 },
@@ -24,6 +26,8 @@ const regionCoordinates: Record<string, { latitude: number; longitude: number }>
 };
 
 const nationwideRegions = Object.entries(regionCoordinates).filter(([region]) => region !== "전국");
+const rainCodes = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99]);
+const cloudCodes = new Set([2, 3, 45, 48]);
 
 function weatherLabel(code: number) {
   if (code === 0) return "맑음";
@@ -37,19 +41,40 @@ function weatherLabel(code: number) {
   return "날씨 확인";
 }
 
-function weatherIcon(code: number) {
-  if (code === 0) return "☀️";
-  if ([1, 2].includes(code)) return "🌤️";
-  if (code === 3) return "☁️";
-  if ([45, 48].includes(code)) return "🌫️";
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "🌧️";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "🌨️";
-  if ([95, 96, 99].includes(code)) return "⛈️";
-  return "🌡️";
+function weatherVisualState(
+  code: number,
+  precipitationProbability = 0,
+  currentPrecipitation = 0,
+): WeatherVisualState {
+  if (currentPrecipitation > 0 || rainCodes.has(code) || precipitationProbability >= 60) return "rainy";
+  if (cloudCodes.has(code) || precipitationProbability >= 30) return "cloudy";
+  return "sunny";
+}
+
+function weatherIcon(code: number, precipitationProbability = 0, currentPrecipitation = 0) {
+  const state = weatherVisualState(code, precipitationProbability, currentPrecipitation);
+  if (state === "rainy") {
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "🌨️";
+    if ([95, 96, 99].includes(code)) return "⛈️";
+    return "🌧️";
+  }
+  if (state === "cloudy") return code === 3 ? "☁️" : "🌤️";
+  return "☀️";
+}
+
+function weatherCondition(
+  code: number,
+  precipitationProbability = 0,
+  currentPrecipitation = 0,
+) {
+  if (currentPrecipitation > 0 || rainCodes.has(code)) return weatherLabel(code);
+  if (precipitationProbability >= 60) return "비 가능성 높음";
+  if (precipitationProbability >= 30) return "구름 많음";
+  return weatherLabel(code);
 }
 
 function indoorWeather(code: number, precipitationProbability = 0) {
-  return precipitationProbability >= 50 || [61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99].includes(code);
+  return precipitationProbability >= 50 || rainCodes.has(code);
 }
 
 async function fetchJson(url: string, revalidate = 600) {
@@ -94,13 +119,16 @@ async function nationwideWeather() {
   return nationwideRegions.map(([region], index) => {
     const current = locations[index]?.current ?? {};
     const code = Number(current.weather_code ?? 0);
+    const currentPrecipitation = Number(current.precipitation ?? 0);
+    const visualState = weatherVisualState(code, 0, currentPrecipitation);
     return {
       region,
-      icon: weatherIcon(code),
-      condition: weatherLabel(code),
+      icon: weatherIcon(code, 0, currentPrecipitation),
+      visualState,
+      condition: weatherCondition(code, 0, currentPrecipitation),
       temperature: Math.round(Number(current.temperature_2m ?? 0)),
       apparentTemperature: Math.round(Number(current.apparent_temperature ?? 0)),
-      precipitation: Number(current.precipitation ?? 0),
+      precipitation: currentPrecipitation,
       windSpeed: Math.round(Number(current.wind_speed_10m ?? 0)),
       indoorRecommended: indoorWeather(code),
       observedAt: current.time ?? null,
@@ -145,6 +173,10 @@ export async function GET(request: NextRequest) {
     const currentHourIndex = matchedHourIndex >= 0 ? matchedHourIndex : 0;
     const code = Number(payload.daily?.weather_code?.[selectedIndex] ?? current.weather_code ?? 0);
     const precipitationProbability = Number(payload.daily?.precipitation_probability_max?.[selectedIndex] ?? 0);
+    const currentPrecipitationProbability = Number(payload.hourly?.precipitation_probability?.[currentHourIndex] ?? 0);
+    const currentCode = Number(current.weather_code ?? code);
+    const currentPrecipitation = Number(current.precipitation ?? 0);
+    const currentVisualState = weatherVisualState(currentCode, currentPrecipitationProbability, currentPrecipitation);
     const indoorRecommended = indoorWeather(code, precipitationProbability);
 
     const hourly = hourlyTimes
@@ -152,26 +184,31 @@ export async function GET(request: NextRequest) {
       .map((time: string, index: number) => {
         const offset = currentHourIndex + index;
         const hourlyCode = Number(payload.hourly?.weather_code?.[offset] ?? 0);
+        const hourlyPrecipitationProbability = Number(payload.hourly?.precipitation_probability?.[offset] ?? 0);
+        const visualState = weatherVisualState(hourlyCode, hourlyPrecipitationProbability);
         return {
           time,
-          icon: weatherIcon(hourlyCode),
-          condition: weatherLabel(hourlyCode),
+          icon: weatherIcon(hourlyCode, hourlyPrecipitationProbability),
+          visualState,
+          condition: weatherCondition(hourlyCode, hourlyPrecipitationProbability),
           temperature: Math.round(Number(payload.hourly?.temperature_2m?.[offset] ?? 0)),
           apparentTemperature: Math.round(Number(payload.hourly?.apparent_temperature?.[offset] ?? 0)),
-          precipitationProbability: Number(payload.hourly?.precipitation_probability?.[offset] ?? 0),
+          precipitationProbability: hourlyPrecipitationProbability,
           windSpeed: Math.round(Number(payload.hourly?.wind_speed_10m?.[offset] ?? 0)),
         };
       });
 
     const daily = dates.map((date, index) => {
       const dailyCode = Number(payload.daily?.weather_code?.[index] ?? 0);
+      const dailyPrecipitationProbability = Number(payload.daily?.precipitation_probability_max?.[index] ?? 0);
       return {
         date,
-        icon: weatherIcon(dailyCode),
-        condition: weatherLabel(dailyCode),
+        icon: weatherIcon(dailyCode, dailyPrecipitationProbability),
+        visualState: weatherVisualState(dailyCode, dailyPrecipitationProbability),
+        condition: weatherCondition(dailyCode, dailyPrecipitationProbability),
         maxTemperature: Math.round(Number(payload.daily?.temperature_2m_max?.[index] ?? 0)),
         minTemperature: Math.round(Number(payload.daily?.temperature_2m_min?.[index] ?? 0)),
-        precipitationProbability: Number(payload.daily?.precipitation_probability_max?.[index] ?? 0),
+        precipitationProbability: dailyPrecipitationProbability,
         sunrise: payload.daily?.sunrise?.[index] ?? null,
         sunset: payload.daily?.sunset?.[index] ?? null,
       };
@@ -185,12 +222,14 @@ export async function GET(request: NextRequest) {
       longitude: location.longitude,
       date: dates[selectedIndex] ?? requestedDate,
       updatedAt: new Date().toISOString(),
-      icon: weatherIcon(Number(current.weather_code ?? code)),
-      condition: weatherLabel(Number(current.weather_code ?? code)),
+      icon: weatherIcon(currentCode, currentPrecipitationProbability, currentPrecipitation),
+      visualState: currentVisualState,
+      condition: weatherCondition(currentCode, currentPrecipitationProbability, currentPrecipitation),
       temperature: Math.round(Number(current.temperature_2m ?? 0)),
       apparentTemperature: Math.round(Number(current.apparent_temperature ?? 0)),
       humidity: Math.round(Number(current.relative_humidity_2m ?? 0)),
-      currentPrecipitation: Number(current.precipitation ?? 0),
+      currentPrecipitation,
+      currentPrecipitationProbability,
       windSpeed: Math.round(Number(current.wind_speed_10m ?? 0)),
       windDirection: Math.round(Number(current.wind_direction_10m ?? 0)),
       maxTemperature: Math.round(Number(payload.daily?.temperature_2m_max?.[selectedIndex] ?? 0)),
