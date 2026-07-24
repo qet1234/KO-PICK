@@ -1,12 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { createServerClient } from "@supabase/ssr";
-import {
-  createClient as createSupabaseClient,
-} from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import {
   createNaverErrorRedirect,
-  createNaverIdentityEmail,
   getAppUrl,
   getNaverCallbackUrl,
   NAVER_STATE_COOKIE,
@@ -15,12 +11,8 @@ import {
 
 export const runtime = "nodejs";
 
-type NaverProfile = {
-  id?: string;
-  email?: string | null;
-  name?: string | null;
-  nickname?: string | null;
-  profile_image?: string | null;
+type NaverExchangeResponse = {
+  token_hash?: string;
   error?: string;
   error_description?: string;
 };
@@ -59,9 +51,7 @@ export async function GET(request: NextRequest) {
     if (
       !code ||
       !state ||
-      !storedStates.some((storedState) =>
-        statesMatch(state, storedState),
-      )
+      !storedStates.some((storedState) => statesMatch(state, storedState))
     ) {
       console.error("네이버 OAuth state 검증에 실패했습니다.");
       return createNaverErrorRedirect(
@@ -74,10 +64,8 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
     const supabasePublishableKey =
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
-    const serviceRoleKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-    if (!supabaseUrl || !supabasePublishableKey || !serviceRoleKey) {
+    if (!supabaseUrl || !supabasePublishableKey) {
       console.error("네이버 로그인용 Supabase 환경변수가 없습니다.");
       return createNaverErrorRedirect(
         request.url,
@@ -85,13 +73,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const profileResponse = await fetch(
+    const exchangeResponse = await fetch(
       `${supabaseUrl}/functions/v1/naver-userinfo`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${serviceRoleKey}`,
-          apikey: serviceRoleKey,
+          Authorization: `Bearer ${supabasePublishableKey}`,
+          apikey: supabasePublishableKey,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ code, state }),
@@ -99,78 +87,20 @@ export async function GET(request: NextRequest) {
         signal: AbortSignal.timeout(15_000),
       },
     );
-    const profile = (await profileResponse.json().catch(() => null)) as
-      | NaverProfile
+    const exchange = (await exchangeResponse.json().catch(() => null)) as
+      | NaverExchangeResponse
       | null;
 
-    if (!profileResponse.ok || !profile?.id) {
+    if (!exchangeResponse.ok || !exchange?.token_hash) {
       console.error("네이버 인증 교환 오류:", {
-        status: profileResponse.status,
-        error: profile?.error,
-        description: profile?.error_description,
+        status: exchangeResponse.status,
+        error: exchange?.error,
+        description: exchange?.error_description,
       });
       return createNaverErrorRedirect(
         request.url,
-        profile?.error_description ||
-          "네이버 인증 정보를 확인하지 못했습니다.",
-      );
-    }
-
-    const displayName =
-      profile.name?.trim() ||
-      profile.nickname?.trim() ||
-      "네이버 사용자";
-    const { email, subjectHash } =
-      createNaverIdentityEmail(profile.id);
-    const userMetadata = {
-      provider: "naver",
-      name: displayName,
-      full_name: displayName,
-      avatar_url: profile.profile_image ?? null,
-      picture: profile.profile_image ?? null,
-      contact_email: profile.email ?? null,
-      naver_subject_hash: subjectHash,
-    };
-    const adminClient = createSupabaseClient(
-      supabaseUrl,
-      serviceRoleKey,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      },
-    );
-    const { data: linkData, error: linkError } =
-      await adminClient.auth.admin.generateLink({
-        type: "magiclink",
-        email,
-        options: {
-          data: userMetadata,
-          redirectTo: getAppUrl(request.url).toString(),
-        },
-      });
-
-    if (linkError || !linkData.properties.hashed_token) {
-      console.error("네이버 Supabase 링크 생성 오류:", linkError);
-      return createNaverErrorRedirect(
-        request.url,
-        "KO-PICK 로그인 세션을 만들지 못했습니다.",
-      );
-    }
-
-    const { error: metadataError } =
-      await adminClient.auth.admin.updateUserById(
-        linkData.user.id,
-        {
-          user_metadata: userMetadata,
-        },
-      );
-
-    if (metadataError) {
-      console.error(
-        "네이버 회원 메타데이터 갱신 오류:",
-        metadataError,
+        exchange?.error_description ||
+          `네이버 인증 정보를 확인하지 못했습니다. (${exchangeResponse.status})`,
       );
     }
 
@@ -211,14 +141,11 @@ export async function GET(request: NextRequest) {
     const { data: sessionData, error: sessionError } =
       await supabase.auth.verifyOtp({
         type: "magiclink",
-        token_hash: linkData.properties.hashed_token,
+        token_hash: exchange.token_hash,
       });
 
     if (sessionError || !sessionData.session) {
-      console.error(
-        "네이버 Supabase 세션 생성 오류:",
-        sessionError,
-      );
+      console.error("네이버 Supabase 세션 생성 오류:", sessionError);
       return createNaverErrorRedirect(
         request.url,
         "KO-PICK 로그인 세션을 만들지 못했습니다.",
