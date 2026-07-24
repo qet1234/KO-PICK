@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
-  createNaverErrorRedirect,
   getNaverCallbackUrl,
   NAVER_STATE_COOKIE,
   readNaverOAuthStates,
@@ -9,17 +8,9 @@ import {
 
 export const runtime = "nodejs";
 
+const NAVER_CLIENT_ID = "2q4Cf2az1due2FFaiXnu";
+
 export async function GET(request: NextRequest) {
-  const clientId = process.env.NAVER_CLIENT_ID?.trim();
-
-  if (!clientId) {
-    console.error("NAVER_CLIENT_ID 환경변수가 없습니다.");
-    return createNaverErrorRedirect(
-      request.url,
-      "네이버 로그인 서버 설정이 완료되지 않았습니다.",
-    );
-  }
-
   const callbackUrl = getNaverCallbackUrl(request.url);
   const state = randomBytes(32).toString("base64url");
   const authorizeUrl = new URL(
@@ -27,7 +18,7 @@ export async function GET(request: NextRequest) {
   );
 
   authorizeUrl.searchParams.set("response_type", "code");
-  authorizeUrl.searchParams.set("client_id", clientId);
+  authorizeUrl.searchParams.set("client_id", NAVER_CLIENT_ID);
   authorizeUrl.searchParams.set("redirect_uri", callbackUrl.toString());
   authorizeUrl.searchParams.set("state", state);
 
