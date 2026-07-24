@@ -1,0 +1,56 @@
+name: Diagnose TourAPI Places
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-tourapi.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      ENDPOINT: https://vbwaruzncfaxnjyybudm.supabase.co/functions/v1/kopick-api/api/public/tour/places?page=1&pageSize=3&region=%EC%A0%84%EA%B5%AD&category=%EC%A0%84%EC%B2%B4
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Inspect production place endpoint
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 25 --output "$response_file" --write-out '%{http_code}' "$ENDPOINT")"
+          echo "HTTP status: $status"
+          cat "$response_file"
+          echo
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            exit 1
+          fi
+          jq -e '.places | type == "array"' "$response_file" >/dev/null
+
+      - name: Report result
+        if: always()
+        env:
+          RESULT: ${{ steps.inspect.outcome }}
+          HTTP_STATUS: ${{ steps.inspect.outputs.status }}
+        shell: bash
+        run: |
+          if [ "$RESULT" = "success" ]; then
+            state=success
+            description='TourAPI place endpoint is healthy'
+          else
+            state=failure
+            description="TourAPI place endpoint failed (HTTP ${HTTP_STATUS:-unknown})"
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context='TourAPI Places' \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
