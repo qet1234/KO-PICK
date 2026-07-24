@@ -51,5 +51,25 @@ jobs:
       - name: Apply database migration
         run: supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
 
-      - name: Deploy Edge Functions
-        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Deploy regular Edge Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for directory in supabase/functions/*; do
+            [ -d "$directory" ] || continue
+            function_name="$(basename "$directory")"
+            case "$function_name" in
+              kopick-api|kopick-gateway|kopick-core) continue ;;
+            esac
+            supabase functions deploy "$function_name" --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
+          done
+
+      - name: Deploy KO-PICK core and public gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf supabase/functions/kopick-core
+          cp -R supabase/functions/kopick-api supabase/functions/kopick-core
+          supabase functions deploy kopick-core --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
+          cp supabase/functions/kopick-gateway/index.ts supabase/functions/kopick-api/index.ts
+          supabase functions deploy kopick-api --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
