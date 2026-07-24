@@ -15,8 +15,10 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() 
 // 기존 컴포넌트가 사용하는 이름은 유지하지만 실제 대상은 Supabase Edge Function입니다.
 export const springApiUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/kopick-api` : "";
 
+let sharedBrowserClient: ReturnType<typeof createClient> | null = null;
 function browserClient() {
-  return createClient();
+  if (!sharedBrowserClient) sharedBrowserClient = createClient();
+  return sharedBrowserClient;
 }
 
 function displayNameFromMetadata(metadata: Record<string, unknown> | undefined, email: string | null) {
@@ -79,7 +81,7 @@ export function warmSpringApi() {
   });
 }
 
-export function socialLoginUrl() {
+export function socialLoginUrl(_provider?: "google" | "kakao" | "naver") {
   return "/login";
 }
 
