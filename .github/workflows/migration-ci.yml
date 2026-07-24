@@ -59,11 +59,11 @@ jobs:
           set +e
           {
             echo "=== kopick-api ==="
-            deno check supabase/functions/kopick-api/index.ts
+            deno check --node-modules-dir=auto supabase/functions/kopick-api/index.ts
             first=$?
             echo
             echo "=== naver-userinfo ==="
-            deno check supabase/functions/naver-userinfo/index.ts
+            deno check --node-modules-dir=auto supabase/functions/naver-userinfo/index.ts
             second=$?
             echo
             echo "kopick_api_status=$first"
