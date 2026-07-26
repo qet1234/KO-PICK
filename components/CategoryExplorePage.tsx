@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
-import {
-  isNaverBookingCategory,
-  naverBookingSearchUrl,
-} from "@/utils/external-booking";
+import NaverBookingButton from "@/components/NaverBookingButton";
 import {
   loadNaverMaps,
   naverMapSearchUrl,
@@ -535,19 +532,6 @@ export default function CategoryExplorePage({
       mapLink.textContent = "네이버 지도에서 보기 ↗";
       content.append(category, title, address, mapLink);
 
-      if (isNaverBookingCategory(place.category)) {
-        const bookingLink = document.createElement("a");
-        bookingLink.className = "is-booking";
-        bookingLink.href = naverBookingSearchUrl({
-          name: place.name,
-          address: place.address,
-        });
-        bookingLink.target = "_blank";
-        bookingLink.rel = "noopener noreferrer";
-        bookingLink.textContent = "N 네이버 예약 바로가기 ↗";
-        content.append(bookingLink);
-      }
-
       naverMaps.Event.addListener(marker, "click", () => {
         infoWindowRef.current?.close();
         const infoWindow = new naverMaps.InfoWindow({
@@ -825,21 +809,13 @@ export default function CategoryExplorePage({
                     >
                       네이버 지도에서 보기 ↗
                     </a>
-                    {isNaverBookingCategory(place.category) && (
-                      <a
-                        className="kp-explore-naver-booking-link"
-                        href={naverBookingSearchUrl({
-                          name: place.name,
-                          address: place.address,
-                        })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={place.name + " 네이버 예약 바로가기"}
-                      >
-                        <b aria-hidden="true">N</b>
-                        네이버 예약 바로가기 ↗
-                      </a>
-                    )}
+                    <NaverBookingButton
+                      name={place.name}
+                      address={place.address}
+                      category={place.category}
+                      source="tour"
+                      className="kp-explore-naver-booking-link"
+                    />
                   </div>
                 </article>
               ))}
