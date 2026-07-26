@@ -63,6 +63,12 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  env: {
+    NEXT_PUBLIC_NAVER_MAP_CLIENT_ID:
+      process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID ??
+      process.env.NAVER_MAP_CLIENT_ID ??
+      "",
+  },
   async headers() {
     return [
       {

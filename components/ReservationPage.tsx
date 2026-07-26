@@ -2,10 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
-import {
-  kakaoBookingSearchUrl,
-  naverBookingSearchUrl,
-} from "@/utils/external-booking";
+import { naverBookingSearchUrl } from "@/utils/external-booking";
 
 type SpaceType = "personal" | "couple" | "friends" | "family";
 type PlanStatus = "voting" | "ready" | "requested" | "confirmed" | "cancelled";
@@ -407,7 +404,6 @@ export default function ReservationPage() {
                           {plan.can_manage && (["voting", "ready"] as PlanStatus[]).includes(plan.status) && <button type="button" disabled={working || candidate.is_selected} onClick={() => finalizePlan(plan, candidate)}>{candidate.is_selected ? "달력 저장됨" : "최종 장소 확정"}</button>}
                           {candidate.external_reservation_url && <a className="is-direct-booking" href={candidate.external_reservation_url} target="_blank" rel="noopener noreferrer">매장 예약 페이지 ↗</a>}
                           <a className="is-naver-booking" href={naverBookingSearchUrl({ name: candidate.place_name, address: candidate.address })} target="_blank" rel="noopener noreferrer">네이버 예약 확인 ↗</a>
-                          <a className="is-kakao-booking" href={kakaoBookingSearchUrl({ name: candidate.place_name, address: candidate.address })} target="_blank" rel="noopener noreferrer">카카오 예약 확인 ↗</a>
                         </div>
                       </article>
                     ))}

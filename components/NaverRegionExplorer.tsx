@@ -3,85 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { springApiUrl } from "@/utils/spring-api";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
-
-type KakaoLatLng = object;
-
-interface KakaoMapInstance {
-  panTo(position: KakaoLatLng): void;
-  setLevel(level: number): void;
-  setBounds(bounds: KakaoLatLngBounds): void;
-  addControl(control: object, position: unknown): void;
-}
-
-interface KakaoLatLngBounds {
-  extend(position: KakaoLatLng): void;
-}
-
-interface KakaoMarkerInstance {
-  setMap(map: KakaoMapInstance | null): void;
-}
-
-interface KakaoInfoWindowInstance {
-  open(
-    map: KakaoMapInstance,
-    marker: KakaoMarkerInstance
-  ): void;
-  close(): void;
-}
-
-interface KakaoClustererInstance {
-  addMarkers(markers: KakaoMarkerInstance[]): void;
-  clear(): void;
-}
-
-interface KakaoMapsApi {
-  load(callback: () => void): void;
-  LatLng: new (
-    latitude: number,
-    longitude: number
-  ) => KakaoLatLng;
-  LatLngBounds: new () => KakaoLatLngBounds;
-  Map: new (
-    container: HTMLElement,
-    options: {
-      center: KakaoLatLng;
-      level: number;
-    }
-  ) => KakaoMapInstance;
-  Marker: new (options: {
-    position: KakaoLatLng;
-  }) => KakaoMarkerInstance;
-  InfoWindow: new (options: {
-    content: HTMLElement;
-    removable?: boolean;
-  }) => KakaoInfoWindowInstance;
-  MarkerClusterer: new (options: {
-    map: KakaoMapInstance;
-    averageCenter?: boolean;
-    minLevel?: number;
-    disableClickZoom?: boolean;
-    styles?: Array<Record<string, string>>;
-  }) => KakaoClustererInstance;
-  MapTypeControl: new () => object;
-  ZoomControl: new () => object;
-  ControlPosition: {
-    TOPRIGHT: unknown;
-    RIGHT: unknown;
-  };
-  event: {
-    addListener(
-      target: object,
-      eventName: string,
-      callback: () => void
-    ): void;
-  };
-}
-
-type KakaoWindow = Window & {
-  kakao?: {
-    maps: KakaoMapsApi;
-  };
-};
+import {
+  loadNaverMaps,
+  naverMapSearchUrl,
+  naverMapsApi,
+  type NaverInfoWindowInstance,
+  type NaverMapInstance,
+  type NaverMarkerInstance,
+} from "@/utils/naver-maps";
 
 interface Place {
   id: number | string;
@@ -174,7 +103,7 @@ type RegionName =
 interface RegionConfig {
   latitude: number;
   longitude: number;
-  level: number;
+  zoom: number;
   aliases: string[];
 }
 
@@ -182,67 +111,67 @@ const regions: Record<RegionName, RegionConfig> = {
   전국: {
     latitude: 36.35,
     longitude: 127.85,
-    level: 13,
+    zoom: 7,
     aliases: [],
   },
   서울: {
     latitude: 37.5665,
     longitude: 126.978,
-    level: 8,
+    zoom: 11,
     aliases: ["서울", "서울특별시"],
   },
   부산: {
     latitude: 35.1796,
     longitude: 129.0756,
-    level: 8,
+    zoom: 11,
     aliases: ["부산", "부산광역시"],
   },
   대구: {
     latitude: 35.8714,
     longitude: 128.6014,
-    level: 8,
+    zoom: 11,
     aliases: ["대구", "대구광역시"],
   },
   인천: {
     latitude: 37.4563,
     longitude: 126.7052,
-    level: 8,
+    zoom: 11,
     aliases: ["인천", "인천광역시"],
   },
   광주: {
     latitude: 35.1595,
     longitude: 126.8526,
-    level: 8,
+    zoom: 11,
     aliases: ["광주", "광주광역시"],
   },
   대전: {
     latitude: 36.3504,
     longitude: 127.3845,
-    level: 8,
+    zoom: 11,
     aliases: ["대전", "대전광역시"],
   },
   울산: {
     latitude: 35.5384,
     longitude: 129.3114,
-    level: 8,
+    zoom: 11,
     aliases: ["울산", "울산광역시"],
   },
   세종: {
     latitude: 36.4801,
     longitude: 127.289,
-    level: 8,
+    zoom: 11,
     aliases: ["세종", "세종특별자치시"],
   },
   경기: {
     latitude: 37.4138,
     longitude: 127.5183,
-    level: 11,
+    zoom: 9,
     aliases: ["경기", "경기도"],
   },
   강원: {
     latitude: 37.8228,
     longitude: 128.1555,
-    level: 11,
+    zoom: 9,
     aliases: [
       "강원",
       "강원도",
@@ -252,19 +181,19 @@ const regions: Record<RegionName, RegionConfig> = {
   충북: {
     latitude: 36.6357,
     longitude: 127.4917,
-    level: 10,
+    zoom: 9,
     aliases: ["충북", "충청북도"],
   },
   충남: {
     latitude: 36.6588,
     longitude: 126.6728,
-    level: 10,
+    zoom: 9,
     aliases: ["충남", "충청남도"],
   },
   전북: {
     latitude: 35.8203,
     longitude: 127.1088,
-    level: 10,
+    zoom: 9,
     aliases: [
       "전북",
       "전라북도",
@@ -274,25 +203,25 @@ const regions: Record<RegionName, RegionConfig> = {
   전남: {
     latitude: 34.8161,
     longitude: 126.463,
-    level: 10,
+    zoom: 9,
     aliases: ["전남", "전라남도"],
   },
   경북: {
     latitude: 36.576,
     longitude: 128.5056,
-    level: 10,
+    zoom: 9,
     aliases: ["경북", "경상북도"],
   },
   경남: {
     latitude: 35.2383,
     longitude: 128.6924,
-    level: 10,
+    zoom: 9,
     aliases: ["경남", "경상남도"],
   },
   제주: {
     latitude: 33.4996,
     longitude: 126.5312,
-    level: 10,
+    zoom: 10,
     aliases: [
       "제주",
       "제주도",
@@ -322,14 +251,12 @@ function placeMatchesSelection(
 
   return place.city === subregion;
 }
-export default function KakaoRegionExplorer() {
+export default function NaverRegionExplorer() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<KakaoMapInstance | null>(null);
-  const markersRef = useRef<KakaoMarkerInstance[]>([]);
-  const clustererRef =
-    useRef<KakaoClustererInstance | null>(null);
+  const mapRef = useRef<NaverMapInstance | null>(null);
+  const markersRef = useRef<NaverMarkerInstance[]>([]);
   const infoWindowRef =
-    useRef<KakaoInfoWindowInstance | null>(null);
+    useRef<NaverInfoWindowInstance | null>(null);
 
   const [selectedRegion, setSelectedRegion] =
     useState<RegionName>("전국");
@@ -344,9 +271,9 @@ export default function KakaoRegionExplorer() {
   const [placesError, setPlacesError] = useState("");
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState(() =>
-    process.env.NEXT_PUBLIC_KAKAO_MAP_KEY
+    process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
       ? ""
-      : "카카오 지도 API 키가 설정되지 않았습니다."
+      : "네이버 지도 Client ID가 설정되지 않았습니다."
   );
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -464,140 +391,59 @@ export default function KakaoRegionExplorer() {
   ]);
 
   useEffect(() => {
-    const apiKey =
-      process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+    const clientId =
+      process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
+    if (!clientId) return;
 
-    if (!apiKey) {
-      return;
-    }
-
-    const initializeMap = () => {
-      const kakao =
-        (window as KakaoWindow).kakao;
-
-      if (!kakao?.maps) {
-        setMapError(
-          "카카오 지도 SDK를 불러오지 못했습니다."
-        );
-        return;
-      }
-
-      kakao.maps.load(() => {
-        if (!containerRef.current || mapRef.current) {
+    let cancelled = false;
+    loadNaverMaps(clientId)
+      .then((naverMaps) => {
+        if (cancelled || !containerRef.current || mapRef.current) {
           return;
         }
 
         const initial = regions.전국;
-        const center = new kakao.maps.LatLng(
-          initial.latitude,
-          initial.longitude
-        );
-
-        const map = new kakao.maps.Map(
+        mapRef.current = new naverMaps.Map(
           containerRef.current,
           {
-            center,
-            level: initial.level,
+            center: new naverMaps.LatLng(
+              initial.latitude,
+              initial.longitude
+            ),
+            zoom: initial.zoom,
+            mapTypeControl: true,
+            mapDataControl: false,
+            scaleControl: true,
+            zoomControl: true,
+            zoomControlOptions: {
+              position: naverMaps.Position.TOP_RIGHT,
+            },
           }
         );
-
-        map.addControl(
-          new kakao.maps.MapTypeControl(),
-          kakao.maps.ControlPosition.TOPRIGHT
-        );
-
-        map.addControl(
-          new kakao.maps.ZoomControl(),
-          kakao.maps.ControlPosition.RIGHT
-        );
-
-        const clusterer =
-          new kakao.maps.MarkerClusterer({
-            map,
-            averageCenter: true,
-            minLevel: 7,
-            disableClickZoom: false,
-            styles: [
-              {
-                width: "46px",
-                height: "46px",
-                background: "#ff3b3b",
-                border: "3px solid #ffffff",
-                borderRadius: "50%",
-                color: "#ffffff",
-                fontSize: "13px",
-                fontWeight: "900",
-                textAlign: "center",
-                lineHeight: "40px",
-                boxShadow:
-                  "0 6px 18px rgba(0,0,0,0.22)",
-              },
-            ],
-          });
-
-        mapRef.current = map;
-        clustererRef.current = clusterer;
         setReady(true);
+      })
+      .catch((loadError: unknown) => {
+        if (!cancelled) {
+          setMapError(
+            loadError instanceof Error
+              ? loadError.message
+              : "네이버 지도 연결에 실패했습니다."
+          );
+        }
       });
+
+    return () => {
+      cancelled = true;
     };
-
-    if ((window as KakaoWindow).kakao?.maps) {
-      initializeMap();
-      return;
-    }
-
-    const existingScript =
-      document.querySelector<HTMLScriptElement>(
-        'script[data-kakao-map-sdk="true"]'
-      );
-
-    if (existingScript) {
-      existingScript.addEventListener(
-        "load",
-        initializeMap,
-        { once: true }
-      );
-      return;
-    }
-
-    const script = document.createElement("script");
-
-    script.dataset.kakaoMapSdk = "true";
-    script.async = true;
-    script.src =
-      "https://dapi.kakao.com/v2/maps/sdk.js" +
-      `?appkey=${apiKey}` +
-      "&autoload=false&libraries=services,clusterer";
-
-    script.addEventListener(
-      "load",
-      initializeMap,
-      { once: true }
-    );
-
-    script.addEventListener(
-      "error",
-      () =>
-        setMapError(
-          "카카오 지도 사용 설정 또는 JavaScript 키를 확인해 주세요."
-        ),
-      { once: true }
-    );
-
-    document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
-    const kakao =
-      (window as KakaoWindow).kakao;
+    const naverMaps = naverMapsApi();
     const map = mapRef.current;
-    const clusterer = clustererRef.current;
 
-    if (!ready || !kakao?.maps || !map) {
+    if (!ready || !naverMaps || !map) {
       return;
     }
-
-    clusterer?.clear();
 
     markersRef.current.forEach((marker) => {
       marker.setMap(null);
@@ -607,8 +453,8 @@ export default function KakaoRegionExplorer() {
     infoWindowRef.current?.close();
     infoWindowRef.current = null;
 
-    const newMarkers: KakaoMarkerInstance[] = [];
-    const bounds = new kakao.maps.LatLngBounds();
+    const newMarkers: NaverMarkerInstance[] = [];
+    const bounds = new naverMaps.LatLngBounds();
 
     filteredPlaces.forEach((place) => {
       const latitude = Number(place.latitude);
@@ -621,13 +467,15 @@ export default function KakaoRegionExplorer() {
         return;
       }
 
-      const position = new kakao.maps.LatLng(
+      const position = new naverMaps.LatLng(
         latitude,
         longitude
       );
 
-      const marker = new kakao.maps.Marker({
+      const marker = new naverMaps.Marker({
         position,
+        map,
+        title: place.name,
       });
 
       const content = document.createElement("div");
@@ -651,14 +499,21 @@ export default function KakaoRegionExplorer() {
       address.textContent =
         place.address ?? "주소 정보가 없습니다.";
 
+      const mapLink = document.createElement("a");
+      mapLink.href = naverMapSearchUrl(place.name, place.address);
+      mapLink.target = "_blank";
+      mapLink.rel = "noopener noreferrer";
+      mapLink.textContent = "네이버 지도에서 보기 ↗";
+
       content.append(
         category,
         title,
         location,
-        address
+        address,
+        mapLink
       );
 
-      kakao.maps.event.addListener(
+      naverMaps.Event.addListener(
         marker,
         "click",
         () => {
@@ -666,9 +521,12 @@ export default function KakaoRegionExplorer() {
           infoWindowRef.current?.close();
 
           const infoWindow =
-            new kakao.maps.InfoWindow({
+            new naverMaps.InfoWindow({
               content,
-              removable: true,
+              borderWidth: 0,
+              backgroundColor: "transparent",
+              disableAnchor: true,
+              pixelOffset: new naverMaps.Point(0, -10),
             });
 
           infoWindow.open(map, marker);
@@ -680,19 +538,16 @@ export default function KakaoRegionExplorer() {
       bounds.extend(position);
     });
 
-    if (clusterer) {
-      clusterer.addMarkers(newMarkers);
-    } else {
-      newMarkers.forEach((marker) => {
-        marker.setMap(map);
-      });
-    }
-
     if (newMarkers.length > 0) {
-      map.setBounds(bounds);
+      map.fitBounds(bounds, {
+        top: 80,
+        right: 60,
+        bottom: 80,
+        left: 60,
+      });
 
       if (newMarkers.length === 1) {
-        map.setLevel(5);
+        map.setZoom(15);
       }
     }
 
@@ -702,22 +557,21 @@ export default function KakaoRegionExplorer() {
   const moveMapToRegion = (
     regionName: RegionName
   ) => {
-    const kakao =
-      (window as KakaoWindow).kakao;
+    const naverMaps = naverMapsApi();
     const map = mapRef.current;
 
-    if (!kakao?.maps || !map) {
+    if (!naverMaps || !map) {
       return;
     }
 
     const region = regions[regionName];
-    const position = new kakao.maps.LatLng(
+    const position = new naverMaps.LatLng(
       region.latitude,
       region.longitude
     );
 
     map.panTo(position);
-    map.setLevel(region.level);
+    map.setZoom(region.zoom);
   };
 
   const selectRegion = (regionName: RegionName) => {
@@ -744,11 +598,10 @@ export default function KakaoRegionExplorer() {
       )
     );
 
-    const kakao =
-      (window as KakaoWindow).kakao;
+    const naverMaps = naverMapsApi();
     const map = mapRef.current;
 
-    if (!matchingPlace || !kakao?.maps || !map) {
+    if (!matchingPlace || !naverMaps || !map) {
       return;
     }
 
@@ -763,9 +616,9 @@ export default function KakaoRegionExplorer() {
     }
 
     map.panTo(
-      new kakao.maps.LatLng(latitude, longitude)
+      new naverMaps.LatLng(latitude, longitude)
     );
-    map.setLevel(6);
+    map.setZoom(14);
   };
 
   return (
@@ -975,7 +828,7 @@ export default function KakaoRegionExplorer() {
           <div
             ref={containerRef}
             className="kp-region-map"
-            aria-label={`${selectedRegion} 카카오 지도`}
+            aria-label={`${selectedRegion} 네이버 지도`}
           />
 
           <div className="kp-region-map-label">
@@ -989,7 +842,7 @@ export default function KakaoRegionExplorer() {
 
           {!ready && !mapError && (
             <div className="kp-region-map-state">
-              카카오 지도를 불러오는 중입니다.
+              네이버 지도를 불러오는 중입니다.
             </div>
           )}
 

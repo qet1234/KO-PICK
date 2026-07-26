@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
+import { naverMapSearchUrl } from "@/utils/naver-maps";
 
 interface Place {
   id: string;
@@ -110,9 +111,7 @@ export default function LiveRecommendations() {
           const favorite = favorites.has(place.id);
           const activityTotal =
             place.detailCount + place.outboundCount + place.favoriteCount;
-          const mapUrl = `https://map.kakao.com/link/search/${encodeURIComponent(
-            place.title
-          )}`;
+          const mapUrl = naverMapSearchUrl(place.title, place.location);
 
           return (
             <article
