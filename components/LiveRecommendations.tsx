@@ -4,10 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
 import { naverMapSearchUrl } from "@/utils/naver-maps";
-import {
-  isNaverBookingCategory,
-  naverBookingSearchUrl,
-} from "@/utils/external-booking";
+import NaverBookingButton from "@/components/NaverBookingButton";
 
 interface Place {
   id: string;
@@ -180,20 +177,14 @@ export default function LiveRecommendations() {
                   >
                     지도에서 보기 ↗
                   </a>
-                  {isNaverBookingCategory(place.category) && (
-                    <a
-                      className="is-booking"
-                      href={naverBookingSearchUrl({
-                        name: place.title,
-                        address: place.location,
-                      })}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => void trackPlaceActivity(place, "outbound")}
-                    >
-                      N 예약 ↗
-                    </a>
-                  )}
+                  <NaverBookingButton
+                    name={place.title}
+                    address={place.location}
+                    category={place.category}
+                    source={place.source}
+                    compact
+                    onClick={() => void trackPlaceActivity(place, "outbound")}
+                  />
                 </div>
               </div>
 
