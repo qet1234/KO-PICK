@@ -168,6 +168,19 @@ async function resolveBookingUrl(value = "") {
     if (isDirectBookingUrl(current)) return current.toString();
     if (!NAVER_REDIRECT_HOSTS.has(current.hostname)) return null;
 
+    const encodedTarget =
+      current.searchParams.get("url") ||
+      current.searchParams.get("u") ||
+      current.searchParams.get("target");
+    if (encodedTarget) {
+      try {
+        const target = new URL(encodedTarget);
+        if (isDirectBookingUrl(target)) return target.toString();
+      } catch {
+        // Continue with the redirect response when the query value is not a URL.
+      }
+    }
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
     try {
@@ -242,18 +255,21 @@ export async function GET(request: NextRequest) {
     const matchedName = stripHtml(best.item.title);
     const matchedAddress = stripHtml(best.item.roadAddress) || stripHtml(best.item.address);
     const exactQuery = `${matchedName} ${matchedAddress}`;
-    const bookingDocuments = await searchNaverBookingDocuments(
-      exactQuery,
-      clientId,
-      clientSecret,
-    );
-    const matchingBookingDocuments = bookingDocuments.filter((item) =>
-      bookingDocumentMatches(matchedName, item),
-    );
-
     let bookingUrl: string | null = null;
-    for (const document of matchingBookingDocuments) {
-      bookingUrl = await resolveBookingUrl(document.link);
+    for (const bookingQuery of [exactQuery, matchedName]) {
+      const bookingDocuments = await searchNaverBookingDocuments(
+        bookingQuery,
+        clientId,
+        clientSecret,
+      );
+      const matchingBookingDocuments = bookingDocuments.filter((item) =>
+        bookingDocumentMatches(matchedName, item),
+      );
+
+      for (const document of matchingBookingDocuments) {
+        bookingUrl = await resolveBookingUrl(document.link);
+        if (bookingUrl) break;
+      }
       if (bookingUrl) break;
     }
 
