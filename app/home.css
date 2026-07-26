@@ -138,6 +138,52 @@ button {
   transform: scaleX(0.58);
 }
 
+.kp-header-place-button {
+  min-height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--kp-black);
+  border-radius: 999px;
+  color: white !important;
+  background: var(--kp-black);
+  box-shadow: 4px 4px 0 var(--kp-lime);
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
+  transition:
+    color 170ms ease,
+    background 170ms ease,
+    box-shadow 170ms ease,
+    transform 170ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kp-header-place-button > span {
+  color: var(--kp-lime);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.kp-header-place-button:hover,
+.kp-header-place-button:focus-visible {
+  color: var(--kp-black) !important;
+  background: var(--kp-lime);
+  box-shadow: 6px 6px 0 var(--kp-black);
+  transform: translate(-2px, -2px);
+}
+
+.kp-header-place-button:hover > span,
+.kp-header-place-button:focus-visible > span {
+  color: var(--kp-black);
+}
+
+.kp-header-place-button:active {
+  box-shadow: 2px 2px 0 var(--kp-black);
+  transform: translate(1px, 1px);
+}
+
 @keyframes kp-nav-press {
   0% {
     transform: translateY(-1px) scale(1);
@@ -1510,9 +1556,13 @@ button {
     display: none;
   }
 
+  .kp-header-place-button {
+    margin-left: auto;
+  }
+
   .header-auth-buttons,
   .header-user {
-    margin-left: auto;
+    margin-left: 0;
   }
 
   .kp-hero-frame,
@@ -1561,6 +1611,17 @@ button {
   .header-space-button,
   .header-signup-button {
     display: none;
+  }
+
+  .kp-header-inner {
+    gap: 10px;
+  }
+
+  .kp-header-place-button {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 11px;
+    box-shadow: 3px 3px 0 var(--kp-lime);
   }
 
   .kp-hero {
