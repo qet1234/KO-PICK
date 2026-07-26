@@ -520,7 +520,12 @@ export default function CategoryExplorePage({
       const address = document.createElement("span");
       address.textContent = place.address ?? "주소 정보 없음";
       const mapLink = document.createElement("a");
-      mapLink.href = naverMapSearchUrl(place.name, place.address);
+      mapLink.href = naverMapSearchUrl(
+        place.name,
+        place.address,
+        place.latitude,
+        place.longitude
+      );
       mapLink.target = "_blank";
       mapLink.rel = "noopener noreferrer";
       mapLink.textContent = "네이버 지도에서 보기 ↗";
@@ -790,7 +795,12 @@ export default function CategoryExplorePage({
 
                   <a
                     className="kp-explore-naver-map-link"
-                    href={naverMapSearchUrl(place.name, place.address)}
+                    href={naverMapSearchUrl(
+        place.name,
+        place.address,
+        place.latitude,
+        place.longitude
+      )}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={place.name + " 네이버 지도에서 보기"}
