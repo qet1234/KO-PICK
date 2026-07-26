@@ -123,3 +123,130 @@
   .reservation-add-trigger, .reservation-add-candidate { margin-left: 17px; margin-right: 17px; }
   .reservation-plan-actions { flex-wrap: wrap; padding: 14px 17px; }
 }
+
+/* TourAPI 음식점과 네이버 장소를 확인한 뒤 이어지는 외부 예약 패널 */
+.reservation-naver-match {
+  width: 100%;
+}
+
+.reservation-naver-match > .is-naver-booking {
+  width: 100%;
+  cursor: pointer;
+}
+
+.reservation-match-result {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 520px);
+  padding: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 18px;
+  background: #f8fafc;
+  color: #172033;
+}
+
+.reservation-match-result.is-matched {
+  border-color: rgba(3, 199, 90, 0.32);
+  background: linear-gradient(145deg, #f4fff8 0%, #ffffff 68%);
+}
+
+.reservation-match-result.is-unmatched {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: #fffafa;
+}
+
+.reservation-match-result > strong {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.reservation-match-result > span,
+.reservation-match-result > small,
+.reservation-match-result > p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.reservation-match-result.is-unmatched > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reservation-match-result.is-unmatched button,
+.reservation-match-result.is-unmatched a {
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.reservation-match-badge {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #03c75a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.reservation-booking-options {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 0.8fr;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.reservation-booking-options label {
+  display: grid;
+  gap: 5px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reservation-booking-options input,
+.reservation-booking-options select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid #d9e1e8;
+  border-radius: 11px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+}
+
+.reservation-naver-continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: #03c75a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.reservation-naver-continue:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(3, 199, 90, 0.22);
+}
+
+@media (max-width: 640px) {
+  .reservation-booking-options {
+    grid-template-columns: 1fr;
+  }
+}
