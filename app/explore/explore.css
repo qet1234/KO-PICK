@@ -219,7 +219,7 @@ select {
 
 .kp-explore-place-card > button {
   width: 100%;
-  height: 100%;
+  height: auto;
   padding: 0;
   display: block;
   border: 0;
@@ -298,6 +298,30 @@ select {
   margin-top: 12px;
   display: inline-block;
   font-size: 10px;
+}
+
+.kp-explore-naver-map-link {
+  min-height: 38px;
+  margin: 0 14px 10px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #03c75a;
+  box-shadow: 0 8px 18px rgba(3, 199, 90, 0.18);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.kp-explore-naver-map-link:focus-visible {
+  outline: 3px solid rgba(3, 199, 90, 0.28);
+  outline-offset: 2px;
 }
 
 .kp-explore-pagination {
@@ -459,6 +483,12 @@ select {
   .kp-explore-place-card:hover img {
     transform: scale(1.06);
   }
+
+  .kp-explore-naver-map-link:hover {
+    background: #02b351;
+    box-shadow: 0 10px 22px rgba(3, 199, 90, 0.26);
+    transform: translateY(-2px);
+  }
 }
 
 @media (max-width: 900px) {
@@ -524,7 +554,8 @@ select {
 
   .kp-explore-category-buttons button,
   .kp-explore-place-card,
-  .kp-explore-card-image img {
+  .kp-explore-card-image img,
+  .kp-explore-naver-map-link {
     transition: none !important;
   }
 }
