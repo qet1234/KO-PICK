@@ -77,6 +77,13 @@ function providerUrl(provider: Provider, target: PlaceTarget) {
     return `https://map.kakao.com/link/search/${query}`;
   }
 
+  if (
+    Number.isFinite(target.latitude) &&
+    Number.isFinite(target.longitude)
+  ) {
+    return `https://map.naver.com/p/search/${encodeURIComponent(target.name)}?c=${target.longitude},${target.latitude},15,0,0,0,dh`;
+  }
+
   return `https://map.naver.com/p/search/${query}`;
 }
 
