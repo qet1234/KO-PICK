@@ -80,7 +80,6 @@ const categoryDetails: Record<Exclude<CategoryValue, "전체">, string[]> = {
   ],
   카페: [
     "전체",
-    "프랜차이즈",
     "감성카페",
     "뷰카페",
     "대형카페",
@@ -120,6 +119,73 @@ const detailLabels: Record<Exclude<CategoryValue, "전체">, string> = {
 
 function displayCategory(category: string) {
   return category === "맛집" ? "음식" : category;
+}
+
+const franchiseCafeBrands = [
+  "스타벅스",
+  "투썸플레이스",
+  "이디야",
+  "메가mgc커피",
+  "메가커피",
+  "컴포즈커피",
+  "빽다방",
+  "할리스",
+  "엔제리너스",
+  "파스쿠찌",
+  "폴바셋",
+  "탐앤탐스",
+  "커피빈",
+  "카페베네",
+  "더벤티",
+  "매머드커피",
+  "매머드익스프레스",
+  "텐퍼센트커피",
+  "하삼동커피",
+  "감성커피",
+  "커피베이",
+  "셀렉토커피",
+  "벌크커피",
+  "청자다방",
+  "카페봄봄",
+  "달콤커피",
+  "커피에반하다",
+  "드롭탑",
+  "커피스미스",
+  "토프레소",
+  "그라찌에",
+  "커피니",
+  "읍천리382",
+  "디저트39",
+  "공차",
+  "아마스빈",
+  "요거프레소",
+  "설빙",
+  "파리바게뜨",
+  "뚜레쥬르",
+  "카페게이트",
+  "더리터",
+  "커피마마",
+  "백억커피",
+  "카페인중독",
+  "starbucks",
+  "twosomeplace",
+  "ediya",
+  "megacoffee",
+  "composecoffee",
+  "paikscoffee",
+] as const;
+
+function normalizeCafeName(value: string) {
+  return value.replace(/[^0-9A-Za-z가-힣]/g, "").toLowerCase();
+}
+
+function isFranchiseCafe(place: Place) {
+  if (!displayCategory(place.category).startsWith("카페")) return false;
+
+  const normalizedName = normalizeCafeName(place.name);
+  return franchiseCafeBrands.some((brand) =>
+    normalizedName.includes(normalizeCafeName(brand))
+  );
 }
 
 function CategoryFallbackIcon({ category }: { category: string }) {
@@ -297,8 +363,20 @@ export default function CategoryExplorePage({
         }
 
         if (!cancelled) {
-          setPlaces(payload.places ?? []);
-          setTotalCount(Number(payload.pagination?.totalCount ?? 0));
+          const receivedPlaces = (payload.places ?? []) as Place[];
+          const visiblePlaces = receivedPlaces.filter(
+            (place) => !isFranchiseCafe(place)
+          );
+          const excludedCount = receivedPlaces.length - visiblePlaces.length;
+
+          setPlaces(visiblePlaces);
+          setTotalCount(
+            Math.max(
+              0,
+              Number(payload.pagination?.totalCount ?? visiblePlaces.length) -
+                excludedCount
+            )
+          );
           setTotalPages(
             Math.max(1, Number(payload.pagination?.totalPages ?? 1))
           );
