@@ -1,17 +1,17 @@
 import AuthHeader from "@/components/AuthHeader";
-import ReliableNaverRegionExplorer from "@/components/ReliableNaverRegionExplorer";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
 import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
+import SeasonalFoodList from "@/components/SeasonalFoodList";
 import "./home.css";
 import "./home-recommend.css";
-import "./home-navigation.css";
 import "./home-discovery.css";
 import "./home-weather-dashboard.css";
 import "./home-weather-navigation.css";
 import "./home-place-location.css";
 import "./home-clarity.css";
+import "./home-seasonal-food.css";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +22,16 @@ export default function Home() {
         <div className="kp-container kp-header-inner">
           <a className="kp-brand" href="#top"><span className="kp-brand-mark">K</span><span>코리아픽</span></a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
-            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#regions">지역 찾기</a><a href="/spaces">함께 공간</a><a href="/reservations">함께 예약</a>
+            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a><a href="/spaces">함께 공간</a><a href="/reservations">함께 예약</a>
           </nav>
+          <a
+            className="kp-header-place-button"
+            href="/explore"
+            aria-label="전국 장소 찾기 화면으로 이동"
+          >
+            <span aria-hidden="true">⌖</span>
+            장소 찾기
+          </a>
           <AuthHeader />
         </div>
       </header>
@@ -60,14 +68,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="kp-region-journey" id="regions">
-        <div className="kp-region-journey-intro" aria-labelledby="region-journey-title">
-          <p className="kp-overline">WHERE TO FIND</p>
-          <h2 id="region-journey-title">원하는 지역에서<br />직접 찾아볼까요?</h2>
-          <p>시·도와 시·군·구를 먼저 선택하고, 필요한 경우 작은 카테고리 필터로 결과를 좁혀보세요.</p>
-        </div>
-        <ReliableNaverRegionExplorer />
-      </div>
+      <SeasonalFoodList />
 
       <footer className="kp-footer" id="privacy">
         <div className="kp-container kp-privacy-panel">
