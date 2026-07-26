@@ -4,7 +4,7 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://*.kakao.com https://*.daumcdn.net https://accounts.google.com https://oapi.map.naver.com https://openapi.map.naver.com`,
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://*.kakao.com https://*.daumcdn.net https://accounts.google.com https://oapi.map.naver.com https://openapi.map.naver.com https://*.pstatic.net`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://oapi.map.naver.com https://openapi.map.naver.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
