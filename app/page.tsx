@@ -12,6 +12,7 @@ import "./home-weather-navigation.css";
 import "./home-place-location.css";
 import "./home-clarity.css";
 import "./home-seasonal-food.css";
+import "./home-category-grid.css";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,6 @@ export default function Home() {
           <a className="kp-brand" href="#top"><span className="kp-brand-mark">K</span><span>코리아픽</span></a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
             <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a>
-            <a href="https://booking.naver.com/" target="_blank" rel="noopener noreferrer">네이버 예약</a>
           </nav>
           <a
             className="kp-header-place-button"
@@ -50,7 +50,7 @@ export default function Home() {
             <div>
               <p className="kp-overline">WHAT TO FIND</p>
               <h2>무엇을 찾고 있나요?</h2>
-              <p>맛집, 카페, 축제, 관광지를 찾거나 네이버에서 바로 예약해 보세요.</p>
+              <p>맛집과 카페를 찾고, 예약 지원 매장은 카드에서 네이버 예약으로 바로 이동하세요.</p>
             </div>
           </div>
           <CategoryCards />
