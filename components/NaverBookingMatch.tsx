@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { naverBookingSearchUrl } from "@/utils/external-booking";
+import {
+  isNaverBookingCategory,
+  naverBookingSearchUrl,
+} from "@/utils/external-booking";
 
 type BookingCandidate = {
   id: string;
@@ -52,7 +55,7 @@ export default function NaverBookingMatch({ candidate, reservationDate, partySiz
   const eligible = useMemo(
     () =>
       candidate.place_source.toLowerCase().includes("tour") &&
-      /(?:음식|맛집|restaurant)/i.test(candidate.category || "") &&
+      isNaverBookingCategory(candidate.category) &&
       Boolean(candidate.address?.trim()),
     [candidate],
   );

@@ -1208,6 +1208,23 @@ button {
   text-decoration: none;
 }
 
+.kp-recommendation-external-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.kp-recommendation-external-links a.is-booking {
+  min-height: 30px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #03c75a;
+}
+
 .kp-recommendation-icon-slot {
   min-height: 72px;
   padding: 12px 14px;

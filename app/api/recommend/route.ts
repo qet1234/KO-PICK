@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
         address,
         description: stripHtml(item.description),
         mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
-        reservationUrl: `https://map.naver.com/p/search/${mapQuery}`,
+        reservationUrl: `https://search.naver.com/search.naver?query=${encodeURIComponent(`${name} ${address} 네이버 예약`)}`,
         score,
         reason: recommendationReason(score, params),
       });

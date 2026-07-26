@@ -103,10 +103,15 @@ export async function GET(request: NextRequest) {
   const source = (request.nextUrl.searchParams.get("source") || "").trim().toLowerCase();
   const category = (request.nextUrl.searchParams.get("category") || "").trim();
 
-  if (!name || !address || !source.includes("tour") || !/(?:음식|맛집|restaurant)/i.test(category)) {
+  if (
+    !name ||
+    !address ||
+    !source.includes("tour") ||
+    !/(?:음식|맛집|restaurant|카페|cafe)/i.test(category)
+  ) {
     return NextResponse.json({
       matched: false,
-      reason: "TourAPI 음식점 후보의 장소명과 주소가 모두 필요합니다.",
+      reason: "TourAPI 음식점·카페 후보의 장소명과 주소가 모두 필요합니다.",
     });
   }
 

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { springApiUrl } from "@/utils/spring-api";
 import { naverMapSearchUrl } from "@/utils/naver-maps";
+import {
+  isNaverBookingCategory,
+  naverBookingSearchUrl,
+} from "@/utils/external-booking";
 
 interface Place {
   id: string;
@@ -167,14 +171,30 @@ export default function LiveRecommendations() {
                   <strong>인기점수 {Math.round(place.popularityScore)}</strong>
                   <small>반응 {activityTotal.toLocaleString("ko-KR")}</small>
                 </div>
-                <a
-                  href={mapUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => void trackPlaceActivity(place, "outbound")}
-                >
-                  지도에서 보기 ↗
-                </a>
+                <div className="kp-recommendation-external-links">
+                  <a
+                    href={mapUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => void trackPlaceActivity(place, "outbound")}
+                  >
+                    지도에서 보기 ↗
+                  </a>
+                  {isNaverBookingCategory(place.category) && (
+                    <a
+                      className="is-booking"
+                      href={naverBookingSearchUrl({
+                        name: place.title,
+                        address: place.location,
+                      })}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => void trackPlaceActivity(place, "outbound")}
+                    >
+                      N 예약 ↗
+                    </a>
+                  )}
+                </div>
               </div>
 
               <div

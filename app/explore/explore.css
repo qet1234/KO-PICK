@@ -300,17 +300,20 @@ select {
   font-size: 10px;
 }
 
-.kp-explore-naver-map-link {
-  min-height: 38px;
+.kp-explore-external-actions {
   margin: 0 14px 10px;
+  display: grid;
+  gap: 7px;
+}
+
+.kp-explore-naver-map-link,
+.kp-explore-naver-booking-link {
+  min-height: 38px;
   padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  color: #fff;
-  background: #03c75a;
-  box-shadow: 0 8px 18px rgba(3, 199, 90, 0.18);
   font-size: 11px;
   font-weight: 900;
   line-height: 1.2;
@@ -319,7 +322,33 @@ select {
   transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
-.kp-explore-naver-map-link:focus-visible {
+.kp-explore-naver-map-link {
+  border: 1px solid rgba(3, 199, 90, 0.34);
+  color: #029844;
+  background: #fff;
+}
+
+.kp-explore-naver-booking-link {
+  gap: 7px;
+  color: #fff;
+  background: #03c75a;
+  box-shadow: 0 8px 18px rgba(3, 199, 90, 0.2);
+}
+
+.kp-explore-naver-booking-link b {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 5px;
+  color: #03c75a;
+  background: #fff;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.kp-explore-naver-map-link:focus-visible,
+.kp-explore-naver-booking-link:focus-visible {
   outline: 3px solid rgba(3, 199, 90, 0.28);
   outline-offset: 2px;
 }
@@ -470,6 +499,17 @@ select {
   text-decoration: none;
 }
 
+.kp-explore-info-window a.is-booking {
+  min-height: 30px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #03c75a;
+}
+
 @media (hover: hover) {
   .kp-explore-category-buttons button:hover {
     transform: translateY(-2px);
@@ -484,8 +524,10 @@ select {
     transform: scale(1.06);
   }
 
-  .kp-explore-naver-map-link:hover {
+  .kp-explore-naver-map-link:hover,
+  .kp-explore-naver-booking-link:hover {
     background: #02b351;
+    color: #fff;
     box-shadow: 0 10px 22px rgba(3, 199, 90, 0.26);
     transform: translateY(-2px);
   }
@@ -555,7 +597,8 @@ select {
   .kp-explore-category-buttons button,
   .kp-explore-place-card,
   .kp-explore-card-image img,
-  .kp-explore-naver-map-link {
+  .kp-explore-naver-map-link,
+  .kp-explore-naver-booking-link {
     transition: none !important;
   }
 }
