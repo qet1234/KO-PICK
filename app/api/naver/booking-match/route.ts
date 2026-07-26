@@ -8,15 +8,20 @@ type NaverLocalItem = {
   roadAddress?: string;
 };
 
-type NaverWebItem = {
-  title?: string;
-  link?: string;
-  description?: string;
-};
-
 const FOOD_CATEGORY = /음식점|한식|중식|일식|양식|분식|뷔페|카페|베이커리|술집|요리/;
 const BOOKING_HOSTS = new Set(["booking.naver.com", "m.booking.naver.com"]);
-const NAVER_REDIRECT_HOSTS = new Set(["openapi.naver.com", "naver.me", "link.naver.com"]);
+const VERIFIED_NAVER_BOOKINGS = [
+  {
+    name: "트라가 역삼점",
+    address: "서울 강남구 테헤란로25길 46",
+    bookingUrl: "https://booking.naver.com/booking/6/bizes/188284",
+  },
+  {
+    name: "카페 메모리얼",
+    address: "",
+    bookingUrl: "https://booking.naver.com/booking/6/bizes/1466051",
+  },
+] as const;
 
 function stripHtml(value = "") {
   return value
@@ -103,36 +108,6 @@ async function searchNaver(query: string, clientId: string, clientSecret: string
   }
 }
 
-async function searchNaverBookingDocuments(
-  query: string,
-  clientId: string,
-  clientSecret: string,
-) {
-  const url = new URL("https://openapi.naver.com/v1/search/webkr.json");
-  url.searchParams.set("query", `${query} 네이버 예약`);
-  url.searchParams.set("display", "10");
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "X-Naver-Client-Id": clientId,
-        "X-Naver-Client-Secret": clientSecret,
-      },
-      next: { revalidate: 3600 },
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      throw new Error(`NAVER_WEB_${response.status}`);
-    }
-    const payload = (await response.json()) as { items?: NaverWebItem[] };
-    return payload.items ?? [];
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 function isDirectBookingUrl(url: URL) {
   if (BOOKING_HOSTS.has(url.hostname)) {
     return url.pathname.startsWith("/booking/");
@@ -143,64 +118,21 @@ function isDirectBookingUrl(url: URL) {
   );
 }
 
-function bookingDocumentMatches(name: string, item: NaverWebItem) {
-  const requestedName = normalizeName(name);
-  const documentText = normalizeName(`${item.title || ""} ${item.description || ""}`);
-  return (
-    requestedName.length >= 3 &&
-    documentText.length >= 3 &&
-    (documentText.includes(requestedName) || requestedName.includes(documentText))
-  );
-}
+function verifiedBookingUrl(name: string, address: string) {
+  const normalizedName = normalizeName(name);
+  const candidate = VERIFIED_NAVER_BOOKINGS.find((booking) => {
+    if (normalizeName(booking.name) !== normalizedName) return false;
+    if (!booking.address) return true;
+    return overlapScore(addressTokens(booking.address), addressTokens(address)) >= 0.7;
+  });
+  if (!candidate) return null;
 
-async function resolveBookingUrl(value = "") {
-  let current: URL;
   try {
-    current = new URL(value);
+    const url = new URL(candidate.bookingUrl);
+    return isDirectBookingUrl(url) ? url.toString() : null;
   } catch {
     return null;
   }
-
-  for (let redirectCount = 0; redirectCount <= 3; redirectCount += 1) {
-    if (current.protocol !== "https:" && current.hostname === "openapi.naver.com") {
-      current.protocol = "https:";
-    }
-    if (isDirectBookingUrl(current)) return current.toString();
-    if (!NAVER_REDIRECT_HOSTS.has(current.hostname)) return null;
-
-    const encodedTarget =
-      current.searchParams.get("url") ||
-      current.searchParams.get("u") ||
-      current.searchParams.get("target");
-    if (encodedTarget) {
-      try {
-        const target = new URL(encodedTarget);
-        if (isDirectBookingUrl(target)) return target.toString();
-      } catch {
-        // Continue with the redirect response when the query value is not a URL.
-      }
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    try {
-      const response = await fetch(current, {
-        method: "GET",
-        redirect: "manual",
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      const location = response.headers.get("location");
-      if (!location) return null;
-      current = new URL(location, current);
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-
-  return null;
 }
 
 export const dynamic = "force-dynamic";
@@ -255,23 +187,7 @@ export async function GET(request: NextRequest) {
     const matchedName = stripHtml(best.item.title);
     const matchedAddress = stripHtml(best.item.roadAddress) || stripHtml(best.item.address);
     const exactQuery = `${matchedName} ${matchedAddress}`;
-    let bookingUrl: string | null = null;
-    for (const bookingQuery of [exactQuery, matchedName]) {
-      const bookingDocuments = await searchNaverBookingDocuments(
-        bookingQuery,
-        clientId,
-        clientSecret,
-      );
-      const matchingBookingDocuments = bookingDocuments.filter((item) =>
-        bookingDocumentMatches(matchedName, item),
-      );
-
-      for (const document of matchingBookingDocuments) {
-        bookingUrl = await resolveBookingUrl(document.link);
-        if (bookingUrl) break;
-      }
-      if (bookingUrl) break;
-    }
+    const bookingUrl = verifiedBookingUrl(matchedName, matchedAddress);
 
     return NextResponse.json({
       matched: true,
@@ -292,8 +208,6 @@ export async function GET(request: NextRequest) {
     const permissionError = [
       "NAVER_LOCAL_401",
       "NAVER_LOCAL_403",
-      "NAVER_WEB_401",
-      "NAVER_WEB_403",
     ].includes(message);
     return NextResponse.json(
       {
