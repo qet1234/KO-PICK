@@ -637,3 +637,75 @@ select {
   object-fit: cover;
 }
 /* END KOREAPICK MAP PHOTO V4 */
+
+/* BEGIN KOREAPICK CATEGORY PHOTO FALLBACK */
+.kp-explore-card-image {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.24) 0 34px, transparent 35px),
+    linear-gradient(145deg, #ff5a54 0%, #ff8a83 100%);
+}
+
+.kp-explore-card-image[data-category="음식"] {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.22) 0 34px, transparent 35px),
+    linear-gradient(145deg, #f05a43 0%, #f7a55a 100%);
+}
+
+.kp-explore-card-image[data-category="카페"] {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.18) 0 34px, transparent 35px),
+    linear-gradient(145deg, #8b6049 0%, #cf9b75 100%);
+}
+
+.kp-explore-card-image[data-category="축제"] {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.2) 0 34px, transparent 35px),
+    linear-gradient(145deg, #6750b7 0%, #d96f9d 100%);
+}
+
+.kp-explore-card-image[data-category="관광지"] {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.22) 0 34px, transparent 35px),
+    linear-gradient(145deg, #237d78 0%, #68b995 100%);
+}
+
+.kp-explore-card-fallback {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+  color: #fff;
+  text-align: center;
+}
+
+.kp-explore-card-fallback svg {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 4px 10px rgba(17, 17, 17, 0.15));
+}
+
+.kp-explore-card-fallback b {
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.kp-explore-card-fallback em {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.kp-explore-card-image img {
+  z-index: 2;
+  background: #ecece7;
+}
+
+.kp-explore-card-image > small {
+  z-index: 3;
+}
+/* END KOREAPICK CATEGORY PHOTO FALLBACK */
