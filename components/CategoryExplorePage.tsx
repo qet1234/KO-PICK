@@ -167,6 +167,21 @@ const franchiseCafeBrands = [
   "커피마마",
   "백억커피",
   "카페인중독",
+  "테라로사",
+  "보사노바",
+  "커피명가",
+  "아티제",
+  "빌리엔젤",
+  "카페노티드",
+  "노티드",
+  "카페레이어드",
+  "만랩커피",
+  "커피홀",
+  "커피나무",
+  "커피사피엔스",
+  "우지커피",
+  "블루샥",
+  "바나프레소",
   "starbucks",
   "twosomeplace",
   "ediya",
@@ -183,9 +198,13 @@ function isFranchiseCafe(place: Place) {
   if (!displayCategory(place.category).startsWith("카페")) return false;
 
   const normalizedName = normalizeCafeName(place.name);
-  return franchiseCafeBrands.some((brand) =>
+  const hasKnownBrand = franchiseCafeBrands.some((brand) =>
     normalizedName.includes(normalizeCafeName(brand))
   );
+  const hasBranchLabel =
+    /(?:본점|직영점|가맹점|[0-9A-Za-z가-힣]{2,}점)$/.test(normalizedName);
+
+  return hasKnownBrand || hasBranchLabel;
 }
 
 function CategoryFallbackIcon({ category }: { category: string }) {
