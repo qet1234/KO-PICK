@@ -17,6 +17,7 @@ type BookingCandidate = {
 
 type BookingMatch = {
   matched: boolean;
+  bookable?: boolean;
   confidence?: number;
   name?: string;
   address?: string;
@@ -71,11 +72,7 @@ export default function NaverBookingMatch({ candidate, reservationDate, partySiz
   });
 
   if (!eligible) {
-    return (
-      <a className="is-naver-booking" href={fallbackUrl} target="_blank" rel="noopener noreferrer">
-        네이버 예약 확인 ↗
-      </a>
-    );
+    return null;
   }
 
   const verify = async () => {
@@ -138,7 +135,14 @@ export default function NaverBookingMatch({ candidate, reservationDate, partySiz
         </div>
       )}
 
-      {match?.matched && (
+      {match?.matched && !match.bookable && (
+        <div className="reservation-match-result is-unmatched">
+          <strong>네이버 예약을 지원하지 않는 매장이에요.</strong>
+          <span>{match.reason || "이 매장에는 예약 버튼을 표시하지 않습니다."}</span>
+        </div>
+      )}
+
+      {match?.matched && match.bookable && match.bookingUrl && (
         <div className="reservation-match-result is-matched">
           <div className="reservation-match-badge">TourAPI · 네이버 장소 일치</div>
           <strong>{match.name}</strong>
