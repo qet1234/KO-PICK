@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { isNaverBookingCategory } from "@/utils/external-booking";
 import "./recommend.css";
 
 type Place = {
@@ -276,11 +275,6 @@ export default function RecommendPage() {
                 <div className="place-actions">
                   <button onClick={() => savePlace(place)}>{selected === place.id ? "저장 완료 ✓" : "저장하기"}</button>
                   <a href={place.mapUrl} target="_blank" rel="noreferrer">네이버 지도에서 보기</a>
-                  {isNaverBookingCategory(place.category) && (
-                    <a href={place.reservationUrl} target="_blank" rel="noopener noreferrer">
-                      N 네이버 예약 바로가기
-                    </a>
-                  )}
                 </div>
               </article>
             ))}
