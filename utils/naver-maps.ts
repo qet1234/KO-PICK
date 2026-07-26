@@ -144,8 +144,20 @@ export function loadNaverMaps(clientId: string) {
 
 export function naverMapSearchUrl(
   name: string,
-  address?: string | null
+  address?: string | null,
+  latitude?: number | string | null,
+  longitude?: number | string | null
 ) {
-  const query = [name, address].filter(Boolean).join(" ");
-  return `https://map.naver.com/p/search/${encodeURIComponent(query)}`;
+  const latitudeValue = Number(latitude);
+  const longitudeValue = Number(longitude);
+  const hasCoordinates =
+    Number.isFinite(latitudeValue) && Number.isFinite(longitudeValue);
+  const query = hasCoordinates
+    ? name.trim()
+    : [name, address].filter(Boolean).join(" ").trim();
+  const center = hasCoordinates
+    ? `?c=${longitudeValue},${latitudeValue},15,0,0,0,dh`
+    : "";
+
+  return `https://map.naver.com/p/search/${encodeURIComponent(query)}${center}`;
 }
