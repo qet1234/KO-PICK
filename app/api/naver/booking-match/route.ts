@@ -85,7 +85,9 @@ async function searchNaver(query: string, clientId: string, clientSecret: string
       cache: "no-store",
       signal: controller.signal,
     });
-    if (!response.ok) return [];
+    if (!response.ok) {
+      throw new Error(`NAVER_LOCAL_${response.status}`);
+    }
     const payload = (await response.json()) as { items?: NaverLocalItem[] };
     return payload.items ?? [];
   } finally {
@@ -108,11 +110,16 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const clientId = process.env.NAVER_CLIENT_ID?.trim();
-  const clientSecret = process.env.NAVER_CLIENT_SECRET?.trim();
+  const clientId =
+    process.env.NAVER_SEARCH_CLIENT_ID?.trim() || process.env.NAVER_CLIENT_ID?.trim();
+  const clientSecret =
+    process.env.NAVER_SEARCH_CLIENT_SECRET?.trim() || process.env.NAVER_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { matched: false, reason: "네이버 지역 검색 API 설정이 필요합니다." },
+      {
+        matched: false,
+        reason: "NAVER_SEARCH_CLIENT_ID와 NAVER_SEARCH_CLIENT_SECRET 설정이 필요합니다.",
+      },
       { status: 503 },
     );
   }
@@ -145,10 +152,17 @@ export async function GET(request: NextRequest) {
       bookingUrl: `https://search.naver.com/search.naver?query=${encodeURIComponent(`${exactQuery} 네이버 예약`)}`,
       notice: "네이버의 실제 예약 가능 시간과 좌석은 이동 후 확인됩니다.",
     });
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const permissionError = message === "NAVER_LOCAL_401" || message === "NAVER_LOCAL_403";
     return NextResponse.json(
-      { matched: false, reason: "네이버 음식점 확인 중 오류가 발생했습니다." },
-      { status: 502 },
+      {
+        matched: false,
+        reason: permissionError
+          ? "네이버 개발자센터 애플리케이션에서 검색 API 권한을 활성화해 주세요."
+          : "네이버 음식점 확인 중 오류가 발생했습니다.",
+      },
+      { status: permissionError ? 503 : 502 },
     );
   }
 }
