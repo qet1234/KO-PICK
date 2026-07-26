@@ -122,6 +122,49 @@ function displayCategory(category: string) {
   return category === "맛집" ? "음식" : category;
 }
 
+function CategoryFallbackIcon({ category }: { category: string }) {
+  const normalizedCategory = displayCategory(category);
+
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {normalizedCategory === "음식" && (
+        <>
+          <path d="M8 7v8c0 3.3 2.7 6 6 6s6-2.7 6-6V7M14 7v34M29 7v34" />
+          <path d="M29 7c7 3.8 9.5 12.5 0 19" />
+        </>
+      )}
+      {normalizedCategory === "카페" && (
+        <>
+          <path d="M9 18h26v8c0 6.1-4.9 11-11 11h-4c-6.1 0-11-4.9-11-11v-8Z" />
+          <path d="M35 21h3.5a5.5 5.5 0 0 1 0 11H35M8 41h31M16 7c-2 2.2-2 4.5 0 7M24 7c-2 2.2-2 4.5 0 7" />
+        </>
+      )}
+      {normalizedCategory === "축제" && (
+        <>
+          <path d="M24 6v9M24 33v9M6 24h9M33 24h9M11.3 11.3l6.4 6.4M30.3 30.3l6.4 6.4M36.7 11.3l-6.4 6.4M17.7 30.3l-6.4 6.4" />
+          <circle cx="24" cy="24" r="4.5" />
+        </>
+      )}
+      {normalizedCategory !== "음식" &&
+        normalizedCategory !== "카페" &&
+        normalizedCategory !== "축제" && (
+          <>
+            <circle cx="35" cy="12" r="4" />
+            <path d="M6 38 18 21l8 10 5-6 11 13H6ZM18 21l4-7 7 10" />
+          </>
+        )}
+    </svg>
+  );
+}
+
 interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
   journeyLabel?: string;
@@ -612,10 +655,15 @@ export default function CategoryExplorePage({
                     onClick={() => focusPlace(place)}
                     aria-label={place.name + " 지도에서 보기"}
                   >
-                    <div className="kp-explore-card-image">
-                      <span aria-hidden="true">
-                        {displayCategory(place.category).slice(0, 1)}
-                      </span>
+                    <div
+                      className="kp-explore-card-image"
+                      data-category={displayCategory(place.category)}
+                    >
+                      <div className="kp-explore-card-fallback" aria-hidden="true">
+                        <CategoryFallbackIcon category={place.category} />
+                        <b>{displayCategory(place.category)}</b>
+                        <em>대표 사진 준비 중</em>
+                      </div>
                       {place.imageUrl && (
                         <img
                           src={place.imageUrl}
