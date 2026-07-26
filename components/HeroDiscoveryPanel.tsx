@@ -52,22 +52,6 @@ export default function HeroDiscoveryPanel() {
           </a>
         ))}
       </div>
-
-      <div className="kp-hero-difference-actions">
-        <a className="is-space" href="/spaces">
-          <small>TOGETHER SPACE</small>
-          <strong>장소 후보를 함께 저장하고 결정</strong>
-          <p>개인·커플·친구·가족 공간에서 서로 찾은 장소를 한곳에 모아보세요.</p>
-          <span>함께 공간 열기 →</span>
-        </a>
-
-        <a className="is-region" href="#regions">
-          <small>LOCAL EXPLORER</small>
-          <strong>시·도부터 시·군·구까지 직접 탐색</strong>
-          <p>전국 지도와 세부 지역 필터를 이용해 원하는 지역을 빠르게 좁혀보세요.</p>
-          <span>지역 지도 보기 ↓</span>
-        </a>
-      </div>
     </aside>
   );
 }
