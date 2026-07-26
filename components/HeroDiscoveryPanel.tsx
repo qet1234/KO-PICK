@@ -17,14 +17,14 @@ const relationshipJourneys = [
     label: "친구",
     title: "모임에 맞는 장소",
     description: "여럿이 방문하기 좋은 맛집, 축제와 즐길 거리를 확인하세요.",
-    href: "/explore?category=음식&detail=전체&journey=친구",
+    href: "/explore?category=전체&journey=친구",
     icon: "03",
   },
   {
     label: "가족",
     title: "온 가족이 함께",
     description: "아이와 부모님까지 편하게 즐길 수 있는 장소를 찾아보세요.",
-    href: "/explore?category=관광지&detail=공원&journey=가족",
+    href: "/explore?category=전체&journey=가족",
     icon: "04",
   },
 ];
