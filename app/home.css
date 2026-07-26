@@ -2422,7 +2422,7 @@ button {
 /* BEGIN KOREAPICK CATEGORY CARDS V4 */
 .kp-category-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   border: 0;
 }
@@ -2450,6 +2450,7 @@ button {
 .kp-category-grid > article:nth-child(2) { animation-delay: 60ms; }
 .kp-category-grid > article:nth-child(3) { animation-delay: 120ms; }
 .kp-category-grid > article:nth-child(4) { animation-delay: 180ms; }
+.kp-category-grid > article:nth-child(5) { animation-delay: 240ms; }
 
 .kp-category-grid > article::before {
   width: 4px;
