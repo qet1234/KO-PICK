@@ -274,7 +274,7 @@ export default function RecommendPage() {
                 {place.description && <p className="place-description">{place.description}</p>}
                 <div className="place-actions">
                   <button onClick={() => savePlace(place)}>{selected === place.id ? "저장 완료 ✓" : "저장하기"}</button>
-                  <a href={place.mapUrl} target="_blank" rel="noreferrer">지도에서 보기</a>
+                  <a href={place.mapUrl} target="_blank" rel="noreferrer">네이버 지도에서 보기</a>
                   <a href={place.reservationUrl} target="_blank" rel="noreferrer">네이버 예약 확인</a>
                 </div>
               </article>
