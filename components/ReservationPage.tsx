@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
-import { naverBookingSearchUrl } from "@/utils/external-booking";
+import NaverBookingMatch from "@/components/NaverBookingMatch";
 
 type SpaceType = "personal" | "couple" | "friends" | "family";
 type PlanStatus = "voting" | "ready" | "requested" | "confirmed" | "cancelled";
@@ -403,7 +403,7 @@ export default function ReservationPage() {
                           <button className={candidate.voted_by_me ? "is-voted" : ""} type="button" disabled={working || !(["voting", "ready"] as PlanStatus[]).includes(plan.status)} onClick={() => toggleVote(candidate.id)}>{candidate.voted_by_me ? "내 투표 취소" : "이 장소에 투표"}</button>
                           {plan.can_manage && (["voting", "ready"] as PlanStatus[]).includes(plan.status) && <button type="button" disabled={working || candidate.is_selected} onClick={() => finalizePlan(plan, candidate)}>{candidate.is_selected ? "달력 저장됨" : "최종 장소 확정"}</button>}
                           {candidate.external_reservation_url && <a className="is-direct-booking" href={candidate.external_reservation_url} target="_blank" rel="noopener noreferrer">매장 예약 페이지 ↗</a>}
-                          <a className="is-naver-booking" href={naverBookingSearchUrl({ name: candidate.place_name, address: candidate.address })} target="_blank" rel="noopener noreferrer">네이버 예약 확인 ↗</a>
+                          <NaverBookingMatch candidate={candidate} reservationDate={plan.reservation_date} partySize={plan.party_size} />
                         </div>
                       </article>
                     ))}
