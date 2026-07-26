@@ -784,9 +784,19 @@ export default function CategoryExplorePage({
                       </span>
                       <h2>{place.name}</h2>
                       <p>{place.address ?? "주소 정보가 없습니다."}</p>
-                      <strong>지도에서 보기 ↗</strong>
+                      <strong>KO-PICK 지도에서 위치 보기</strong>
                     </div>
                   </button>
+
+                  <a
+                    className="kp-explore-naver-map-link"
+                    href={naverMapSearchUrl(place.name, place.address)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={place.name + " 네이버 지도에서 보기"}
+                  >
+                    네이버 지도에서 보기 ↗
+                  </a>
                 </article>
               ))}
             </div>
