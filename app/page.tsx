@@ -22,7 +22,8 @@ export default function Home() {
         <div className="kp-container kp-header-inner">
           <a className="kp-brand" href="#top"><span className="kp-brand-mark">K</span><span>코리아픽</span></a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
-            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a><a href="/spaces">함께 공간</a><a href="/reservations">함께 예약</a>
+            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a>
+            <a href="https://booking.naver.com/" target="_blank" rel="noopener noreferrer">네이버 예약</a>
           </nav>
           <a
             className="kp-header-place-button"
@@ -49,7 +50,7 @@ export default function Home() {
             <div>
               <p className="kp-overline">WHAT TO FIND</p>
               <h2>무엇을 찾고 있나요?</h2>
-              <p>맛집, 카페, 축제와 관광지 중 원하는 장소 종류를 먼저 선택해 보세요.</p>
+              <p>맛집, 카페, 축제, 관광지를 찾거나 네이버에서 바로 예약해 보세요.</p>
             </div>
           </div>
           <CategoryCards />
