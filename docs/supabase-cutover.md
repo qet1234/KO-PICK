@@ -135,7 +135,7 @@ Vercel 프로젝트의 Production, Preview, Development 범위에 필요한 값�
 NEXT_PUBLIC_APP_URL=https://koreapick.duckdns.org
 NEXT_PUBLIC_SUPABASE_URL=https://<SUPABASE_PROJECT_REF>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY>
-NEXT_PUBLIC_KAKAO_MAP_KEY=<KAKAO_JAVASCRIPT_KEY>
+NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=<NAVER_MAPS_CLIENT_ID>
 ```
 
 다음 Render/Spring 환경변수는 Supabase 전환 후 Vercel에서 제거합니다.

@@ -89,7 +89,6 @@
 .reservation-candidate-actions button.is-voted { border-color: var(--reserve-blue); color: #fff; background: var(--reserve-blue); }
 .reservation-candidate-actions a.is-direct-booking { border-color: #151512; color: #fff; background: #151512; }
 .reservation-candidate-actions a.is-naver-booking { border-color: #03c75a; color: #fff; background: #03c75a; }
-.reservation-candidate-actions a.is-kakao-booking { border-color: #fee500; color: #231f20; background: #fee500; }
 .reservation-candidate-actions button:disabled { opacity: .5; }
 .reservation-add-trigger { margin: 0 27px 22px; background: #f5f3ee; }
 .reservation-add-candidate { margin: 0 27px 22px; padding: 18px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; border-radius: 16px; background: #f3f1eb; }

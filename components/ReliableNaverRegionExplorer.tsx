@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import KakaoRegionExplorer from "@/components/KakaoRegionExplorer";
+import NaverRegionExplorer from "@/components/NaverRegionExplorer";
 import { springApiUrl } from "@/utils/spring-api";
 
 const regionDistricts: Record<string, string[]> = {
@@ -49,7 +49,7 @@ function jsonResponse(payload: unknown, source?: Response) {
   });
 }
 
-export default function ReliableKakaoRegionExplorer() {
+export default function ReliableNaverRegionExplorer() {
   const rootRef = useRef<HTMLDivElement>(null);
   const selectedDistrictRef = useRef("전체");
   const [region, setRegion] = useState("전국");
@@ -238,7 +238,7 @@ export default function ReliableKakaoRegionExplorer() {
 
   return (
     <div className="kp-reliable-region-explorer" ref={rootRef}>
-      <KakaoRegionExplorer />
+      <NaverRegionExplorer />
       {toolbar}
     </div>
   );
