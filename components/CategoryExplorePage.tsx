@@ -124,10 +124,14 @@ function displayCategory(category: string) {
 
 interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
+  journeyLabel?: string;
+  resultLabel?: string;
 }
 
 export default function CategoryExplorePage({
   initialCategory,
+  journeyLabel,
+  resultLabel,
 }: CategoryExplorePageProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<NaverMapInstance | null>(null);
@@ -161,6 +165,13 @@ export default function CategoryExplorePage({
       )?.label ?? selectedCategory,
     [selectedCategory]
   );
+
+  const resultCategoryLabel =
+    resultLabel && resultLabel !== "전체"
+      ? resultLabel
+      : journeyLabel
+        ? `${journeyLabel} 전체`
+        : selectedCategoryLabel;
 
   const detailOptions =
     selectedCategory === "전체" ? [] : categoryDetails[selectedCategory];
@@ -460,7 +471,7 @@ export default function CategoryExplorePage({
 
         <div>
           <small>PLACE EXPLORER</small>
-          <strong>{selectedCategoryLabel} 전체 결과</strong>
+          <strong>{journeyLabel ? `${journeyLabel} 맞춤 지도` : `${selectedCategoryLabel} 전체 결과`}</strong>
         </div>
 
         <a href="/" className="kp-explore-home-link">
@@ -471,11 +482,12 @@ export default function CategoryExplorePage({
       <div className="kp-explore-workspace">
         <aside className="kp-explore-panel">
           <section className="kp-explore-filter-section">
-            <p className="kp-explore-eyebrow">PLACE CATEGORY</p>
-            <h1>{selectedCategoryLabel} 장소 찾기</h1>
+            <p className="kp-explore-eyebrow">{journeyLabel ? "RELATIONSHIP PLACE MAP" : "PLACE CATEGORY"}</p>
+            <h1>{journeyLabel ? `${journeyLabel} 장소 찾기` : `${selectedCategoryLabel} 장소 찾기`}</h1>
             <p>
-              카테고리와 지역을 선택하면 장소 목록과 지도가
-              함께 변경됩니다.
+              {journeyLabel
+                ? `${journeyLabel} 카테고리와 지역을 선택하면 추천 장소 목록과 지도가 함께 변경됩니다.`
+                : "카테고리와 지역을 선택하면 장소 목록과 지도가 함께 변경됩니다."}
             </p>
 
             <div className="kp-explore-category-buttons">
@@ -577,8 +589,8 @@ export default function CategoryExplorePage({
                   ? " · " + selectedSubregion
                   : ""}
                 {" · "}
-                {selectedCategoryLabel}
-                {selectedDetail !== "전체" ? " · " + selectedDetail : ""}
+                {resultCategoryLabel}
+                {!journeyLabel && selectedDetail !== "전체" ? " · " + selectedDetail : ""}
                 {" 추천 장소 "}
                 {totalCount.toLocaleString("ko-KR")}곳
               </strong>
@@ -682,7 +694,7 @@ export default function CategoryExplorePage({
                 ? selectedRegion
                 : selectedSubregion}
             </strong>
-            <span>{selectedCategoryLabel}</span>
+            <span>{resultCategoryLabel}</span>
           </div>
 
           {!mapReady && !mapError && (
