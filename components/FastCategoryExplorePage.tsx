@@ -42,11 +42,60 @@ const journeyMenus: Record<string, JourneyMenu[]> = {
     { label: "축제", icon: "별", description: "함께 즐기는 계절 행사" },
     { label: "음식", icon: "식", description: "데이트에 어울리는 맛집" },
   ],
+  친구: [
+    { label: "전체", icon: "✦", description: "친구와 즐기기 좋은 장소 전체" },
+    { label: "모임 맛집", icon: "식", description: "여럿이 함께 먹기 좋은 곳" },
+    { label: "놀거리", icon: "활", description: "체험·테마파크와 즐길 거리" },
+    { label: "축제", icon: "별", description: "친구와 즐기는 계절 행사" },
+    { label: "카페", icon: "잔", description: "대화하기 좋은 넓은 카페" },
+  ],
+  가족: [
+    { label: "전체", icon: "♡", description: "온 가족이 즐기기 좋은 장소 전체" },
+    { label: "가족 외식", icon: "식", description: "아이와 부모님이 함께하는 한 끼" },
+    { label: "아이와 함께", icon: "아", description: "테마파크·동물원과 체험 장소" },
+    { label: "부모님과 함께", icon: "효", description: "역사·문화 명소를 편안하게" },
+    { label: "가족 나들이", icon: "길", description: "공원·수목원에서 여유롭게" },
+  ],
 };
 
 const journeyDescriptions: Record<string, string> = {
   혼자: "혼밥부터 조용한 카페, 혼자 천천히 둘러보기 좋은 장소만 모았습니다.",
   커플: "카페·관광지·축제·맛집을 한 지도에서 비교해 데이트 장소를 고를 수 있습니다.",
+  친구: "모임 맛집·놀거리·축제·카페를 비교해 친구들과 갈 장소를 고를 수 있습니다.",
+  가족: "가족 외식부터 아이·부모님과 함께하기 좋은 나들이 장소를 모았습니다.",
+};
+
+const journeyFilters: Record<string, Record<string, { category: CategoryValue; detailType?: string }>> = {
+  혼자: {
+    혼밥: { category: "음식", detailType: "간편식" },
+    "조용한 카페": { category: "카페", detailType: "조용한카페" },
+    "혼자 둘러보기": { category: "관광지", detailType: "공원" },
+  },
+  커플: {
+    카페: { category: "카페", detailType: "감성카페" },
+    "데이트 관광지": { category: "관광지", detailType: "공원" },
+    축제: { category: "축제" },
+    음식: { category: "음식" },
+  },
+  친구: {
+    "모임 맛집": { category: "음식" },
+    놀거리: { category: "관광지", detailType: "테마파크" },
+    축제: { category: "축제" },
+    카페: { category: "카페", detailType: "대형카페" },
+  },
+  가족: {
+    "가족 외식": { category: "음식", detailType: "한식" },
+    "아이와 함께": { category: "관광지", detailType: "테마파크" },
+    "부모님과 함께": { category: "관광지", detailType: "역사·유적" },
+    "가족 나들이": { category: "관광지", detailType: "공원" },
+  },
+};
+
+const journeyEnglishLabels: Record<string, string> = {
+  혼자: "ME",
+  커플: "TWO",
+  친구: "FRIENDS",
+  가족: "FAMILY",
 };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -154,10 +203,16 @@ export default function FastCategoryExplorePage({
       }
 
       if (journey) {
+        const selectedType = journeyTypeRef.current;
+        const filter = journeyFilters[journey]?.[selectedType];
         parsedUrl.searchParams.set("journey", journey);
-        parsedUrl.searchParams.set("journeyType", journeyTypeRef.current);
-        parsedUrl.searchParams.set("category", "전체");
-        parsedUrl.searchParams.delete("detailType");
+        parsedUrl.searchParams.set("journeyType", selectedType);
+        parsedUrl.searchParams.set("category", filter?.category ?? "전체");
+        if (filter?.detailType) {
+          parsedUrl.searchParams.set("detailType", filter.detailType);
+        } else {
+          parsedUrl.searchParams.delete("detailType");
+        }
       }
 
       const activeDistrict = districtRef.current;
@@ -379,7 +434,7 @@ export default function FastCategoryExplorePage({
         <section className="kp-journey-category-menu" aria-label={`${journey} 장소 유형`}>
           <div className="kp-journey-category-copy">
             <div>
-              <small>KO-PICK FOR {journey === "혼자" ? "ME" : "TWO"}</small>
+              <small>KO-PICK FOR {journeyEnglishLabels[journey] ?? "TOGETHER"}</small>
               <strong>{journey} 맞춤 카테고리</strong>
             </div>
             <span>{selectedJourneyType}</span>
@@ -413,6 +468,8 @@ export default function FastCategoryExplorePage({
       <CategoryExplorePage
         key={`${journey || "default"}-${selectedJourneyType}`}
         initialCategory={journey ? "전체" : initialCategory}
+        journeyLabel={journey || undefined}
+        resultLabel={journey ? selectedJourneyType : undefined}
       />
       {journeyMenu}
     </div>
