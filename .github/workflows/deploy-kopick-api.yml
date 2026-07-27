@@ -108,7 +108,7 @@ jobs:
           if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
             exit 1
           fi
-          jq -e '.places | type == "array" and (.places | length > 0)' "$response_file" >/dev/null
+          jq -e '(.places | type == "array") and (.places | length > 0)' "$response_file" >/dev/null
 
       - name: Report deployment result
         if: always()
