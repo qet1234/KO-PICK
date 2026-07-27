@@ -139,19 +139,27 @@ function tourPlaceSources(category: string, detailTypes: string[]): TourPlaceSou
     return [{ endpoint: "areaBasedList2" }];
   }
 
-  const sources = detailTypes.flatMap((detailType) => {
+  const sources: TourPlaceSource[] = [];
+  for (const detailType of detailTypes) {
     const cat3 = foodCategoryCodes[detailType];
-    if (cat3) return [{ endpoint: "areaBasedList2" as const, cat3 }];
+    if (cat3) {
+      sources.push({ endpoint: "areaBasedList2", cat3 });
+      continue;
+    }
 
-    return (detailKeywords[detailType] ?? [detailType]).map((keyword) => ({
-      endpoint: "searchKeyword2" as const,
-      keyword,
-    }));
-  });
+    for (const keyword of detailKeywords[detailType] ?? [detailType]) {
+      sources.push({ endpoint: "searchKeyword2", keyword });
+    }
+  }
 
-  return [...new Map(
-    sources.map((source) => [`${source.endpoint}|${source.cat3 ?? ""}|${source.keyword ?? ""}`, source]),
-  ).values()];
+  const uniqueSources = new Map<string, TourPlaceSource>();
+  for (const source of sources) {
+    uniqueSources.set(
+      `${source.endpoint}|${source.cat3 ?? ""}|${source.keyword ?? ""}`,
+      source,
+    );
+  }
+  return [...uniqueSources.values()];
 }
 
 function transformPlace(item: any, fallbackCategory: string) {
