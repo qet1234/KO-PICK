@@ -12,6 +12,11 @@ const FOOD_CATEGORY = /음식점|한식|중식|일식|양식|분식|뷔페|카�
 const BOOKING_HOSTS = new Set(["booking.naver.com", "m.booking.naver.com"]);
 const VERIFIED_NAVER_BOOKINGS = [
   {
+    name: "성수노루",
+    address: "",
+    bookingUrl: "https://booking.naver.com/booking/5/bizes/703205/items/7755694?tab=book",
+  },
+  {
     name: "트라가 역삼점",
     address: "서울 강남구 테헤란로25길 46",
     bookingUrl: "https://booking.naver.com/booking/6/bizes/188284",
@@ -118,6 +123,17 @@ function isDirectBookingUrl(url: URL) {
   );
 }
 
+function directBookingUrl(value?: string) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(stripHtml(value));
+    return isDirectBookingUrl(url) ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function verifiedBookingUrl(name: string, address: string) {
   const normalizedName = normalizeName(name);
   const candidate = VERIFIED_NAVER_BOOKINGS.find((booking) => {
@@ -187,7 +203,9 @@ export async function GET(request: NextRequest) {
     const matchedName = stripHtml(best.item.title);
     const matchedAddress = stripHtml(best.item.roadAddress) || stripHtml(best.item.address);
     const exactQuery = `${matchedName} ${matchedAddress}`;
-    const bookingUrl = verifiedBookingUrl(matchedName, matchedAddress);
+    const bookingUrl =
+      directBookingUrl(best.item.link) ||
+      verifiedBookingUrl(matchedName, matchedAddress);
 
     return NextResponse.json({
       matched: true,

@@ -95,8 +95,21 @@ export default function NaverBookingButton({
     >
       {compact ? "N 예약 ↗" : (
         <>
-          <b aria-hidden="true">N</b>
-          네이버 예약 ↗
+          <span className="kp-naver-booking-brand" aria-hidden="true">
+            <b>N</b>
+            예약
+          </span>
+          <span className="kp-naver-booking-copy">
+            <strong>네이버 예약</strong>
+            <small>날짜 · 인원 · 시간을 선택하세요</small>
+          </span>
+          <svg
+            className="kp-naver-booking-arrow"
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
         </>
       )}
     </a>
