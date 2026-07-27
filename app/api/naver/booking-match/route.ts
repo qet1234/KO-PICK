@@ -66,6 +66,15 @@ function overlapScore(left: Set<string>, right: Set<string>) {
   return overlap / Math.min(left.size, right.size);
 }
 
+function searchAddress(value: string) {
+  return stripHtml(value)
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+(?:지하\s*)?\d+(?:\s*,\s*\d+)?\s*층.*$/u, "")
+    .replace(/\s+\d+\s*호.*$/u, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function matchScore(name: string, address: string, item: NaverLocalItem) {
   const requestedName = normalizeName(name);
   const foundName = normalizeName(item.title);
@@ -111,6 +120,33 @@ async function searchNaver(query: string, clientId: string, clientSecret: string
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function findBestMatch(
+  name: string,
+  address: string,
+  clientId: string,
+  clientSecret: string,
+) {
+  const queries = Array.from(
+    new Set(
+      [address, searchAddress(address)]
+        .filter(Boolean)
+        .map((candidateAddress) => `${name} ${candidateAddress}`),
+    ),
+  );
+
+  for (const query of queries) {
+    const items = await searchNaver(query, clientId, clientSecret);
+    const ranked = items
+      .filter((item) => FOOD_CATEGORY.test(stripHtml(item.category)))
+      .map((item) => ({ item, score: matchScore(name, address, item) }))
+      .sort((left, right) => right.score - left.score);
+    const best = ranked[0];
+    if (best && best.score >= 0.72) return best;
+  }
+
+  return null;
 }
 
 function isDirectBookingUrl(url: URL) {
@@ -186,14 +222,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const items = await searchNaver(`${name} ${address}`, clientId, clientSecret);
-    const ranked = items
-      .filter((item) => FOOD_CATEGORY.test(stripHtml(item.category)))
-      .map((item) => ({ item, score: matchScore(name, address, item) }))
-      .sort((left, right) => right.score - left.score);
-
-    const best = ranked[0];
-    if (!best || best.score < 0.72) {
+    const best = await findBestMatch(name, address, clientId, clientSecret);
+    if (!best) {
       return NextResponse.json({
         matched: false,
         reason: "TourAPI 장소와 충분히 일치하는 네이버 음식점을 찾지 못했습니다.",
