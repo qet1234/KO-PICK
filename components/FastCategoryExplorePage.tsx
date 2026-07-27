@@ -403,32 +403,6 @@ export default function FastCategoryExplorePage({
     return () => window.clearTimeout(timer);
   }, [journey, selectedJourneyType]);
 
-  useEffect(() => {
-    if (journey || !initialDetail || initialDetail === "전체") return;
-
-    let attempts = 0;
-    const timer = window.setInterval(() => {
-      attempts += 1;
-      const buttons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>(
-          ".kp-explore-detail-buttons button",
-        ),
-      );
-      const target = buttons.find(
-        (button) => button.textContent?.trim() === initialDetail,
-      );
-
-      if (target) {
-        target.click();
-        window.clearInterval(timer);
-      } else if (attempts >= 20) {
-        window.clearInterval(timer);
-      }
-    }, 100);
-
-    return () => window.clearInterval(timer);
-  }, [initialDetail, initialCategory, journey]);
-
   const journeyMenu = availableJourneyMenus.length > 0 && menuHost
     ? createPortal(
         <section className="kp-journey-category-menu" aria-label={`${journey} 장소 유형`}>
@@ -468,6 +442,7 @@ export default function FastCategoryExplorePage({
       <CategoryExplorePage
         key={`${journey || "default"}-${selectedJourneyType}`}
         initialCategory={journey ? "전체" : initialCategory}
+        initialDetail={journey ? "전체" : initialDetail}
         journeyLabel={journey || undefined}
         resultLabel={journey ? selectedJourneyType : undefined}
       />

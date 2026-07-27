@@ -620,6 +620,12 @@ select {
   gap: 12px;
 }
 
+.kp-explore-detail-heading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
 .kp-explore-detail-heading strong {
   color: var(--explore-red);
   font-size: 9px;
@@ -627,10 +633,99 @@ select {
   letter-spacing: 0.12em;
 }
 
-.kp-explore-detail-heading span {
+.kp-explore-detail-heading span,
+.kp-explore-detail-heading small {
   color: #555550;
   font-size: 10px;
   font-weight: 800;
+}
+
+.kp-explore-detail-heading small {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: #151515;
+}
+
+.kp-explore-food-filter-help {
+  margin: -2px 0 11px;
+  color: var(--explore-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.kp-explore-food-checks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.kp-explore-food-check {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 9px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #d7d7d1;
+  border-radius: 10px;
+  color: #353530;
+  background: #fff;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease,
+    background-color 180ms ease, border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.kp-explore-food-check input {
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.kp-explore-food-check > span {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #c8c8c2;
+  border-radius: 5px;
+  color: transparent;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.kp-explore-food-check > b {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kp-explore-food-check.is-checked {
+  border-color: var(--explore-red);
+  color: #1c1c1a;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(255, 59, 54, 0.1);
+}
+
+.kp-explore-food-check.is-checked > span {
+  border-color: var(--explore-red);
+  color: #fff;
+  background: var(--explore-red);
+}
+
+.kp-explore-food-check:has(input:focus-visible) {
+  outline: 3px solid rgba(255, 59, 54, 0.25);
+  outline-offset: 2px;
 }
 
 .kp-explore-detail-buttons {
@@ -669,6 +764,11 @@ select {
 }
 
 @media (hover: hover) {
+  .kp-explore-food-check:hover {
+    border-color: var(--explore-red);
+    transform: translateY(-1px);
+  }
+
   .kp-explore-detail-buttons button:hover {
     transform: translateY(-1px);
     border-color: var(--explore-red);
@@ -676,6 +776,10 @@ select {
 }
 
 @media (max-width: 720px) {
+  .kp-explore-food-checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .kp-explore-detail-buttons {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -689,6 +793,7 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .kp-explore-food-check,
   .kp-explore-detail-buttons button {
     transition: none !important;
   }

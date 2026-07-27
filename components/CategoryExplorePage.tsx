@@ -253,12 +253,14 @@ function CategoryFallbackIcon({ category }: { category: string }) {
 
 interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
+  initialDetail?: string;
   journeyLabel?: string;
   resultLabel?: string;
 }
 
 export default function CategoryExplorePage({
   initialCategory,
+  initialDetail = "전체",
   journeyLabel,
   resultLabel,
 }: CategoryExplorePageProps) {
@@ -269,7 +271,19 @@ export default function CategoryExplorePage({
 
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryValue>(initialCategory);
-  const [selectedDetail, setSelectedDetail] = useState("전체");
+  const [selectedDetail, setSelectedDetail] = useState(() => {
+    if (initialCategory === "전체" || initialCategory === "음식") return "전체";
+    return categoryDetails[initialCategory].includes(initialDetail)
+      ? initialDetail
+      : "전체";
+  });
+  const [selectedFoodDetails, setSelectedFoodDetails] = useState<string[]>(() =>
+    initialCategory === "음식" &&
+    initialDetail !== "전체" &&
+    categoryDetails.음식.includes(initialDetail)
+      ? [initialDetail]
+      : []
+  );
   const [selectedRegion, setSelectedRegion] =
     useState<RegionName>("전국");
   const [selectedSubregion, setSelectedSubregion] = useState("전체");
@@ -306,6 +320,12 @@ export default function CategoryExplorePage({
     selectedCategory === "전체" ? [] : categoryDetails[selectedCategory];
   const detailLabel =
     selectedCategory === "전체" ? "" : detailLabels[selectedCategory];
+  const selectedDetailSummary =
+    selectedCategory === "음식"
+      ? selectedFoodDetails.join(" · ")
+      : selectedDetail === "전체"
+        ? ""
+        : selectedDetail;
 
   useEffect(() => {
     let cancelled = false;
@@ -367,7 +387,11 @@ export default function CategoryExplorePage({
         });
 
         if (sigunguCode) params.set("sigunguCode", sigunguCode);
-        if (selectedDetail !== "전체") {
+        if (selectedCategory === "음식") {
+          selectedFoodDetails.forEach((detail) => {
+            params.append("detailType", detail);
+          });
+        } else if (selectedDetail !== "전체") {
           params.set("detailType", selectedDetail);
         }
 
@@ -425,6 +449,7 @@ export default function CategoryExplorePage({
     page,
     selectedCategory,
     selectedDetail,
+    selectedFoodDetails,
     selectedRegion,
     selectedSubregion,
     subregions,
@@ -652,6 +677,7 @@ export default function CategoryExplorePage({
                   onClick={() => {
                     setSelectedCategory(option.value);
                     setSelectedDetail("전체");
+                    setSelectedFoodDetails([]);
                     setPage(1);
                   }}
                 >
@@ -661,27 +687,92 @@ export default function CategoryExplorePage({
             </div>
 
             {detailOptions.length > 0 && (
-              <div className="kp-explore-detail-filter">
+              <div
+                className={`kp-explore-detail-filter${
+                  selectedCategory === "음식" ? " is-food-filter" : ""
+                }`}
+              >
                 <div className="kp-explore-detail-heading">
-                  <strong>DETAIL TYPE</strong>
-                  <span>{detailLabel}</span>
+                  <div>
+                    <strong>
+                      {selectedCategory === "음식" ? "FOOD TYPE" : "DETAIL TYPE"}
+                    </strong>
+                    <span>{detailLabel}</span>
+                  </div>
+                  {selectedCategory === "음식" && (
+                    <small aria-live="polite">
+                      {selectedFoodDetails.length > 0
+                        ? `${selectedFoodDetails.length}개 선택`
+                        : "전체 선택"}
+                    </small>
+                  )}
                 </div>
-                <div className="kp-explore-detail-buttons">
-                  {detailOptions.map((detail) => (
-                    <button
-                      key={detail}
-                      type="button"
-                      className={selectedDetail === detail ? "is-active" : ""}
-                      aria-pressed={selectedDetail === detail}
-                      onClick={() => {
-                        setSelectedDetail(detail);
-                        setPage(1);
-                      }}
+                {selectedCategory === "음식" ? (
+                  <>
+                    <p className="kp-explore-food-filter-help">
+                      원하는 음식 종류를 여러 개 체크할 수 있습니다.
+                    </p>
+                    <div
+                      className="kp-explore-food-checks"
+                      role="group"
+                      aria-label="음식 종류 다중 선택"
                     >
-                      {detail}
-                    </button>
-                  ))}
-                </div>
+                      {detailOptions.map((detail) => {
+                        const isAll = detail === "전체";
+                        const isChecked = isAll
+                          ? selectedFoodDetails.length === 0
+                          : selectedFoodDetails.includes(detail);
+
+                        return (
+                          <label
+                            className={`kp-explore-food-check${
+                              isChecked ? " is-checked" : ""
+                            }`}
+                            key={detail}
+                          >
+                            <input
+                              type="checkbox"
+                              name="foodType"
+                              value={detail}
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isAll) {
+                                  setSelectedFoodDetails([]);
+                                } else {
+                                  setSelectedFoodDetails((current) =>
+                                    current.includes(detail)
+                                      ? current.filter((value) => value !== detail)
+                                      : [...current, detail]
+                                  );
+                                }
+                                setPage(1);
+                              }}
+                            />
+                            <span aria-hidden="true">✓</span>
+                            <b>{detail}</b>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="kp-explore-detail-buttons">
+                    {detailOptions.map((detail) => (
+                      <button
+                        key={detail}
+                        type="button"
+                        className={selectedDetail === detail ? "is-active" : ""}
+                        aria-pressed={selectedDetail === detail}
+                        onClick={() => {
+                          setSelectedDetail(detail);
+                          setPage(1);
+                        }}
+                      >
+                        {detail}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -736,7 +827,9 @@ export default function CategoryExplorePage({
                   : ""}
                 {" · "}
                 {resultCategoryLabel}
-                {!journeyLabel && selectedDetail !== "전체" ? " · " + selectedDetail : ""}
+                {!journeyLabel && selectedDetailSummary
+                  ? " · " + selectedDetailSummary
+                  : ""}
                 {" 추천 장소 "}
                 {totalCount.toLocaleString("ko-KR")}곳
               </strong>
