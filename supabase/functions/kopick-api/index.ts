@@ -162,6 +162,17 @@ function tourPlaceSources(category: string, detailTypes: string[]): TourPlaceSou
   return [...uniqueSources.values()];
 }
 
+function interleave<T>(groups: T[][]) {
+  const output: T[] = [];
+  const maxLength = Math.max(0, ...groups.map((group) => group.length));
+  for (let index = 0; index < maxLength; index += 1) {
+    for (const group of groups) {
+      if (group[index] !== undefined) output.push(group[index]);
+    }
+  }
+  return output;
+}
+
 function transformPlace(item: any, fallbackCategory: string) {
   const address = textOf(item.addr1) || null;
   const addressParts = address?.split(/\s+/) ?? [];
@@ -295,11 +306,17 @@ async function handleTourPlaces(url: URL) {
   const sourceRows = bookingOnly ? 100 : Math.max(pageSize * 3, 36);
   const sources = tourPlaceSources(category, detailTypes);
   const keywordSearch = sources.some((source) => source.endpoint === "searchKeyword2");
+  const selectedFoodSearch = category === "음식" && detailTypes.length > 0;
+  const rowsPerAreaSource = keywordSearch
+    ? 100
+    : selectedFoodSearch
+      ? Math.max(1, Math.ceil(pageSize / sources.length))
+      : sourceRows;
   const bodies = await Promise.all(sources.map((source) => {
     const params: Record<string, string> = {
       arrange: "Q",
-      numOfRows: String(source.endpoint === "searchKeyword2" ? 100 : sourceRows),
-      pageNo: source.endpoint === "searchKeyword2" || bookingOnly ? "1" : String(requestedPage),
+      numOfRows: String(source.endpoint === "searchKeyword2" ? 100 : rowsPerAreaSource),
+      pageNo: keywordSearch || bookingOnly ? "1" : String(requestedPage),
     };
     if (areaCode) params.areaCode = areaCode;
     if (sigunguCode) params.sigunguCode = sigunguCode;
@@ -310,8 +327,7 @@ async function handleTourPlaces(url: URL) {
   }));
 
   const seenItems = new Set<string>();
-  const items = bodies
-    .flatMap(itemsFrom)
+  const items = interleave(bodies.map(itemsFrom))
     .filter((item) => {
       const key = textOf(item.contentid) || `${textOf(item.title)}|${textOf(item.mapx)}|${textOf(item.mapy)}`;
       if (!key || seenItems.has(key)) return false;
@@ -352,7 +368,16 @@ async function handleTourPlaces(url: URL) {
     : keywordSearch
       ? places.length
       : bodies.reduce((sum, body) => sum + Number(body.totalCount || 0), 0) || places.length;
-  const totalPages = keywordSearch ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
+  const totalPages = keywordSearch
+    ? 1
+    : selectedFoodSearch
+      ? Math.max(
+          1,
+          ...bodies.map((body) =>
+            Math.ceil(Number(body.totalCount || 0) / rowsPerAreaSource)
+          ),
+        )
+      : Math.max(1, Math.ceil(totalCount / pageSize));
   if (bookingOnly) {
     const start = (requestedPage - 1) * pageSize;
     places = places.slice(start, start + pageSize);
