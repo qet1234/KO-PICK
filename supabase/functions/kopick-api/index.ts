@@ -239,7 +239,12 @@ async function handleTourPlaces(url: URL) {
   }
 
   const category = url.searchParams.get("category") || "전체";
-  const detailType = url.searchParams.get("detailType") || "전체";
+  const detailTypes = [...new Set(
+    url.searchParams
+      .getAll("detailType")
+      .map((value) => value.trim())
+      .filter((value) => value && value !== "전체"),
+  )];
   const sigunguCode = url.searchParams.get("sigunguCode") || "";
   const bookingOnly = url.searchParams.get("bookingOnly") === "true";
   const requestedPage = Math.max(1, Number(url.searchParams.get("page") || 1));
@@ -258,9 +263,17 @@ async function handleTourPlaces(url: URL) {
   if (category === "카페") {
     places = places.filter((place) => /카페|커피|베이커리|다방|스타벅스|투썸|이디야|컴포즈|메가|빽다방|할리스|커피빈|폴바셋|파스쿠찌|엔제리너스/i.test(`${place.name} ${place.address ?? ""}`));
   }
-  places = places.filter((place) => matchesDetail(place, detailType));
+  places = places.filter((place) =>
+    detailTypes.length === 0 ||
+    detailTypes.some((detailType) => matchesDetail(place, detailType))
+  );
 
-  if (category === "카페" && detailType === "프랜차이즈" && places.length < pageSize) {
+  if (
+    category === "카페" &&
+    detailTypes.length === 1 &&
+    detailTypes[0] === "프랜차이즈" &&
+    places.length < pageSize
+  ) {
     const cityName = url.searchParams.get("city") || "";
     const supplements = await kakaoFranchisePlaces(region, cityName, pageSize - places.length);
     const seen = new Set(places.map((place) => `${place.name}|${place.address ?? ""}`));
@@ -285,6 +298,7 @@ async function handleTourPlaces(url: URL) {
     places,
     pagination: { page: requestedPage, pageSize, totalCount, totalPages },
     bookingOnly,
+    detailTypes: detailTypes.length > 0 ? detailTypes : ["전체"],
     scannedCount: bookingOnly ? Math.min(80, itemsFrom(body).length) : places.length,
     source: "supabase-edge-tourapi",
   });

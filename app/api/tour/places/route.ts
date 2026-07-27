@@ -301,9 +301,22 @@ export async function GET(request: NextRequest) {
       문화: "관광지",
     };
     const category = categoryAliases[requestedCategory] ?? requestedCategory;
-    const detailType = searchParams.get("detailType") ?? "전체";
+    const selectedDetailTypes = [...new Set(
+      searchParams
+        .getAll("detailType")
+        .map((value) => value.trim())
+        .filter((value) => value && value !== "전체")
+    )];
+    const detailTypes =
+      selectedDetailTypes.length > 0 ? selectedDetailTypes : ["전체"];
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
-    const sources = getQuerySources(category, detailType);
+    const sources = Array.from(
+      new Map(
+        detailTypes
+          .flatMap((detailType) => getQuerySources(category, detailType))
+          .map((source) => [JSON.stringify(source), source])
+      ).values()
+    );
 
     if (!sources.length) {
       return NextResponse.json(
@@ -370,7 +383,7 @@ export async function GET(request: NextRequest) {
 
     const rawItems = uniqueItems(payloads.flatMap((payload) => asItems(payload)));
     const categoryItems =
-      category === "음식" && detailType === "전체"
+      category === "음식" && selectedDetailTypes.length === 0
         ? rawItems.filter((item) => item.cat3 !== cafeCategoryCode)
         : rawItems;
 
@@ -385,9 +398,9 @@ export async function GET(request: NextRequest) {
             ? item.cat3 === cafeCategoryCode
               ? "카페"
               : contentTypeNames[contentTypeId] ?? "기타"
-            : detailType === "전체"
+            : selectedDetailTypes.length === 0
               ? category
-              : `${category} · ${detailType}`;
+              : `${category} · ${selectedDetailTypes.join(" · ")}`;
 
         return {
           id: item.contentid ?? "",
@@ -441,6 +454,7 @@ export async function GET(request: NextRequest) {
         totalCount,
         totalPages,
       },
+      detailTypes,
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);
