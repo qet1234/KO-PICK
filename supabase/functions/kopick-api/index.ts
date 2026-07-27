@@ -17,6 +17,14 @@ const categoryTypes: Record<string, string> = {
   음식: "39", 맛집: "39", 카페: "39", 축제: "15", 관광지: "12", 문화: "14",
 };
 
+const foodCategoryCodes: Record<string, string> = {
+  한식: "A05020100",
+  양식: "A05020200",
+  일식: "A05020300",
+  중식: "A05020400",
+  세계음식: "A05020500",
+};
+
 const detailKeywords: Record<string, string[]> = {
   한식: ["한식", "한정식", "국밥", "국수", "갈비", "백반"],
   일식: ["일식", "초밥", "스시", "라멘", "우동", "돈카츠"],
@@ -120,6 +128,32 @@ function textOf(value: unknown) {
   return typeof value === "string" ? value.trim() : value == null ? "" : String(value).trim();
 }
 
+type TourPlaceSource = {
+  endpoint: "areaBasedList2" | "searchKeyword2";
+  cat3?: string;
+  keyword?: string;
+};
+
+function tourPlaceSources(category: string, detailTypes: string[]): TourPlaceSource[] {
+  if (category !== "음식" || detailTypes.length === 0) {
+    return [{ endpoint: "areaBasedList2" }];
+  }
+
+  const sources = detailTypes.flatMap((detailType) => {
+    const cat3 = foodCategoryCodes[detailType];
+    if (cat3) return [{ endpoint: "areaBasedList2" as const, cat3 }];
+
+    return (detailKeywords[detailType] ?? [detailType]).map((keyword) => ({
+      endpoint: "searchKeyword2" as const,
+      keyword,
+    }));
+  });
+
+  return [...new Map(
+    sources.map((source) => [`${source.endpoint}|${source.cat3 ?? ""}|${source.keyword ?? ""}`, source]),
+  ).values()];
+}
+
 function transformPlace(item: any, fallbackCategory: string) {
   const address = textOf(item.addr1) || null;
   const addressParts = address?.split(/\s+/) ?? [];
@@ -133,6 +167,7 @@ function transformPlace(item: any, fallbackCategory: string) {
     city: addressParts[1] || null,
     location: addressParts.slice(0, 2).join(" ") || "전국",
     category,
+    detailCategory: textOf(item.cat3) || null,
     address,
     latitude: Number(item.mapy || 0),
     longitude: Number(item.mapx || 0),
@@ -250,23 +285,42 @@ async function handleTourPlaces(url: URL) {
   const requestedPage = Math.max(1, Number(url.searchParams.get("page") || 1));
   const pageSize = Math.max(1, Math.min(30, Number(url.searchParams.get("pageSize") || 12)));
   const sourceRows = bookingOnly ? 100 : Math.max(pageSize * 3, 36);
-  const params: Record<string, string> = {
-    arrange: "Q", numOfRows: String(sourceRows), pageNo: bookingOnly ? "1" : String(requestedPage),
-  };
-  if (areaCode) params.areaCode = areaCode;
-  if (sigunguCode) params.sigunguCode = sigunguCode;
-  if (categoryTypes[category]) params.contentTypeId = categoryTypes[category];
+  const sources = tourPlaceSources(category, detailTypes);
+  const keywordSearch = sources.some((source) => source.endpoint === "searchKeyword2");
+  const bodies = await Promise.all(sources.map((source) => {
+    const params: Record<string, string> = {
+      arrange: "Q",
+      numOfRows: String(source.endpoint === "searchKeyword2" ? 100 : sourceRows),
+      pageNo: source.endpoint === "searchKeyword2" || bookingOnly ? "1" : String(requestedPage),
+    };
+    if (areaCode) params.areaCode = areaCode;
+    if (sigunguCode) params.sigunguCode = sigunguCode;
+    if (categoryTypes[category]) params.contentTypeId = categoryTypes[category];
+    if (source.cat3) params.cat3 = source.cat3;
+    if (source.keyword) params.keyword = source.keyword;
+    return tourRequest(source.endpoint, params);
+  }));
 
-  const body = await tourRequest("areaBasedList2", params);
-  let places = itemsFrom(body).map((item) => transformPlace(item, category)).filter((place) => place.name);
+  const seenItems = new Set<string>();
+  const items = bodies
+    .flatMap(itemsFrom)
+    .filter((item) => {
+      const key = textOf(item.contentid) || `${textOf(item.title)}|${textOf(item.mapx)}|${textOf(item.mapy)}`;
+      if (!key || seenItems.has(key)) return false;
+      seenItems.add(key);
+      return true;
+    });
+  let places = items.map((item) => transformPlace(item, category)).filter((place) => place.name);
 
   if (category === "카페") {
     places = places.filter((place) => /카페|커피|베이커리|다방|스타벅스|투썸|이디야|컴포즈|메가|빽다방|할리스|커피빈|폴바셋|파스쿠찌|엔제리너스/i.test(`${place.name} ${place.address ?? ""}`));
   }
-  places = places.filter((place) =>
-    detailTypes.length === 0 ||
-    detailTypes.some((detailType) => matchesDetail(place, detailType))
-  );
+  if (category !== "음식" || detailTypes.length === 0) {
+    places = places.filter((place) =>
+      detailTypes.length === 0 ||
+      detailTypes.some((detailType) => matchesDetail(place, detailType))
+    );
+  }
 
   if (
     category === "카페" &&
@@ -285,8 +339,12 @@ async function handleTourPlaces(url: URL) {
     places = enriched.filter((place) => place.bookingAvailable);
   }
 
-  const totalCount = bookingOnly ? places.length : Number(body.totalCount || places.length);
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const totalCount = bookingOnly
+    ? places.length
+    : keywordSearch
+      ? places.length
+      : bodies.reduce((sum, body) => sum + Number(body.totalCount || 0), 0) || places.length;
+  const totalPages = keywordSearch ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
   if (bookingOnly) {
     const start = (requestedPage - 1) * pageSize;
     places = places.slice(start, start + pageSize);
@@ -299,7 +357,7 @@ async function handleTourPlaces(url: URL) {
     pagination: { page: requestedPage, pageSize, totalCount, totalPages },
     bookingOnly,
     detailTypes: detailTypes.length > 0 ? detailTypes : ["전체"],
-    scannedCount: bookingOnly ? Math.min(80, itemsFrom(body).length) : places.length,
+    scannedCount: bookingOnly ? Math.min(80, items.length) : places.length,
     source: "supabase-edge-tourapi",
   });
 }
