@@ -42,7 +42,7 @@ jobs:
 
       - name: Apply database migration
         env:
-          RELEASE_MIGRATION: supabase/migrations/20260731170000_release_privacy_controls.sql
+          LEGAL_SHARE_MIGRATION: supabase/migrations/20260731223000_legal_course_sharing.sql
         shell: bash
         run: |
           set -euo pipefail
@@ -58,22 +58,22 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            echo "Applying the reviewed release migration through the Supabase Management API."
-            jq -Rs '{query: .}' "$RELEASE_MIGRATION" > release-migration.json
+            echo "Applying the reviewed legal sharing migration through the Supabase Management API."
+            jq -Rs '{query: .}' "$LEGAL_SHARE_MIGRATION" > legal-share-migration.json
             curl --fail-with-body --silent --show-error \
               --request POST \
               --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               --header "Content-Type: application/json" \
-              --data-binary @release-migration.json \
+              --data-binary @legal-share-migration.json \
               "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query"
           fi
 
-      - name: Verify privacy migration
+      - name: Verify privacy and sharing migrations
         shell: bash
         run: |
           set -euo pipefail
           jq -n '{
-            query: "select to_regclass('\''public.support_requests'\'') is not null and to_regprocedure('\''public.prepare_account_deletion(uuid,text)'\'') is not null as ready"
+            query: "select to_regclass('\''public.support_requests'\'') is not null and to_regprocedure('\''public.prepare_account_deletion(uuid,text)'\'') is not null and to_regclass('\''public.user_legal_consents'\'') is not null and to_regclass('\''public.shared_courses'\'') is not null and to_regprocedure('\''public.get_shared_course(text)'\'') is not null and to_regprocedure('\''public.revoke_course_share(uuid)'\'') is not null as ready"
           }' > verify-migration.json
           curl --fail-with-body --silent --show-error \
             --request POST \

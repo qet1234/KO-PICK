@@ -8,6 +8,11 @@ import {
   NAVER_STATE_COOKIE,
   readNaverOAuthStates,
 } from "@/utils/naver-auth";
+import {
+  LEGAL_CONSENT_COOKIE,
+  verifyLegalConsentCookie,
+} from "@/utils/legal-consent";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/legal-document-versions";
 
 export const runtime = "nodejs";
 
@@ -38,6 +43,12 @@ export async function GET(request: NextRequest) {
     const storedStates = readNaverOAuthStates(
       request.cookies.get(NAVER_STATE_COOKIE)?.value,
     );
+    let consentValid = false;
+    try {
+      consentValid = verifyLegalConsentCookie(request.cookies.get(LEGAL_CONSENT_COOKIE)?.value);
+    } catch (error) {
+      console.error("네이버 로그인 동의 서명 검증 오류:", error);
+    }
 
     if (oauthError || oauthErrorDescription) {
       return createNaverErrorRedirect(
@@ -57,6 +68,13 @@ export async function GET(request: NextRequest) {
       return createNaverErrorRedirect(
         request.url,
         "네이버 로그인 요청이 만료되었거나 유효하지 않습니다.",
+      );
+    }
+
+    if (!consentValid) {
+      return createNaverErrorRedirect(
+        request.url,
+        "로그인 동의가 만료되었습니다. 필수 항목에 다시 동의해 주세요.",
       );
     }
 
@@ -151,6 +169,27 @@ export async function GET(request: NextRequest) {
         "KO-PICK 로그인 세션을 만들지 못했습니다.",
       );
     }
+
+    const { error: consentError } = await supabase.rpc("record_user_legal_consents", {
+      p_privacy_version: PRIVACY_VERSION,
+      p_source: "naver",
+      p_terms_version: TERMS_VERSION,
+    });
+    if (consentError) {
+      console.error("네이버 로그인 동의 기록 오류:", consentError);
+      return createNaverErrorRedirect(
+        request.url,
+        "필수 동의 내역을 기록하지 못해 로그인을 완료하지 않았습니다.",
+      );
+    }
+
+    successResponse.cookies.set(LEGAL_CONSENT_COOKIE, "", {
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+      secure: getNaverCallbackUrl(request.url).protocol === "https:",
+    });
 
     return successResponse;
   } catch (error) {
