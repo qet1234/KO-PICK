@@ -153,7 +153,10 @@ export default function FastCategoryExplorePage({
   const [menuHost, setMenuHost] = useState<HTMLElement | null>(null);
   const journeyTypeRef = useRef(selectedJourneyType);
   const districtRef = useRef("전체");
-  journeyTypeRef.current = selectedJourneyType;
+
+  useEffect(() => {
+    journeyTypeRef.current = selectedJourneyType;
+  }, [selectedJourneyType]);
 
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
@@ -343,7 +346,7 @@ export default function FastCategoryExplorePage({
 
   useEffect(() => {
     if (!journey) {
-      setMenuHost(null);
+      queueMicrotask(() => setMenuHost(null));
       return;
     }
 

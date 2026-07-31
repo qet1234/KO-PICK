@@ -99,7 +99,9 @@ export default function PlaceNavigationChooser() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(PREFERENCE_KEY);
-    if (stored === "kakao" || stored === "naver") setPreferred(stored);
+    if (stored === "kakao" || stored === "naver") {
+      queueMicrotask(() => setPreferred(stored));
+    }
   }, []);
 
   useEffect(() => {

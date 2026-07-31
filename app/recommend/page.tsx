@@ -13,6 +13,7 @@ type Place = {
   reservationUrl: string;
   score: number;
   reason: string;
+  source: string;
 };
 
 type FormState = {
@@ -92,17 +93,19 @@ export default function RecommendPage() {
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(PREFERENCE_KEY);
-      if (saved) {
-        setPreferences({ ...initialPreferences, ...(JSON.parse(saved) as Partial<PreferenceState>) });
-        setStep("situation");
+    queueMicrotask(() => {
+      try {
+        const saved = localStorage.getItem(PREFERENCE_KEY);
+        if (saved) {
+          setPreferences({ ...initialPreferences, ...(JSON.parse(saved) as Partial<PreferenceState>) });
+          setStep("situation");
+        }
+      } catch {
+        localStorage.removeItem(PREFERENCE_KEY);
+      } finally {
+        setProfileLoaded(true);
       }
-    } catch {
-      localStorage.removeItem(PREFERENCE_KEY);
-    } finally {
-      setProfileLoaded(true);
-    }
+    });
   }, []);
 
   const visiblePlaces = useMemo(
@@ -256,6 +259,7 @@ export default function RecommendPage() {
               <p className="recommend-eyebrow">YOUR PERSONAL PICKS</p>
               <h2>{scopeLabel}에서 {form.relationship}과 가기 좋은 {form.category} {visiblePlaces.length}곳</h2>
               <p className="result-profile">{profileSummary} 성향을 반영해 적합도순으로 정렬했어요.</p>
+              <p className="result-profile">장소 원천: 한국관광공사 TourAPI · 지도 확인: 네이버 지도 외부 링크</p>
             </div>
             <div className="result-controls">
               <button onClick={() => setStep("situation")}>조건 수정</button>

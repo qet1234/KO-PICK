@@ -1,0 +1,65 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "데이터 출처·저작권 | 코리아픽",
+  description: "코리아픽의 장소 데이터, 지도, 예약 링크와 오픈소스 출처를 안내합니다.",
+};
+
+export default function SourcesPage() {
+  return (
+    <main className="legal-page">
+      <article className="legal-shell">
+        <header className="legal-header">
+          <a href="/">← 코리아픽 홈</a>
+          <small>SOURCES &amp; COPYRIGHT</small>
+          <h1>데이터 출처·저작권</h1>
+          <p>장소 데이터와 외부 서비스의 역할을 명확히 구분합니다.</p>
+        </header>
+        <div className="legal-content">
+          <section>
+            <h2>한국관광공사 TourAPI</h2>
+            <p>장소명, 주소, 좌표, 분류, 행사·관광 정보의 기본 원천은 한국관광공사 TourAPI입니다.</p>
+            <ul>
+              <li>제공기관: 한국관광공사</li>
+              <li>공공데이터: 국문 관광정보 서비스 TourAPI 4.0</li>
+              <li>KO-PICK 추천 점수는 TourAPI 장소에 이용자가 선택한 조건을 적용한 자체 정렬 결과입니다.</li>
+              <li>원천 데이터의 최신성·정확성은 제공기관 갱신 시점에 따라 달라질 수 있습니다.</li>
+            </ul>
+            <p>
+              <a href="https://api.visitkorea.or.kr/" target="_blank" rel="noreferrer">TourAPI 공식 사이트</a>{" · "}
+              <a href="https://www.data.go.kr/data/15101578/openapi.do" target="_blank" rel="noreferrer">공공데이터포털 상세</a>
+            </p>
+          </section>
+          <section>
+            <h2>사진 사용 원칙</h2>
+            <p className="legal-note">현재 공개 화면은 이미지별 공공누리 유형과 원권리자를 확인하지 못한 TourAPI 사진을 표시하지 않습니다.</p>
+            <p>향후 이미지를 표시할 때는 항목별 출처·저작권 유형을 저장하고, 출처 표시와 변경 금지 등 개별 조건을 충족하는 이미지만 사용합니다.</p>
+            <p><a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noreferrer">공공누리 이용조건 확인</a></p>
+          </section>
+          <section>
+            <h2>지도와 예약</h2>
+            <div className="legal-table-wrap">
+              <table>
+                <thead><tr><th>서비스</th><th>KO-PICK에서의 역할</th><th>안내</th></tr></thead>
+                <tbody>
+                  <tr><td>NAVER Maps</td><td>지도 표시, 장소명·주소 기반 외부 지도 검색</td><td>네이버 상표·지도·외부 페이지의 권리는 네이버에 귀속</td></tr>
+                  <tr><td>네이버 예약</td><td>TourAPI 장소와 명칭·주소가 일치하고 사전 검증된 경우 외부 예약 링크 제공</td><td>예약 가능 여부, 결제, 변경·취소는 네이버와 매장 정책 적용</td></tr>
+                  <tr><td>카카오맵</td><td>이용자가 선택한 경우 외부 길찾기 링크 제공</td><td>장소 데이터를 수집·재판매하지 않음</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section>
+            <h2>오픈소스</h2>
+            <p>Next.js, React, Supabase 클라이언트 등 오픈소스는 각 라이선스에 따라 사용합니다. 배포물의 상세 고지는 저장소의 <a href="https://github.com/qet1234/KO-PICK/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">THIRD_PARTY_NOTICES</a>에서 확인할 수 있습니다.</p>
+          </section>
+          <section>
+            <h2>권리 침해 신고</h2>
+            <p>권리자 이름, 대상 URL, 권리 근거, 요청사항을 고객지원에 보내면 확인 후 노출 중단·수정 등 필요한 조치를 진행합니다.</p>
+            <div className="legal-actions"><a href="/support?category=copyright">권리 침해 신고</a></div>
+          </section>
+        </div>
+      </article>
+    </main>
+  );
+}

@@ -156,11 +156,8 @@ export default function HeroWeatherDashboard() {
   const todayKey = seoulTodayKey();
   const weekRange = forecastWeekRange(todayKey);
 
-  const remainingWeekForecast = useMemo(
-    () => (weather?.daily ?? []).filter(
-      (item) => item.date >= weekRange.startKey && item.date <= weekRange.endKey,
-    ),
-    [weekRange.endKey, weekRange.startKey, weather?.daily],
+  const remainingWeekForecast = (weather?.daily ?? []).filter(
+    (item) => item.date >= weekRange.startKey && item.date <= weekRange.endKey,
   );
 
   const activeHourly = weather?.hourly[selectedHourIndex] ?? weather?.hourly[0];
@@ -171,10 +168,6 @@ export default function HeroWeatherDashboard() {
   const activePrecipitationProbability = activeHourly?.precipitationProbability
     ?? weather?.currentPrecipitationProbability
     ?? 0;
-
-  useEffect(() => {
-    setDistrict("전체");
-  }, [region]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -246,7 +239,13 @@ export default function HeroWeatherDashboard() {
       <section className="kp-weather-location-controls" aria-label="날씨 지역 선택">
         <label>
           <span>시·도 선택</span>
-          <select value={region} onChange={(event) => setRegion(event.target.value)}>
+          <select
+            value={region}
+            onChange={(event) => {
+              setRegion(event.target.value);
+              setDistrict("전체");
+            }}
+          >
             {regions.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </label>

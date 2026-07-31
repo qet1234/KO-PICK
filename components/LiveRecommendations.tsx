@@ -123,18 +123,6 @@ export default function LiveRecommendations() {
               <div
                 className={`kp-recommendation-image ${paletteClasses[index % paletteClasses.length]}`}
               >
-                {place.imageUrl && (
-                  <img
-                    src={place.imageUrl}
-                    alt={`${place.title} 대표 사진`}
-                    loading="lazy"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                )}
                 <span className="kp-card-category">{place.category}</span>
                 <button
                   className={`kp-save-button ${favorite ? "is-active" : ""}`}

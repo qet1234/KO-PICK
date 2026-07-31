@@ -57,6 +57,24 @@ const categoryIcons: Record<string, string> = {
   음식: "🍽", 맛집: "🍽", 카페: "☕", 축제: "✦", 관광지: "⌖", 문화: "▣",
 };
 
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function enforceRateLimit(req: Request, group: string, limit: number, windowMs: number) {
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const client = req.headers.get("cf-connecting-ip")?.trim() || forwarded || "unknown";
+  const key = `${group}:${client}`;
+  const now = Date.now();
+  const current = rateBuckets.get(key);
+  if (!current || current.resetAt <= now) {
+    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return;
+  }
+  if (current.count >= limit) {
+    throw new Error("RATE_LIMIT_EXCEEDED");
+  }
+  current.count += 1;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
@@ -190,7 +208,11 @@ function transformPlace(item: any, fallbackCategory: string) {
     address,
     latitude: Number(item.mapy || 0),
     longitude: Number(item.mapx || 0),
-    imageUrl: textOf(item.firstimage) || textOf(item.firstimage2) || null,
+    // TourAPI image items require per-image copyright classification.
+    // Do not publish an image until that metadata is stored and verified.
+    imageUrl: null,
+    imageLicenseStatus: "not_displayed_unverified",
+    source: "한국관광공사 TourAPI",
     tel: textOf(item.tel) || null,
     kakaoPlaceUrl: null,
     bookingAvailable: false,
@@ -204,42 +226,6 @@ function matchesDetail(place: any, detailType: string) {
   const words = detailKeywords[detailType] ?? [detailType];
   const haystack = `${place.name} ${place.address ?? ""} ${place.category}`.toLowerCase();
   return words.some((word) => haystack.includes(word.toLowerCase()));
-}
-
-async function kakaoFranchisePlaces(region: string, city: string, limit: number) {
-  const key = Deno.env.get("KAKAO_REST_API_KEY");
-  if (!key || limit <= 0) return [];
-  const brands = detailKeywords.프랜차이즈;
-  const results: any[] = [];
-  for (const brand of brands) {
-    if (results.length >= limit) break;
-    const query = [region === "전국" ? "" : region, city, brand].filter(Boolean).join(" ");
-    const params = new URLSearchParams({ query, category_group_code: "CE7", size: "15", page: "1" });
-    try {
-      const response = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?${params}`, {
-        headers: { Authorization: `KakaoAK ${key}` },
-      });
-      if (!response.ok) continue;
-      const payload = await response.json();
-      for (const doc of payload.documents ?? []) {
-        results.push({
-          id: `kakao-${doc.id}`,
-          contentTypeId: "kakao",
-          name: doc.place_name,
-          title: doc.place_name,
-          region: (doc.road_address_name || doc.address_name || region).split(/\s+/)[0] || region,
-          city: (doc.road_address_name || doc.address_name || "").split(/\s+/)[1] || null,
-          location: (doc.road_address_name || doc.address_name || region).split(/\s+/).slice(0, 2).join(" "),
-          category: "카페",
-          address: doc.road_address_name || doc.address_name || null,
-          latitude: Number(doc.y), longitude: Number(doc.x), imageUrl: null, tel: doc.phone || null,
-          kakaoPlaceUrl: doc.place_url || null, bookingAvailable: false, bookingGuide: null, bookingUrl: null,
-        });
-        if (results.length >= limit) break;
-      }
-    } catch { /* TourAPI 결과는 계속 사용 */ }
-  }
-  return results;
 }
 
 function firstHttpUrl(value: string) {
@@ -281,7 +267,8 @@ async function mapWithConcurrency<T, R>(values: T[], concurrency: number, mapper
   return output;
 }
 
-async function handleTourPlaces(url: URL) {
+async function handleTourPlaces(req: Request, url: URL) {
+  enforceRateLimit(req, "tour", 120, 60_000);
   const mode = url.searchParams.get("mode") || "places";
   const region = url.searchParams.get("region") || "전국";
   const areaCode = regionCodes[region] || "";
@@ -346,18 +333,6 @@ async function handleTourPlaces(url: URL) {
     );
   }
 
-  if (
-    category === "카페" &&
-    detailTypes.length === 1 &&
-    detailTypes[0] === "프랜차이즈" &&
-    places.length < pageSize
-  ) {
-    const cityName = url.searchParams.get("city") || "";
-    const supplements = await kakaoFranchisePlaces(region, cityName, pageSize - places.length);
-    const seen = new Set(places.map((place) => `${place.name}|${place.address ?? ""}`));
-    places.push(...supplements.filter((place) => !seen.has(`${place.name}|${place.address ?? ""}`)));
-  }
-
   if (bookingOnly) {
     const enriched = await mapWithConcurrency(places.slice(0, 80), 4, enrichBooking);
     places = enriched.filter((place) => place.bookingAvailable);
@@ -403,7 +378,7 @@ function normalizeTrendPlace(row: any, rank: number) {
     location: [row.region, row.city].filter(Boolean).join(" ") || "전국",
     title: row.name,
     description: row.address || `${category} 실시간 인기 장소`,
-    imageUrl: row.image_url || null,
+    imageUrl: null,
     icon: categoryIcons[category] || "⌖",
     popularityScore: Math.max(1, score),
     viewCount: Number(row.activity_count || 0), detailCount: 0, outboundCount: 0, favoriteCount: 0,
@@ -412,6 +387,7 @@ function normalizeTrendPlace(row: any, rank: number) {
 }
 
 async function handleTrendingPlaces(req: Request, url: URL) {
+  enforceRateLimit(req, "trending-places", req.method === "POST" ? 60 : 180, 60_000);
   const admin = supabaseAdmin();
   if (req.method === "POST") {
     const body = await req.json();
@@ -430,6 +406,7 @@ async function handleTrendingPlaces(req: Request, url: URL) {
       event_type: ["view", "detail", "outbound", "favorite"].includes(body.eventType) ? body.eventType : "view",
     });
     if (error) throw error;
+    await admin.rpc("prune_service_activity_events");
     return json({ success: true });
   }
   const limit = Math.max(1, Math.min(20, Number(url.searchParams.get("limit") || 8)));
@@ -450,6 +427,7 @@ async function handleTrendingPlaces(req: Request, url: URL) {
 }
 
 async function handleTrendingKeywords(req: Request, url: URL) {
+  enforceRateLimit(req, "trending-keywords", req.method === "POST" ? 30 : 180, 60_000);
   const admin = supabaseAdmin();
   if (req.method === "POST") {
     const body = await req.json();
@@ -460,6 +438,7 @@ async function handleTrendingKeywords(req: Request, url: URL) {
       source: body.source === "trend" ? "trend" : "search",
     });
     if (error) throw error;
+    await admin.rpc("prune_service_activity_events");
     return json({ success: true });
   }
   const limit = Math.max(1, Math.min(30, Number(url.searchParams.get("limit") || 10)));
@@ -476,9 +455,43 @@ async function handleAccountDelete(req: Request) {
   const { data, error } = await caller.auth.getUser();
   if (error || !data.user) return json({ error: "로그인이 필요합니다." }, 401);
   const admin = supabaseAdmin();
+  const body = await req.json().catch(() => ({})) as { visitorId?: unknown };
+  const visitorId = typeof body.visitorId === "string"
+    ? body.visitorId.trim().slice(0, 120)
+    : null;
+  const { error: prepareError } = await admin.rpc("prepare_account_deletion", {
+    p_user_id: data.user.id,
+    p_visitor_id: visitorId,
+  });
+  if (prepareError) throw prepareError;
   const { error: deleteError } = await admin.auth.admin.deleteUser(data.user.id);
   if (deleteError) throw deleteError;
   return json({ success: true });
+}
+
+async function handleSupportRequest(req: Request) {
+  enforceRateLimit(req, "support", 5, 60 * 60_000);
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const category = String(body.category || "service");
+  const email = String(body.email || "").trim().toLowerCase().slice(0, 254);
+  const message = String(body.message || "").trim().slice(0, 2000);
+  if (!["privacy", "account-deletion", "copyright", "service"].includes(category)) {
+    return json({ error: "문의 유형이 올바르지 않습니다." }, 400);
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return json({ error: "답변받을 이메일 주소를 확인해 주세요." }, 400);
+  }
+  if (message.length < 10) {
+    return json({ error: "문의 내용을 10자 이상 입력해 주세요." }, 400);
+  }
+  const admin = supabaseAdmin();
+  const { data, error } = await admin
+    .from("support_requests")
+    .insert({ category, email, message })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return json({ success: true, requestId: data.id }, 201);
 }
 
 Deno.serve(async (req) => {
@@ -487,13 +500,17 @@ Deno.serve(async (req) => {
   const path = routePath(url);
   try {
     if (path === "/" || path === "/actuator/health") return json({ status: "UP", runtime: "supabase-edge" });
-    if (path === "/api/public/tour/places" && req.method === "GET") return await handleTourPlaces(url);
+    if (path === "/api/public/tour/places" && req.method === "GET") return await handleTourPlaces(req, url);
     if (path === "/api/public/trending-places" && ["GET", "POST"].includes(req.method)) return await handleTrendingPlaces(req, url);
     if (path === "/api/public/trending-keywords" && ["GET", "POST"].includes(req.method)) return await handleTrendingKeywords(req, url);
+    if (path === "/api/public/support" && req.method === "POST") return await handleSupportRequest(req);
     if (path === "/api/web/account" && req.method === "DELETE") return await handleAccountDelete(req);
     return json({ error: "지원하지 않는 Supabase API 경로입니다.", path }, 404);
   } catch (error) {
     console.error("KO-PICK Edge Function error", error);
+    if (error instanceof Error && error.message === "RATE_LIMIT_EXCEEDED") {
+      return json({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, 429);
+    }
     return json({ error: error instanceof Error ? error.message : "서버 요청을 처리하지 못했습니다." }, 500);
   }
 });

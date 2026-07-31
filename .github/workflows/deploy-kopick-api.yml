@@ -27,7 +27,6 @@ jobs:
       PROJECT_REF: vbwaruzncfaxnjyybudm
       TOUR_API_SERVICE_KEY: ${{ secrets.TOUR_API_SERVICE_KEY }}
       TOUR_API_MOBILE_APP: ${{ secrets.TOUR_API_MOBILE_APP }}
-      KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY || secrets.KAKAO_CLIENT_ID }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Mark deployment pending
@@ -46,7 +45,7 @@ jobs:
         with:
           version: latest
 
-      - name: Verify Supabase token and Kakao key
+      - name: Verify Supabase token
         shell: bash
         run: |
           set -euo pipefail
@@ -54,16 +53,12 @@ jobs:
             echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"
             exit 1
           fi
-          if [ -z "${KAKAO_REST_API_KEY:-}" ]; then
-            echo "Missing GitHub Secret: KAKAO_CLIENT_ID or KAKAO_REST_API_KEY"
-            exit 1
-          fi
 
       - name: Store place API secrets
         shell: bash
         run: |
           set -euo pipefail
-          args=(KAKAO_REST_API_KEY="$KAKAO_REST_API_KEY")
+          args=()
           if [ -n "${TOUR_API_SERVICE_KEY:-}" ]; then
             args+=(TOUR_API_SERVICE_KEY="$TOUR_API_SERVICE_KEY")
           fi
