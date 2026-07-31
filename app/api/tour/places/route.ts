@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { loadVerifiedTourImages } from "@/utils/tourapi-image";
 
 const TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2";
 const PAGE_SIZE_MAX = 100;
+const IMAGE_ENRICHMENT_LIMIT = 12;
 
 const regionCodes: Record<string, string> = {
   서울: "1",
@@ -310,6 +312,7 @@ export async function GET(request: NextRequest) {
     const detailTypes =
       selectedDetailTypes.length > 0 ? selectedDetailTypes : ["전체"];
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
+    const includeImages = searchParams.get("includeImages") !== "false";
     const sources = Array.from(
       new Map(
         detailTypes
@@ -387,7 +390,7 @@ export async function GET(request: NextRequest) {
         ? rawItems.filter((item) => item.cat3 !== cafeCategoryCode)
         : rawItems;
 
-    const places = categoryItems
+    const normalizedPlaces = categoryItems
       .map((item) => {
         const address = [item.addr1, item.addr2].filter(Boolean).join(" ");
         const normalizedRegion =
@@ -411,7 +414,7 @@ export async function GET(request: NextRequest) {
           address: address || null,
           latitude: Number(item.mapy),
           longitude: Number(item.mapx),
-          imageUrl:
+          preferredImageUrl:
             (item.firstimage ?? item.firstimage2 ?? "").replace(
               /^http:/,
               "https:"
@@ -429,6 +432,40 @@ export async function GET(request: NextRequest) {
           place.longitude >= 124 &&
           place.longitude <= 132
       );
+
+    const verifiedImages = includeImages
+      ? await loadVerifiedTourImages(
+          normalizedPlaces
+            .slice(0, IMAGE_ENRICHMENT_LIMIT)
+            .map((place) => ({
+              contentId: place.id,
+              preferredUrl: place.preferredImageUrl,
+            })),
+          { serviceKey, mobileApp }
+        )
+      : new Map();
+
+    const places = normalizedPlaces.map((place) => {
+      const image = verifiedImages.get(place.id);
+      return {
+        id: place.id,
+        name: place.name,
+        region: place.region,
+        city: place.city,
+        category: place.category,
+        address: place.address,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        imageUrl: image?.imageUrl ?? null,
+        imageThumbnailUrl: image?.thumbnailUrl ?? null,
+        imageCopyrightCode: image?.copyrightCode ?? null,
+        imageLicenseLabel: image?.licenseLabel ?? null,
+        imageAttribution: image?.attribution ?? null,
+        imageModificationAllowed: image?.modificationAllowed ?? false,
+        imageLicenseUrl: image?.licenseUrl ?? null,
+        imageSourceUrl: image?.sourceUrl ?? null,
+      };
+    });
 
     const bodies = payloads.map((payload) => payload.response?.body);
     const totalCount = keywordSearch

@@ -35,6 +35,18 @@ Exact Maven artifacts and versions are resolved from `backend/pom.xml`.
 Source code for LGPL-covered components remains available from their upstream
 projects, and KO-PICK does not modify those libraries.
 
+## Public data and media
+
+Place data and verified representative images are supplied by the Korea
+Tourism Organization TourAPI. Representative images are displayed only when
+the per-image copyright classification returned by TourAPI is `Type1` or
+`Type3`. KO-PICK displays the source and Korea Open Government License type
+with each image. Type3 images are rendered without cropping, filters, or zoom
+effects.
+
+- TourAPI dataset: https://www.data.go.kr/data/15101578/openapi.do
+- Korea Open Government License terms: https://www.kogl.or.kr/info/license.do
+
 ## Common license text
 
 MIT-licensed components are provided under the following terms:

@@ -15,6 +15,13 @@ type Place = {
   score: number;
   reason: string;
   source: string;
+  imageUrl: string | null;
+  imageCopyrightCode: "Type1" | "Type3" | null;
+  imageLicenseLabel: string | null;
+  imageAttribution: string | null;
+  imageModificationAllowed: boolean;
+  imageLicenseUrl: string | null;
+  imageSourceUrl: string | null;
 };
 
 type FormState = {
@@ -525,10 +532,33 @@ export default function RecommendPage() {
 }
 
 function PlaceCard({ place, index, duration, selected, onSave, voteUrl, showCourseTime = false }: { place: Place; index: number; duration: string; selected: string | null; onSave: (place: Place) => void; voteUrl: (place: Place) => string; showCourseTime?: boolean }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(
+    place.imageUrl &&
+      place.imageAttribution &&
+      (place.imageCopyrightCode === "Type1" || place.imageCopyrightCode === "Type3") &&
+      !imageFailed
+  );
+
   return (
     <article className={`place-card ${selected === place.id ? "is-selected" : ""}`}>
       <div className="place-rank">{String(index + 1).padStart(2, "0")}</div>
       {showCourseTime && <div className="course-time">{courseTime(index, duration)}</div>}
+      {showImage && (
+        <div className="place-card-media">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={place.imageModificationAllowed ? "" : "is-no-derivatives"}
+            src={place.imageUrl ?? ""}
+            alt={`${place.name} 대표 사진`}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImageFailed(true)}
+          />
+          <span>{place.imageAttribution}</span>
+        </div>
+      )}
       <div className="place-score">취향 적합도 {place.score}%</div>
       <h3>{place.name}</h3>
       <p className="place-category">{place.category}</p>

@@ -25,6 +25,12 @@ interface Place {
   latitude: number | string;
   longitude: number | string;
   imageUrl?: string | null;
+  imageCopyrightCode?: "Type1" | "Type3" | null;
+  imageLicenseLabel?: string | null;
+  imageAttribution?: string | null;
+  imageModificationAllowed?: boolean;
+  imageLicenseUrl?: string | null;
+  imageSourceUrl?: string | null;
 }
 
 interface SubregionOption {
@@ -248,6 +254,50 @@ function CategoryFallbackIcon({ category }: { category: string }) {
           </>
         )}
     </svg>
+  );
+}
+
+function TourPlaceCardMedia({ place }: { place: Place }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(
+    place.imageUrl &&
+      place.imageAttribution &&
+      (place.imageCopyrightCode === "Type1" || place.imageCopyrightCode === "Type3") &&
+      !imageFailed
+  );
+
+  return (
+    <div
+      className="kp-explore-card-image"
+      data-category={displayCategory(place.category)}
+    >
+      <div className="kp-explore-card-fallback" aria-hidden="true">
+        <CategoryFallbackIcon category={place.category} />
+        <b>{displayCategory(place.category)}</b>
+        <em>대표 사진 준비 중</em>
+      </div>
+      {showImage && (
+        <>
+          {/* TourAPI image hosts vary, so this licensed remote asset is rendered directly. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className={place.imageModificationAllowed ? "" : "is-no-derivatives"}
+            src={place.imageUrl ?? ""}
+            alt={`${place.name} 대표 사진`}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={() => setImageFailed(true)}
+          />
+          <span
+            className="kp-explore-image-credit"
+          >
+            {place.imageAttribution}
+          </span>
+        </>
+      )}
+      <small>{displayCategory(place.category)}</small>
+    </div>
   );
 }
 
@@ -530,13 +580,22 @@ export default function CategoryExplorePage({
       if (place.imageUrl) {
         const image = document.createElement("img");
         image.className = "kp-explore-info-window-image";
+        if (!place.imageModificationAllowed) {
+          image.classList.add("is-no-derivatives");
+        }
         image.src = place.imageUrl;
         image.alt = place.name + " 대표 사진";
         image.loading = "lazy";
         image.decoding = "async";
         image.referrerPolicy = "no-referrer";
-        image.addEventListener("error", () => image.remove(), { once: true });
-        content.append(image);
+        const credit = document.createElement("span");
+        credit.className = "kp-explore-info-window-credit";
+        credit.textContent = place.imageAttribution ?? "사진: 한국관광공사 TourAPI";
+        image.addEventListener("error", () => {
+          image.remove();
+          credit.remove();
+        }, { once: true });
+        content.append(image, credit);
       }
 
       const category = document.createElement("small");
@@ -851,17 +910,7 @@ export default function CategoryExplorePage({
                     onClick={() => focusPlace(place)}
                     aria-label={place.name + " 지도에서 보기"}
                   >
-                    <div
-                      className="kp-explore-card-image"
-                      data-category={displayCategory(place.category)}
-                    >
-                      <div className="kp-explore-card-fallback" aria-hidden="true">
-                        <CategoryFallbackIcon category={place.category} />
-                        <b>{displayCategory(place.category)}</b>
-                        <em>대표 사진 준비 중</em>
-                      </div>
-                      <small>{displayCategory(place.category)}</small>
-                    </div>
+                    <TourPlaceCardMedia place={place} />
 
                     <div className="kp-explore-card-copy">
                       <span>

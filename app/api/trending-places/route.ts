@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { loadVerifiedTourImages } from "@/utils/tourapi-image";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,12 @@ interface TrendingPlace {
   title: string;
   description: string;
   imageUrl: string | null;
+  imageCopyrightCode?: "Type1" | "Type3" | null;
+  imageLicenseLabel?: string | null;
+  imageAttribution?: string | null;
+  imageModificationAllowed?: boolean;
+  imageLicenseUrl?: string | null;
+  imageSourceUrl?: string | null;
   icon: string;
   popularityScore: number;
   viewCount: number;
@@ -300,14 +307,33 @@ export async function GET() {
       seen.add(place.id);
       return true;
     })
-    .slice(0, TRENDING_LIMIT)
-    .map((place, index) => ({ ...place, rank: index + 1 }));
+    .slice(0, TRENDING_LIMIT);
+
+  const verifiedImages = await loadVerifiedTourImages(
+    merged
+      .filter((place) => place.source !== "fallback")
+      .map((place) => ({ contentId: place.id, preferredUrl: place.imageUrl }))
+  );
+  const places = merged.map((place, index) => {
+    const image = verifiedImages.get(place.id);
+    return {
+      ...place,
+      rank: index + 1,
+      imageUrl: image?.imageUrl ?? null,
+      imageCopyrightCode: image?.copyrightCode ?? null,
+      imageLicenseLabel: image?.licenseLabel ?? null,
+      imageAttribution: image?.attribution ?? null,
+      imageModificationAllowed: image?.modificationAllowed ?? false,
+      imageLicenseUrl: image?.licenseUrl ?? null,
+      imageSourceUrl: image?.sourceUrl ?? null,
+    };
+  });
 
   return NextResponse.json(
     {
       updatedAt: new Date().toISOString(),
       realtimeEnabled: activityPlaces.length > 0,
-      places: merged,
+      places,
     },
     { headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } }
   );
