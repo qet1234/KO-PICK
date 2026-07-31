@@ -102,7 +102,23 @@ async function fetchTourPlaces(region: string, category: string, pageSize: numbe
   if (district && district !== "전체") {
     const subregions = await fetchTourSubregions(region);
     const subregion = subregions.find((item) => item.name?.trim() === district.trim());
-    if (subregion?.code) query.set("sigunguCode", subregion.code);
+    if (subregion?.code) {
+      query.set("sigunguCode", subregion.code);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+      if (appUrl) {
+        const appResponse = await fetch(`${appUrl}/api/tour/places?${query}`, {
+          next: { revalidate: 600 },
+        }).catch(() => null);
+        if (appResponse?.ok) {
+          const appPayload = await appResponse.json().catch(() => null) as {
+            places?: TourPlace[];
+          } | null;
+          if (Array.isArray(appPayload?.places) && appPayload.places.length > 0) {
+            return appPayload.places;
+          }
+        }
+      }
+    }
   }
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const response = await fetch(serviceUrl(`/api/public/tour/places?${query}`), {
