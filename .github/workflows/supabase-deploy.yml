@@ -46,12 +46,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
-            supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-            supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD"
-            supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
-          else
-            echo "Database password is unavailable; applying the reviewed release migration through the Supabase Management API."
+
+          apply_with_management_api() {
+            echo "Applying the reviewed release migration through the Supabase Management API."
             jq -Rs '{query: .}' "$RELEASE_MIGRATION" > release-migration.json
             curl --fail-with-body --silent --show-error \
               --request POST \
@@ -59,6 +56,20 @@ jobs:
               --header "Content-Type: application/json" \
               --data-binary @release-migration.json \
               "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query"
+          }
+
+          if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
+            if supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" \
+              && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" \
+              && supabase db push --linked --password "$SUPABASE_DB_PASSWORD"; then
+              echo "Database migration applied with the Supabase CLI."
+            else
+              echo "::warning::The configured database password was rejected; using the authenticated Management API fallback."
+              apply_with_management_api
+            fi
+          else
+            echo "Database password is unavailable; using the authenticated Management API fallback."
+            apply_with_management_api
           fi
 
       - name: Verify privacy migration
