@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "KO-PICK",
+    "slug": "ko-pick",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "kopick",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.koreapick.app",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.koreapick.app",
+      "versionCode": 1,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
