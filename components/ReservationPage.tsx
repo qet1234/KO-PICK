@@ -296,7 +296,7 @@ export default function ReservationPage() {
     <main className="reservation-page">
       <header className="reservation-topbar">
         <a className="reservation-brand" href="/"><span>K</span>코리아픽</a>
-        <nav><a href="/recommend">맞춤 코스</a><a href="/explore?category=음식">장소 찾기</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
+        <nav><a href="/recommend">코스 설정</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
       </header>
 
       <div className="reservation-shell">
