@@ -46,12 +46,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          migration_applied=false
           if [ -n "${SUPABASE_DB_PASSWORD:-}" ]; then
-            supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-            supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD"
-            supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
-          else
-            echo "Database password is unavailable; applying the reviewed release migration through the Supabase Management API."
+            if supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" \
+              && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD" \
+              && supabase db push --linked --password "$SUPABASE_DB_PASSWORD"; then
+              migration_applied=true
+            else
+              echo "The configured database password could not apply migrations; using the Supabase Management API fallback."
+            fi
+          fi
+
+          if [ "$migration_applied" != true ]; then
+            echo "Applying the reviewed release migration through the Supabase Management API."
             jq -Rs '{query: .}' "$RELEASE_MIGRATION" > release-migration.json
             curl --fail-with-body --silent --show-error \
               --request POST \
