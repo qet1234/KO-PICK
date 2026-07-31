@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { loadVerifiedTourImages } from "@/utils/tourapi-image";
+import { verifiedTourImageFromList } from "@/utils/tourapi-image";
 
 const TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2";
 const PAGE_SIZE_MAX = 100;
-const IMAGE_ENRICHMENT_LIMIT = 12;
 
 const regionCodes: Record<string, string> = {
   서울: "1",
@@ -98,6 +97,7 @@ interface TourApiItem {
   mapy?: string;
   firstimage?: string;
   firstimage2?: string;
+  cpyrhtDivCd?: string;
   areacode?: string;
   sigungucode?: string;
   cat1?: string;
@@ -419,6 +419,9 @@ export async function GET(request: NextRequest) {
               /^http:/,
               "https:"
             ) || null,
+          preferredThumbnailUrl:
+            (item.firstimage2 ?? "").replace(/^http:/, "https:") || null,
+          imageCopyrightCode: item.cpyrhtDivCd ?? null,
         };
       })
       .filter(
@@ -433,20 +436,14 @@ export async function GET(request: NextRequest) {
           place.longitude <= 132
       );
 
-    const verifiedImages = includeImages
-      ? await loadVerifiedTourImages(
-          normalizedPlaces
-            .slice(0, IMAGE_ENRICHMENT_LIMIT)
-            .map((place) => ({
-              contentId: place.id,
-              preferredUrl: place.preferredImageUrl,
-            })),
-          { serviceKey, mobileApp }
-        )
-      : new Map();
-
     const places = normalizedPlaces.map((place) => {
-      const image = verifiedImages.get(place.id);
+      const image = includeImages
+        ? verifiedTourImageFromList({
+            imageUrl: place.preferredImageUrl,
+            thumbnailUrl: place.preferredThumbnailUrl,
+            copyrightCode: place.imageCopyrightCode,
+          })
+        : null;
       return {
         id: place.id,
         name: place.name,

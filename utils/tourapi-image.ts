@@ -1,5 +1,5 @@
 const TOUR_API_IMAGE_ENDPOINT =
-  "https://apis.data.go.kr/B551011/KorService2/detailImage2";
+  "https://apis.data.go.kr/B551011/KorService2/detailCommon2";
 
 export type TourImageCopyrightCode = "Type1" | "Type3";
 
@@ -23,6 +23,8 @@ type TourImageRequest = {
 type TourImageItem = {
   originimgurl?: string;
   smallimageurl?: string;
+  firstimage?: string;
+  firstimage2?: string;
   imgname?: string;
   cpyrhtDivCd?: string;
 };
@@ -84,7 +86,9 @@ function itemsFrom(payload: TourImagePayload) {
 
 function toVerifiedImage(item: TourImageItem): VerifiedTourImage | null {
   const copyrightCode = normalizeCopyrightCode(item.cpyrhtDivCd);
-  const imageUrl = normalizeVisitKoreaImageUrl(item.originimgurl);
+  const imageUrl = normalizeVisitKoreaImageUrl(
+    item.originimgurl ?? item.firstimage
+  );
   if (!copyrightCode || !imageUrl) return null;
 
   const licenseLabel =
@@ -92,7 +96,9 @@ function toVerifiedImage(item: TourImageItem): VerifiedTourImage | null {
 
   return {
     imageUrl,
-    thumbnailUrl: normalizeVisitKoreaImageUrl(item.smallimageurl),
+    thumbnailUrl: normalizeVisitKoreaImageUrl(
+      item.smallimageurl ?? item.firstimage2
+    ),
     imageName: item.imgname?.trim() || null,
     copyrightCode,
     licenseLabel,
@@ -101,6 +107,20 @@ function toVerifiedImage(item: TourImageItem): VerifiedTourImage | null {
     licenseUrl: "https://www.kogl.or.kr/info/license.do",
     sourceUrl: "https://www.data.go.kr/data/15101578/openapi.do",
   };
+}
+
+export function verifiedTourImageFromList(input: {
+  imageUrl?: string | null;
+  thumbnailUrl?: string | null;
+  copyrightCode?: string | null;
+  imageName?: string | null;
+}) {
+  return toVerifiedImage({
+    originimgurl: input.imageUrl ?? undefined,
+    smallimageurl: input.thumbnailUrl ?? undefined,
+    cpyrhtDivCd: input.copyrightCode ?? undefined,
+    imgname: input.imageName ?? undefined,
+  });
 }
 
 async function loadVerifiedTourImage(
@@ -114,10 +134,8 @@ async function loadVerifiedTourImage(
     MobileApp: mobileApp,
     _type: "json",
     contentId: input.contentId,
-    imageYN: "Y",
-    subImageYN: "Y",
     pageNo: "1",
-    numOfRows: "100",
+    numOfRows: "1",
   });
 
   try {

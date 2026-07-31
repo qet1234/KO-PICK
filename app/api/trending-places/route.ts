@@ -1,6 +1,9 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-import { loadVerifiedTourImages } from "@/utils/tourapi-image";
+import {
+  loadVerifiedTourImages,
+  verifiedTourImageFromList,
+} from "@/utils/tourapi-image";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +35,7 @@ interface TourApiItem {
   addr2?: string;
   firstimage?: string;
   firstimage2?: string;
+  cpyrhtDivCd?: string;
 }
 
 interface TourApiPayload {
@@ -269,6 +273,11 @@ async function loadTourPlaces(): Promise<TrendingPlace[]> {
         /^http:/,
         "https:"
       );
+      const verifiedImage = verifiedTourImageFromList({
+        imageUrl,
+        thumbnailUrl: item.firstimage2,
+        copyrightCode: item.cpyrhtDivCd,
+      });
 
       return {
         id: item.contentid,
@@ -277,7 +286,13 @@ async function loadTourPlaces(): Promise<TrendingPlace[]> {
         location,
         title: item.title,
         description: address || "한국관광공사 추천 장소입니다.",
-        imageUrl: imageUrl || null,
+        imageUrl: verifiedImage?.imageUrl ?? null,
+        imageCopyrightCode: verifiedImage?.copyrightCode ?? null,
+        imageLicenseLabel: verifiedImage?.licenseLabel ?? null,
+        imageAttribution: verifiedImage?.attribution ?? null,
+        imageModificationAllowed: verifiedImage?.modificationAllowed ?? false,
+        imageLicenseUrl: verifiedImage?.licenseUrl ?? null,
+        imageSourceUrl: verifiedImage?.sourceUrl ?? null,
         icon: source.icon,
         popularityScore: 0,
         viewCount: 0,
@@ -311,21 +326,26 @@ export async function GET() {
 
   const verifiedImages = await loadVerifiedTourImages(
     merged
-      .filter((place) => place.source !== "fallback")
+      .filter((place) => place.source !== "fallback" && !place.imageUrl)
       .map((place) => ({ contentId: place.id, preferredUrl: place.imageUrl }))
   );
   const places = merged.map((place, index) => {
     const image = verifiedImages.get(place.id);
+    const hasVerifiedImage = Boolean(
+      place.imageUrl &&
+        place.imageAttribution &&
+        (place.imageCopyrightCode === "Type1" || place.imageCopyrightCode === "Type3")
+    );
     return {
       ...place,
       rank: index + 1,
-      imageUrl: image?.imageUrl ?? null,
-      imageCopyrightCode: image?.copyrightCode ?? null,
-      imageLicenseLabel: image?.licenseLabel ?? null,
-      imageAttribution: image?.attribution ?? null,
-      imageModificationAllowed: image?.modificationAllowed ?? false,
-      imageLicenseUrl: image?.licenseUrl ?? null,
-      imageSourceUrl: image?.sourceUrl ?? null,
+      imageUrl: hasVerifiedImage ? place.imageUrl : image?.imageUrl ?? null,
+      imageCopyrightCode: hasVerifiedImage ? place.imageCopyrightCode : image?.copyrightCode ?? null,
+      imageLicenseLabel: hasVerifiedImage ? place.imageLicenseLabel : image?.licenseLabel ?? null,
+      imageAttribution: hasVerifiedImage ? place.imageAttribution : image?.attribution ?? null,
+      imageModificationAllowed: hasVerifiedImage ? place.imageModificationAllowed : image?.modificationAllowed ?? false,
+      imageLicenseUrl: hasVerifiedImage ? place.imageLicenseUrl : image?.licenseUrl ?? null,
+      imageSourceUrl: hasVerifiedImage ? place.imageSourceUrl : image?.sourceUrl ?? null,
     };
   });
 
