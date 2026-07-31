@@ -154,8 +154,6 @@ export default function LoginPage() {
             로그인하고 저장한 장소와 맞춤 추천 기록을 확인하세요.
           </p>
 
-          <div className="quick-signup-note">5초 만에 빠른 회원가입</div>
-
           <label className="login-consent">
             <input
               type="checkbox"
@@ -182,6 +180,8 @@ export default function LoginPage() {
               </small>
             </span>
           </label>
+
+          <div className="quick-signup-note">5초 만에 빠른 회원가입</div>
 
           <button
             className="kakao-button"
