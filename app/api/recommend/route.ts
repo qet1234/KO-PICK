@@ -65,6 +65,21 @@ function serviceUrl(path: string) {
 
 async function fetchTourSubregions(region: string) {
   const query = new URLSearchParams({ mode: "subregions", region });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (appUrl) {
+    const appResponse = await fetch(`${appUrl}/api/tour/places?${query}`, {
+      next: { revalidate: 86_400 },
+    }).catch(() => null);
+    if (appResponse?.ok) {
+      const appPayload = await appResponse.json().catch(() => null) as {
+        subregions?: Array<{ code?: string; name?: string }>;
+      } | null;
+      if (Array.isArray(appPayload?.subregions) && appPayload.subregions.length > 0) {
+        return appPayload.subregions;
+      }
+    }
+  }
+
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const response = await fetch(serviceUrl(`/api/public/tour/places?${query}`), {
     headers: publishableKey ? { apikey: publishableKey } : undefined,
