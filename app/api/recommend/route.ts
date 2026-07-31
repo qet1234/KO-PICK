@@ -12,6 +12,13 @@ type TourPlace = {
   city?: string | null;
   latitude?: number | string;
   longitude?: number | string;
+  imageUrl?: string | null;
+  imageCopyrightCode?: "Type1" | "Type3" | null;
+  imageLicenseLabel?: string | null;
+  imageAttribution?: string | null;
+  imageModificationAllowed?: boolean;
+  imageLicenseUrl?: string | null;
+  imageSourceUrl?: string | null;
 };
 
 type Candidate = {
@@ -106,26 +113,26 @@ async function fetchTourPlaces(region: string, category: string, pageSize: numbe
     category,
     page: "1",
     pageSize: String(Math.max(1, Math.min(30, pageSize))),
-    includeImages: "false",
+    includeImages: "true",
   });
   if (district && district !== "전체") {
     const subregions = await fetchTourSubregions(region);
     const subregion = subregions.find((item) => item.name?.trim() === district.trim());
     if (subregion?.code) {
       query.set("sigunguCode", subregion.code);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
-      if (appUrl) {
-        const appResponse = await fetch(`${appUrl}/api/tour/places?${query}`, {
-          next: { revalidate: 600 },
-        }).catch(() => null);
-        if (appResponse?.ok) {
-          const appPayload = await appResponse.json().catch(() => null) as {
-            places?: TourPlace[];
-          } | null;
-          if (Array.isArray(appPayload?.places) && appPayload.places.length > 0) {
-            return appPayload.places;
-          }
-        }
+    }
+  }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, "");
+  if (appUrl) {
+    const appResponse = await fetch(`${appUrl}/api/tour/places?${query}`, {
+      next: { revalidate: 600 },
+    }).catch(() => null);
+    if (appResponse?.ok) {
+      const appPayload = await appResponse.json().catch(() => null) as {
+        places?: TourPlace[];
+      } | null;
+      if (Array.isArray(appPayload?.places) && appPayload.places.length > 0) {
+        return appPayload.places;
       }
     }
   }
@@ -227,6 +234,11 @@ function toCandidate(place: TourPlace, index: number, params: URLSearchParams): 
   const longitudeValue = String(place.longitude ?? "").trim();
   const latitude = latitudeValue ? Number(latitudeValue) : Number.NaN;
   const longitude = longitudeValue ? Number(longitudeValue) : Number.NaN;
+  const hasVerifiedImage = Boolean(
+    place.imageUrl &&
+      place.imageAttribution &&
+      (place.imageCopyrightCode === "Type1" || place.imageCopyrightCode === "Type3")
+  );
   return {
     id,
     name,
@@ -238,13 +250,13 @@ function toCandidate(place: TourPlace, index: number, params: URLSearchParams): 
     score,
     reason: reasonFor(score, params),
     source: "한국관광공사 TourAPI",
-    imageUrl: null,
-    imageCopyrightCode: null,
-    imageLicenseLabel: null,
-    imageAttribution: null,
-    imageModificationAllowed: false,
-    imageLicenseUrl: null,
-    imageSourceUrl: null,
+    imageUrl: hasVerifiedImage ? place.imageUrl ?? null : null,
+    imageCopyrightCode: hasVerifiedImage ? place.imageCopyrightCode ?? null : null,
+    imageLicenseLabel: hasVerifiedImage ? place.imageLicenseLabel ?? null : null,
+    imageAttribution: hasVerifiedImage ? place.imageAttribution ?? null : null,
+    imageModificationAllowed: hasVerifiedImage && place.imageModificationAllowed === true,
+    imageLicenseUrl: hasVerifiedImage ? place.imageLicenseUrl ?? null : null,
+    imageSourceUrl: hasVerifiedImage ? place.imageSourceUrl ?? null : null,
     latitude: Number.isFinite(latitude) ? latitude : null,
     longitude: Number.isFinite(longitude) ? longitude : null,
   };
@@ -273,10 +285,12 @@ function toPublicCandidate(candidate: ScoredCandidate): Candidate {
 }
 
 async function withVerifiedCandidateImages<T extends Candidate>(candidates: T[]) {
+  const missing = candidates.filter((candidate) => !candidate.imageUrl);
   const verifiedImages = await loadVerifiedTourImages(
-    candidates.map((candidate) => ({ contentId: candidate.id }))
+    missing.map((candidate) => ({ contentId: candidate.id }))
   );
   return candidates.map((candidate) => {
+    if (candidate.imageUrl && candidate.imageAttribution) return candidate;
     const image = verifiedImages.get(candidate.id);
     return {
       ...candidate,
