@@ -46,6 +46,14 @@ type WeatherSnapshot = {
   indoorRecommended: boolean;
 };
 
+type CourseBundle = {
+  id: string;
+  region: string;
+  title: string;
+  duration: string;
+  items: Place[];
+};
+
 type SavedItinerary = {
   id: string;
   savedAt: string;
@@ -126,9 +134,9 @@ function purposeFor(relationship: string) {
 
 function courseTime(index: number, duration: string) {
   const schedules: Record<string, string[]> = {
-    "2시간": ["START", "+ 60분"],
-    반나절: ["START", "+ 90분", "+ 3시간"],
-    하루: ["10:30", "12:30", "15:00", "18:00"],
+    "2시간": ["START", "+ 40분", "+ 80분"],
+    반나절: ["11:00", "12:30", "14:30", "16:30"],
+    하루: ["10:00", "11:30", "13:00", "15:00", "17:00", "19:00"],
   };
   return schedules[duration]?.[index] || `STOP ${index + 1}`;
 }
@@ -138,6 +146,7 @@ export default function RecommendPage() {
   const [preferences, setPreferences] = useState<PreferenceState>(initialPreferences);
   const [step, setStep] = useState<"preferences" | "situation" | "results">("preferences");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [courses, setCourses] = useState<CourseBundle[]>([]);
   const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
   const [savedItineraries, setSavedItineraries] = useState<SavedItinerary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -145,6 +154,7 @@ export default function RecommendPage() {
   const [notice, setNotice] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [variation, setVariation] = useState(0);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -170,6 +180,18 @@ export default function RecommendPage() {
     [form.mode, places],
   );
 
+  const visibleCourses = useMemo(() => {
+    if (form.mode !== "course") return [];
+    if (courses.length > 0) return courses;
+    return places.length > 0 ? [{
+      id: `${form.region}-${form.duration}`,
+      region: form.region,
+      title: `${form.region} ${form.relationship} ${form.duration} 코스`,
+      duration: form.duration,
+      items: places,
+    }] : [];
+  }, [courses, form.duration, form.mode, form.region, form.relationship, places]);
+
   const profileSummary = useMemo(
     () => Object.values(preferences).join(" · "),
     [preferences],
@@ -180,6 +202,7 @@ export default function RecommendPage() {
   };
 
   const selectRegion = (region: string) => {
+    setVariation(0);
     setForm((prev) => ({
       ...prev,
       region,
@@ -222,11 +245,7 @@ export default function RecommendPage() {
     } satisfies WeatherSnapshot;
   };
 
-  const recommend = async () => {
-    if (form.mode === "course" && form.region === "전국") {
-      setError("이동 가능한 코스를 만들려면 시·도를 하나 선택해 주세요.");
-      return;
-    }
+  const recommend = async (nextVariation = variation) => {
     setLoading(true);
     setError("");
     setNotice("");
@@ -242,16 +261,22 @@ export default function RecommendPage() {
         weatherCondition: forecast?.condition || "",
         weatherIndoor: String(forecast?.indoorRecommended ?? form.indoor === "실내"),
         resultCount: String(RECOMMENDATION_LIMIT),
+        variation: String(nextVariation),
       });
       const response = await fetch(`/api/recommend?${query.toString()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "추천 장소를 불러오지 못했습니다.");
       setPlaces(data.items || []);
+      setCourses(Array.isArray(data.courses) ? data.courses : []);
       if (!data.items?.length) {
         setError("조건에 맞는 장소를 찾지 못했습니다. 지역이나 카테고리를 바꿔보세요.");
         return;
       }
-      if (!forecast) setNotice("날씨 예보를 불러오지 못해 선택한 취향과 장소 정보만으로 추천했어요.");
+      if (form.region === "전국") {
+        setNotice("전국 결과는 장거리 이동으로 연결하지 않고, 각 지역 안에서 이동하기 좋은 코스로 나눠 보여드려요.");
+      } else if (!forecast) {
+        setNotice("날씨 예보를 불러오지 못해 선택한 취향과 장소 정보만으로 추천했어요.");
+      }
       setStep("results");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "추천 중 오류가 발생했습니다.");
@@ -269,15 +294,16 @@ export default function RecommendPage() {
     setNotice("장소를 이 기기에 저장했습니다.");
   };
 
-  const itineraryTitle = `${form.date} ${form.region} ${form.relationship} ${form.duration} 코스`;
+  const itineraryTitle = (course?: CourseBundle) => `${form.date} ${course?.region || form.region} ${form.relationship} ${form.duration} 코스`;
 
-  const saveItinerary = () => {
+  const saveItinerary = (course?: CourseBundle) => {
+    const title = itineraryTitle(course);
     const itinerary: SavedItinerary = {
       id: `${Date.now()}`,
       savedAt: new Date().toISOString(),
-      title: itineraryTitle,
+      title,
       form,
-      places: visiblePlaces,
+      places: course?.items || visiblePlaces,
       weather,
     };
     const next = [itinerary, ...savedItineraries].slice(0, 8);
@@ -286,15 +312,17 @@ export default function RecommendPage() {
     setNotice("완성된 코스를 이 기기에 저장했습니다.");
   };
 
-  const shareItinerary = async () => {
+  const shareItinerary = async (course?: CourseBundle) => {
+    const title = itineraryTitle(course);
+    const sharedPlaces = course?.items || visiblePlaces;
     const text = [
-      `KO-PICK · ${itineraryTitle}`,
+      `KO-PICK · ${title}`,
       weather ? `${weather.condition} · 강수 ${weather.precipitationProbability}% · ${weather.minTemperature}~${weather.maxTemperature}°` : "",
-      ...visiblePlaces.map((place, index) => `${index + 1}. ${place.name} (${place.address})\n${place.mapUrl}`),
+      ...sharedPlaces.map((place, index) => `${index + 1}. ${place.name} (${place.address})\n${place.mapUrl}`),
     ].filter(Boolean).join("\n");
     try {
       if (navigator.share) {
-        await navigator.share({ title: itineraryTitle, text });
+        await navigator.share({ title, text });
         setNotice("코스 공유 화면을 열었습니다.");
       } else {
         await navigator.clipboard.writeText(text);
@@ -310,6 +338,12 @@ export default function RecommendPage() {
     const next = savedItineraries.filter((item) => item.id !== id);
     localStorage.setItem(SAVED_ITINERARY_KEY, JSON.stringify(next));
     setSavedItineraries(next);
+  };
+
+  const refreshNationwideCourses = () => {
+    const nextVariation = variation + 1;
+    setVariation(nextVariation);
+    void recommend(nextVariation);
   };
 
   const voteUrl = (place: Place) => {
@@ -372,13 +406,13 @@ export default function RecommendPage() {
             <button type="button" onClick={() => setStep("preferences")}>성향 다시 설정</button>
           </div>
 
-          <Choice label="어떤 결과가 필요한가요?" values={choices.mode} selected={form.mode} labels={{ course: "2~4곳 코스", single: "한 곳 추천" }} onSelect={(value) => update("mode", value as FormState["mode"])} />
+          <Choice label="어떤 결과가 필요한가요?" values={choices.mode} selected={form.mode} labels={{ course: "3~6곳 코스", single: "한 곳 추천" }} onSelect={(value) => update("mode", value as FormState["mode"])} />
           <Choice label="어디에서 찾을까요?" values={regionChoices} selected={form.region} onSelect={selectRegion} />
 
           {form.scope === "전국" && (
             <div className="nationwide-notice">
-              <strong>{form.mode === "course" ? "코스는 지역 선택이 필요해요" : "전국 균형 추천"}</strong>
-              <p>{form.mode === "course" ? "실제로 이동할 수 있는 순서로 묶기 위해 시·도를 하나 선택해 주세요." : "17개 시·도를 고르게 검색한 뒤 취향에 잘 맞는 장소부터 보여드려요."}</p>
+              <strong>{form.mode === "course" ? "전국 지역별 코스 비교" : "전국 균형 추천"}</strong>
+              <p>{form.mode === "course" ? "17개 시·도 중 서로 다른 권역의 코스 2~4개를 한 번에 보여드려요. 각 코스는 한 지역 안에서 이동하기 좋은 순서로 구성합니다." : "17개 시·도를 고르게 검색한 뒤 취향에 잘 맞는 장소부터 보여드려요."}</p>
             </div>
           )}
 
@@ -397,8 +431,8 @@ export default function RecommendPage() {
             <Choice label="예산" values={choices.budget} selected={form.budget} onSelect={(value) => update("budget", value)} compact />
           </div>
 
-          <p className="weather-auto-note">방문 날짜의 예보를 자동 확인해 비·눈 가능성이 높으면 실내 장소의 추천 순위를 올립니다.</p>
-          <button className="recommend-submit" onClick={recommend} disabled={loading}>
+          <p className="weather-auto-note">{form.region === "전국" ? "전국 비교에서는 선택한 실내·야외 취향을 우선 반영합니다. 시·도를 선택하면 해당 지역의 방문일 예보까지 자동으로 반영해요." : "방문 날짜의 예보를 자동 확인해 비·눈 가능성이 높으면 실내 장소의 추천 순위를 올립니다."}</p>
+          <button className="recommend-submit" onClick={() => void recommend()} disabled={loading}>
             {loading ? `${scopeLabel} 장소와 날씨를 함께 분석하는 중...` : `${scopeLabel} ${modeLabel(form.mode)} 받기 →`}
           </button>
         </section>
@@ -414,7 +448,8 @@ export default function RecommendPage() {
               <p className="result-profile">장소 원천: 한국관광공사 TourAPI · 지도 확인: 네이버 지도 외부 링크</p>
             </div>
             <div className="result-controls">
-              {form.mode === "course" && <><button type="button" onClick={saveItinerary}>코스 저장</button><button type="button" onClick={() => void shareItinerary()}>코스 공유</button></>}
+              {form.mode === "course" && form.region !== "전국" && <><button type="button" onClick={() => saveItinerary()}>코스 저장</button><button type="button" onClick={() => void shareItinerary()}>코스 공유</button></>}
+              {form.mode === "course" && form.region === "전국" && <button type="button" onClick={refreshNationwideCourses} disabled={loading}>{loading ? "새 코스 찾는 중..." : "다른 전국 코스"}</button>}
               <button type="button" onClick={() => setStep("situation")}>조건 수정</button>
             </div>
           </div>
@@ -426,26 +461,32 @@ export default function RecommendPage() {
             </div>
           )}
 
-          <div className={`place-grid is-list-mode ${form.mode === "course" ? "is-course-mode" : ""}`}>
-            {visiblePlaces.map((place, index) => (
-              <article className={`place-card ${selected === place.id ? "is-selected" : ""}`} key={`${place.id}-${index}`}>
-                <div className="place-rank">{String(index + 1).padStart(2, "0")}</div>
-                {form.mode === "course" && <div className="course-time">{courseTime(index, form.duration)}</div>}
-                <div className="place-score">취향 적합도 {place.score}%</div>
-                <h3>{place.name}</h3>
-                <p className="place-category">{place.category}</p>
-                <p className="place-address">{place.address}</p>
-                <p className="place-reason">{place.reason}</p>
-                {place.description && <p className="place-description">{place.description}</p>}
-                <div className="place-actions">
-                  <button onClick={() => savePlace(place)}>{selected === place.id ? "저장 완료 ✓" : "장소 저장"}</button>
-                  <a href={place.mapUrl} target="_blank" rel="noreferrer">지도에서 보기</a>
-                  <a href={voteUrl(place)}>함께 투표 후보로</a>
-                </div>
-              </article>
-            ))}
-          </div>
-          {form.mode === "course" && <p className="course-route-note">표시된 순서는 좌표와 주소가 가까운 후보를 우선 배치한 권장 순서입니다. 실제 이동시간과 영업 여부는 지도·매장 정보를 다시 확인해 주세요.</p>}
+          {form.mode === "course" ? (
+            <div className={`course-collection ${visibleCourses.length > 1 ? "is-nationwide" : ""}`}>
+              {visibleCourses.map((course) => (
+                <section className="course-bundle" key={course.id}>
+                  {visibleCourses.length > 1 && (
+                    <div className="course-bundle-heading">
+                      <div><span>{course.region}</span><h3>{course.title}</h3><p>{course.items.length}곳을 이동하기 좋은 순서로 묶었어요.</p></div>
+                      <div><button type="button" onClick={() => saveItinerary(course)}>이 코스 저장</button><button type="button" onClick={() => void shareItinerary(course)}>공유</button></div>
+                    </div>
+                  )}
+                  <div className="place-grid is-list-mode is-course-mode">
+                    {course.items.map((place, index) => (
+                      <PlaceCard key={`${course.id}-${place.id}-${index}`} place={place} index={index} duration={course.duration} selected={selected} onSave={savePlace} voteUrl={voteUrl} showCourseTime />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="place-grid is-list-mode">
+              {visiblePlaces.map((place, index) => (
+                <PlaceCard key={`${place.id}-${index}`} place={place} index={index} duration={form.duration} selected={selected} onSave={savePlace} voteUrl={voteUrl} />
+              ))}
+            </div>
+          )}
+          {form.mode === "course" && <p className="course-route-note">각 코스에 표시된 순서는 좌표와 주소가 가까운 후보를 우선 배치한 권장 순서입니다. 서로 다른 지역의 코스를 하나의 이동 경로로 연결하지 않으며, 실제 이동시간과 영업 여부는 지도·매장 정보를 다시 확인해 주세요.</p>}
         </section>
       )}
 
@@ -463,6 +504,26 @@ export default function RecommendPage() {
         </section>
       )}
     </main>
+  );
+}
+
+function PlaceCard({ place, index, duration, selected, onSave, voteUrl, showCourseTime = false }: { place: Place; index: number; duration: string; selected: string | null; onSave: (place: Place) => void; voteUrl: (place: Place) => string; showCourseTime?: boolean }) {
+  return (
+    <article className={`place-card ${selected === place.id ? "is-selected" : ""}`}>
+      <div className="place-rank">{String(index + 1).padStart(2, "0")}</div>
+      {showCourseTime && <div className="course-time">{courseTime(index, duration)}</div>}
+      <div className="place-score">취향 적합도 {place.score}%</div>
+      <h3>{place.name}</h3>
+      <p className="place-category">{place.category}</p>
+      <p className="place-address">{place.address}</p>
+      <p className="place-reason">{place.reason}</p>
+      {place.description && <p className="place-description">{place.description}</p>}
+      <div className="place-actions">
+        <button onClick={() => onSave(place)}>{selected === place.id ? "저장 완료 ✓" : "장소 저장"}</button>
+        <a href={place.mapUrl} target="_blank" rel="noreferrer">지도에서 보기</a>
+        <a href={voteUrl(place)}>함께 투표 후보로</a>
+      </div>
+    </article>
   );
 }
 

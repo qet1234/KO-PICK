@@ -31,10 +31,27 @@ type ScoredCandidate = Candidate & {
   longitude: number | null;
 };
 
+type CourseBundle = {
+  id: string;
+  region: string;
+  title: string;
+  duration: string;
+  items: Candidate[];
+};
+
 const NATIONWIDE_REGIONS = [
   "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
   "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
 ] as const;
+
+const NATIONWIDE_REGION_GROUPS = [
+  ["서울", "인천", "경기"],
+  ["강원", "대전", "세종", "충북", "충남"],
+  ["광주", "전북", "전남", "제주"],
+  ["부산", "대구", "울산", "경북", "경남"],
+] as const;
+
+const MAX_COURSE_PLACES = 12;
 
 function tourCategory(value: string) {
   return value === "맛집" ? "음식" : value;
@@ -182,17 +199,51 @@ function distanceKm(a: ScoredCandidate, b: ScoredCandidate) {
 }
 
 function courseCategories(duration: string, preferred: string, weatherIndoor: boolean) {
-  if (duration === "2시간") {
-    return preferred === "카페" ? ["관광지", "카페"] : [preferred, "카페"];
-  }
+  const base = weatherIndoor
+    ? ["관광지", "음식", "카페", "축제"]
+    : ["관광지", "음식", "축제", "카페"];
+  const distinct = [preferred, ...base.filter((category) => category !== preferred)];
+
+  if (duration === "2시간") return distinct.slice(0, 3);
   if (duration === "하루") {
-    return weatherIndoor
-      ? ["관광지", "음식", "카페", "관광지"]
-      : ["관광지", "음식", "축제", "카페"];
+    return [
+      ...distinct,
+      weatherIndoor ? "관광지" : "축제",
+      weatherIndoor ? "카페" : "관광지",
+    ];
   }
-  return weatherIndoor
-    ? ["음식", "관광지", "카페"]
-    : ["관광지", "음식", "카페"];
+  return distinct;
+}
+
+function stableHash(value: string) {
+  let hash = 0;
+  for (const character of value) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return hash;
+}
+
+function nationwideRegionOrder(params: URLSearchParams) {
+  const seed = stableHash([
+    params.get("date"),
+    params.get("relationship"),
+    params.get("category"),
+    params.get("mood"),
+    params.get("variation") || "0",
+  ].join("|"));
+  const groups = NATIONWIDE_REGION_GROUPS.map((group, groupIndex) => {
+    const offset = (seed + groupIndex * 3) % group.length;
+    return [...group.slice(offset), ...group.slice(0, offset)];
+  });
+  const ordered: string[] = [];
+  const groupOffset = seed % groups.length;
+  const rotatedGroups = [...groups.slice(groupOffset), ...groups.slice(0, groupOffset)];
+
+  for (let round = 0; round < Math.max(...groups.map((group) => group.length)); round += 1) {
+    for (const group of rotatedGroups) {
+      const region = group[round];
+      if (region) ordered.push(region);
+    }
+  }
+  return ordered;
 }
 
 async function buildCourse(scope: string, region: string, params: URLSearchParams) {
@@ -267,6 +318,46 @@ async function buildCourse(scope: string, region: string, params: URLSearchParam
   return selected;
 }
 
+function toCourseBundle(region: string, params: URLSearchParams, course: ScoredCandidate[]): CourseBundle {
+  const duration = params.get("duration") || "반나절";
+  const relationship = params.get("relationship") || "개인";
+  return {
+    id: `${region}-${duration}-${course.map((item) => item.id).join("-")}`,
+    region,
+    title: `${region} ${relationship} ${duration} 코스`,
+    duration,
+    items: course.map(toPublicCandidate),
+  };
+}
+
+async function buildNationwideCourses(params: URLSearchParams) {
+  const preferred = tourCategory(params.get("category") || "카페");
+  const duration = params.get("duration") || "반나절";
+  const stopCount = courseCategories(
+    duration,
+    preferred,
+    params.get("weatherIndoor") === "true",
+  ).length;
+  const targetCount = Math.max(2, Math.floor(MAX_COURSE_PLACES / stopCount));
+  const regionOrder = nationwideRegionOrder(params);
+  const courses: CourseBundle[] = [];
+  const maximumAttempts = Math.min(regionOrder.length, targetCount + 4);
+
+  for (let index = 0; index < maximumAttempts && courses.length < targetCount; index += targetCount) {
+    const batch = regionOrder.slice(index, Math.min(index + targetCount, maximumAttempts));
+    const settled = await Promise.allSettled(batch.map(async (region) => {
+      const course = await buildCourse("내 지역", region, params);
+      return course.length >= 2 ? toCourseBundle(region, params, course) : null;
+    }));
+    for (const result of settled) {
+      if (result.status === "fulfilled" && result.value) courses.push(result.value);
+      if (courses.length >= targetCount) break;
+    }
+  }
+
+  return courses;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const params = request.nextUrl.searchParams;
@@ -281,9 +372,30 @@ export async function GET(request: NextRequest) {
 
     if (mode === "course") {
       if (scope === "전국" || region === "전국") {
+        const courses = await buildNationwideCourses(params);
+        if (courses.length === 0) {
+          return NextResponse.json(
+            { error: "전국에서 코스로 묶을 장소를 찾지 못했습니다. 잠시 후 다시 시도해 주세요." },
+            { status: 404 },
+          );
+        }
         return NextResponse.json(
-          { error: "이동 가능한 코스를 만들려면 시·도를 하나 선택해 주세요." },
-          { status: 400 },
+          {
+            scope: "전국",
+            mode,
+            totalCount: courses.reduce((total, course) => total + course.items.length, 0),
+            items: courses.flatMap((course) => course.items),
+            courses,
+            availableRegions: NATIONWIDE_REGIONS,
+            course: {
+              date: params.get("date") || null,
+              duration: params.get("duration") || "반나절",
+              weatherCondition: null,
+              indoorRecommended: params.get("weatherIndoor") === "true",
+            },
+            source: "한국관광공사 TourAPI",
+            attributionUrl: "https://api.visitkorea.or.kr/",
+          },
         );
       }
       const course = await buildCourse(scope, region, params);
@@ -298,6 +410,7 @@ export async function GET(request: NextRequest) {
         mode,
         totalCount: course.length,
         items: course.map(toPublicCandidate),
+        courses: [toCourseBundle(region, params, course)],
         course: {
           date: params.get("date") || null,
           duration: params.get("duration") || "반나절",
