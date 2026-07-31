@@ -68,8 +68,26 @@
 .legal-danger { background: #fff3f1; color: #7c3027; }
 .legal-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .legal-actions a { padding: 12px 18px; border-radius: 12px; background: #173f2c; color: #fff; text-decoration: none; }
-.login-consent { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0; color: #4f6157; font-size: 13px; line-height: 1.55; }
-.login-consent input { margin-top: 3px; accent-color: #183f2c; }
+.login-consent {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin: 16px 0;
+  color: #4f6157;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.login-consent input {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 2px 0 0;
+  padding: 0;
+  border-radius: 4px;
+  accent-color: #183f2c;
+}
 .login-consent a { color: #183f2c; font-weight: 800; text-underline-offset: 3px; }
 .login-consent strong { color: #a63b32; }
 .login-consent-detail { display: block; margin-top: 6px; color: #697a70; font-size: 11px; line-height: 1.65; }
