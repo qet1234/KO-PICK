@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import "./recommend.css";
 
 type Place = {
@@ -20,6 +21,7 @@ type FormState = {
   mode: "single" | "course";
   scope: string;
   region: string;
+  district: string;
   relationship: string;
   date: string;
   duration: string;
@@ -78,6 +80,7 @@ const initialForm: FormState = {
   mode: "course",
   scope: "내 지역",
   region: "경기",
+  district: "전체",
   relationship: "커플",
   date: seoulDateKey(),
   duration: "반나절",
@@ -206,6 +209,7 @@ export default function RecommendPage() {
     setForm((prev) => ({
       ...prev,
       region,
+      district: "전체",
       scope: region === "전국" ? "전국" : "내 지역",
     }));
   };
@@ -221,7 +225,7 @@ export default function RecommendPage() {
 
   const getWeather = async () => {
     if (form.region === "전국") return null;
-    const query = new URLSearchParams({ region: form.region, date: form.date });
+    const query = new URLSearchParams({ region: form.region, district: form.district, date: form.date });
     const response = await fetch(`/api/weather?${query}`, { cache: "no-store" });
     if (!response.ok) return null;
     const data = await response.json() as {
@@ -409,10 +413,23 @@ export default function RecommendPage() {
           <Choice label="어떤 결과가 필요한가요?" values={choices.mode} selected={form.mode} labels={{ course: "3~6곳 코스", single: "한 곳 추천" }} onSelect={(value) => update("mode", value as FormState["mode"])} />
           <Choice label="어디에서 찾을까요?" values={regionChoices} selected={form.region} onSelect={selectRegion} />
 
+          {form.region !== "전국" && (
+            <label className="region-field recommend-district-field">
+              <span>시·군·구</span>
+              <select value={form.district} onChange={(event) => update("district", event.target.value)}>
+                <option value="전체">{form.region} 전체</option>
+                {(koreaRegionDistricts[form.region] ?? []).map((district) => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
+              </select>
+              <small>선택한 시·군·구의 후보가 부족하면 같은 시·도 안에서 가까운 코스 후보를 보완합니다.</small>
+            </label>
+          )}
+
           {form.scope === "전국" && (
             <div className="nationwide-notice">
               <strong>{form.mode === "course" ? "전국 지역별 코스 비교" : "전국 균형 추천"}</strong>
-              <p>{form.mode === "course" ? "17개 시·도 중 서로 다른 권역의 코스 2~4개를 한 번에 보여드려요. 각 코스는 한 지역 안에서 이동하기 좋은 순서로 구성합니다." : "17개 시·도를 고르게 검색한 뒤 취향에 잘 맞는 장소부터 보여드려요."}</p>
+              <p>{form.mode === "course" ? "수도권·중부권·호남/제주권·영남권에서 최대 4개 코스를 한 번에 보여드려요. 각 코스는 한 지역 안의 3~6곳으로 구성합니다." : "17개 시·도를 고르게 검색한 뒤 취향에 잘 맞는 장소부터 보여드려요."}</p>
             </div>
           )}
 
