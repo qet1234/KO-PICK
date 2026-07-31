@@ -97,7 +97,7 @@ const initialForm: FormState = {
   mood: "조용한",
   indoor: "실내",
   distance: "3km",
-  budget: "보통",
+  budget: "5만원",
 };
 
 const initialPreferences: PreferenceState = {
@@ -121,7 +121,7 @@ const choices = {
   mood: ["조용한", "활기찬", "감성적인", "뷰가 좋은"],
   indoor: ["실내", "야외"],
   distance: ["1km", "3km", "5km", "10km"],
-  budget: ["낮음", "보통", "높음"],
+  budget: ["1만원", "2만원", "3만원", "4만원", "5만원", "6만원", "7만원", "8만원", "9만원", "10만원"],
 } as const;
 
 const preferenceChoices = {
@@ -530,6 +530,8 @@ export default function RecommendPage() {
           <div className="recommend-row">
             <Choice label="공간 선호" values={choices.indoor} selected={form.indoor} onSelect={(value) => update("indoor", value)} compact />
             <Choice label="이동 거리 선호" values={choices.distance} selected={form.distance} onSelect={(value) => update("distance", value)} compact />
+          </div>
+          <div className="recommend-budget">
             <Choice label="예산" values={choices.budget} selected={form.budget} onSelect={(value) => update("budget", value)} compact />
           </div>
 
