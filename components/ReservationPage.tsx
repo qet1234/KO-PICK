@@ -90,6 +90,10 @@ export default function ReservationPage() {
   const initialCategory = searchParams.get("category") ?? "";
   const initialPlaceId = searchParams.get("placeId") ?? "";
   const initialSpaceId = searchParams.get("spaceId") ?? "";
+  const requestedDate = searchParams.get("date") ?? "";
+  const initialDate = requestedDate >= today ? requestedDate : today;
+  const requestedPurpose = searchParams.get("purpose") ?? "";
+  const initialPurpose = purposes.includes(requestedPurpose) ? requestedPurpose : "데이트";
 
   const [spaces, setSpaces] = useState<SpaceSummary[]>([]);
   const [plans, setPlans] = useState<ReservationPlan[]>([]);
@@ -99,16 +103,16 @@ export default function ReservationPage() {
   const [notice, setNotice] = useState("");
 
   const [spaceId, setSpaceId] = useState("");
-  const [title, setTitle] = useState(initialPlaceName ? `${initialPlaceName} 함께 예약` : "우리의 외출 계획");
-  const [purpose, setPurpose] = useState("데이트");
-  const [reservationDate, setReservationDate] = useState(today);
+  const [title, setTitle] = useState(initialPlaceName ? `${initialPlaceName} 장소 투표` : "우리의 외출 계획");
+  const [purpose, setPurpose] = useState(initialPurpose);
+  const [reservationDate, setReservationDate] = useState(initialDate);
   const [partySize, setPartySize] = useState(2);
   const [budget, setBudget] = useState("");
   const [note, setNote] = useState("");
   const [placeName, setPlaceName] = useState(initialPlaceName);
   const [address, setAddress] = useState(initialAddress);
   const [category, setCategory] = useState(initialCategory);
-  const [candidateStartsAt, setCandidateStartsAt] = useState(`${today}T18:00`);
+  const [candidateStartsAt, setCandidateStartsAt] = useState(`${initialDate}T18:00`);
   const [externalUrl, setExternalUrl] = useState("");
 
   const [addingToPlan, setAddingToPlan] = useState<string | null>(null);
@@ -204,7 +208,7 @@ export default function ReservationPage() {
         });
       }
 
-      setNotice("함께 예약 계획을 만들었습니다. 공간 구성원에게 투표를 요청해 보세요.");
+      setNotice("함께 고를 장소 투표를 만들었습니다. 공간 구성원에게 공유해 보세요.");
       setTitle("우리의 외출 계획");
       setNote("");
       setPlaceName("");
@@ -292,19 +296,19 @@ export default function ReservationPage() {
     <main className="reservation-page">
       <header className="reservation-topbar">
         <a className="reservation-brand" href="/"><span>K</span>코리아픽</a>
-        <nav><a href="/explore?category=음식">장소 찾기</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
+        <nav><a href="/recommend">맞춤 코스</a><a href="/explore?category=음식">장소 찾기</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
       </header>
 
       <div className="reservation-shell">
         <section className="reservation-hero">
           <div>
-            <p>RESERVE TOGETHER</p>
-            <h1>같이 고르고,<br />함께 예약해요.</h1>
+            <p>VOTE TOGETHER</p>
+            <h1>후보를 모으고,<br />함께 결정해요.</h1>
           </div>
           <ol>
             <li><span>01</span>관계·목적에 맞는 계획 만들기</li>
             <li><span>02</span>구성원이 후보 장소에 투표하기</li>
-            <li><span>03</span>대표자가 확정하고 공동 달력에 저장하기</li>
+            <li><span>03</span>대표자가 확정하고 공동 달력·외부 예약으로 연결하기</li>
           </ol>
         </section>
 
@@ -313,9 +317,9 @@ export default function ReservationPage() {
 
         <section className="reservation-create-section">
           <div className="reservation-section-copy">
-            <p>NEW PLAN</p>
-            <h2>함께 예약<br />계획 만들기</h2>
-            <span>매장 제휴 전에는 외부 예약 페이지로 연결되며, 실제 매장 확인 전까지는 예약 완료로 표시하지 않아요.</span>
+            <p>NEW VOTE</p>
+            <h2>장소 투표<br />만들기</h2>
+            <span>후보 투표와 최종 선택은 KO-PICK에서 진행하고, 예약은 외부 페이지에서 확인합니다. 실제 매장 확인 전에는 예약 완료로 표시하지 않아요.</span>
           </div>
 
           <form className="reservation-create-form" onSubmit={createPlan}>
@@ -363,13 +367,13 @@ export default function ReservationPage() {
               <label>외부 예약 링크<input type="url" value={externalUrl} onChange={(event) => setExternalUrl(event.target.value)} maxLength={1000} placeholder="매장 홈페이지 또는 예약 페이지" /></label>
             </div>
 
-            <button className="reservation-primary-button is-wide" type="submit" disabled={working || spaces.length === 0}>{working ? "저장 중" : "투표할 예약 계획 만들기 →"}</button>
+            <button className="reservation-primary-button is-wide" type="submit" disabled={working || spaces.length === 0}>{working ? "저장 중" : "장소 투표 시작하기 →"}</button>
           </form>
         </section>
 
         <section className="reservation-plans-section" id="reservation-plans">
           <div className="reservation-section-heading">
-            <div><p>OUR PLANS</p><h2>함께 정하는 예약</h2></div>
+            <div><p>OUR PLANS</p><h2>함께 정하는 장소</h2></div>
             <span>{plans.length}개 계획</span>
           </div>
 

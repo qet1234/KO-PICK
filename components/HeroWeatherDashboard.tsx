@@ -335,7 +335,10 @@ export default function HeroWeatherDashboard() {
 
           <footer className="kp-weather-dashboard-footer">
             <div><small>WEATHER PICK</small><strong>{weather.recommendation}</strong></div>
-            <a href={exploreUrl}>날씨 맞춤 장소 보기 →</a>
+            <div className="kp-weather-dashboard-links">
+              <a className="kp-weather-attribution" href="https://open-meteo.com/" target="_blank" rel="noreferrer">Weather data by Open-Meteo.com</a>
+              <a href={exploreUrl}>날씨 맞춤 장소 보기 →</a>
+            </div>
           </footer>
         </>
       )}
