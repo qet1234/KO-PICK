@@ -241,6 +241,29 @@ async function buildCourse(scope: string, region: string, params: URLSearchParam
     selected.push(next);
   }
 
+  if (selected.length < categories.length) {
+    const fallbackPool = [...pools.values()]
+      .flat()
+      .filter((candidate) => !used.has(candidate.id));
+
+    while (selected.length < categories.length && fallbackPool.length > 0) {
+      const previous = selected.at(-1);
+      const ranked = fallbackPool.map((candidate) => {
+        const distance = previous ? distanceKm(previous, candidate) : null;
+        const nearbyBonus = previous && candidate.address.split(" ").slice(0, 2).join(" ")
+          === previous.address.split(" ").slice(0, 2).join(" ") ? 8 : 0;
+        const distancePenalty = distance === null ? 0 : Math.min(18, distance / 3);
+        return { candidate, courseScore: candidate.score + nearbyBonus - distancePenalty };
+      }).sort((a, b) => b.courseScore - a.courseScore);
+      const next = ranked[0]?.candidate;
+      if (!next) break;
+      used.add(next.id);
+      selected.push(next);
+      const nextIndex = fallbackPool.findIndex((candidate) => candidate.id === next.id);
+      fallbackPool.splice(nextIndex, 1);
+    }
+  }
+
   return selected;
 }
 
