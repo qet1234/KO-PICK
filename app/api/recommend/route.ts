@@ -51,7 +51,7 @@ const NATIONWIDE_REGION_GROUPS = [
   ["부산", "대구", "울산", "경북", "경남"],
 ] as const;
 
-const MAX_COURSE_PLACES = 12;
+const NATIONWIDE_COURSE_COUNT = NATIONWIDE_REGION_GROUPS.length;
 
 function tourCategory(value: string) {
   return value === "맛집" ? "음식" : value;
@@ -63,13 +63,32 @@ function serviceUrl(path: string) {
   return `${projectUrl}/functions/v1/kopick-api${path}`;
 }
 
-async function fetchTourPlaces(region: string, category: string, pageSize: number) {
+async function fetchTourSubregions(region: string) {
+  const query = new URLSearchParams({ mode: "subregions", region });
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const response = await fetch(serviceUrl(`/api/public/tour/places?${query}`), {
+    headers: publishableKey ? { apikey: publishableKey } : undefined,
+    next: { revalidate: 86_400 },
+  });
+  const payload = await response.json().catch(() => null) as {
+    subregions?: Array<{ code?: string; name?: string }>;
+  } | null;
+  if (!response.ok) return [];
+  return Array.isArray(payload?.subregions) ? payload.subregions : [];
+}
+
+async function fetchTourPlaces(region: string, category: string, pageSize: number, district = "전체") {
   const query = new URLSearchParams({
     region,
     category,
     page: "1",
     pageSize: String(Math.max(1, Math.min(30, pageSize))),
   });
+  if (district && district !== "전체") {
+    const subregions = await fetchTourSubregions(region);
+    const subregion = subregions.find((item) => item.name?.trim() === district.trim());
+    if (subregion?.code) query.set("sigunguCode", subregion.code);
+  }
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
   const response = await fetch(serviceUrl(`/api/public/tour/places?${query}`), {
     headers: publishableKey ? { apikey: publishableKey } : undefined,
@@ -83,9 +102,22 @@ async function fetchTourPlaces(region: string, category: string, pageSize: numbe
   return Array.isArray(payload?.places) ? payload.places : [];
 }
 
-async function loadCandidatePool(scope: string, region: string, category: string) {
+async function loadCandidatePool(scope: string, region: string, category: string, district = "전체") {
   if (scope !== "전국" && region !== "전국") {
-    return fetchTourPlaces(region, category, 30);
+    const districtPlaces = await fetchTourPlaces(region, category, 30, district);
+    if (district === "전체" || districtPlaces.length >= 4) return districtPlaces;
+
+    const regionPlaces = await fetchTourPlaces(region, category, 30);
+    const seen = new Set(districtPlaces.map((place) => String(place.id ?? `${place.name}|${place.address}`)));
+    return [
+      ...districtPlaces,
+      ...regionPlaces.filter((place) => {
+        const key = String(place.id ?? `${place.name}|${place.address}`);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+    ];
   }
 
   const groups: TourPlace[][] = [];
@@ -106,6 +138,7 @@ function scorePlace(place: TourPlace, index: number, params: URLSearchParams) {
   const relationship = params.get("relationship") || "개인";
   const mood = params.get("mood") || "조용한";
   const category = tourCategory(params.get("category") || "카페");
+  const district = params.get("district") || "전체";
   let score = 72 - Math.min(index, 8);
 
   const terms: Record<string, string[]> = {
@@ -120,6 +153,7 @@ function scorePlace(place: TourPlace, index: number, params: URLSearchParams) {
   };
 
   if (text.includes(category)) score += 10;
+  if (district !== "전체" && (place.city === district || text.includes(district))) score += 14;
   if ((terms[relationship] ?? []).some((term) => text.includes(term))) score += 7;
   if ((terms[mood] ?? []).some((term) => text.includes(term))) score += 6;
   if (params.get("indoor") === "실내" && /(카페|식당|박물관|미술관|전시)/.test(text)) {
@@ -221,7 +255,7 @@ function stableHash(value: string) {
   return hash;
 }
 
-function nationwideRegionOrder(params: URLSearchParams) {
+function nationwideGroupOrders(params: URLSearchParams) {
   const seed = stableHash([
     params.get("date"),
     params.get("relationship"),
@@ -229,21 +263,10 @@ function nationwideRegionOrder(params: URLSearchParams) {
     params.get("mood"),
     params.get("variation") || "0",
   ].join("|"));
-  const groups = NATIONWIDE_REGION_GROUPS.map((group, groupIndex) => {
+  return NATIONWIDE_REGION_GROUPS.map((group, groupIndex) => {
     const offset = (seed + groupIndex * 3) % group.length;
     return [...group.slice(offset), ...group.slice(0, offset)];
   });
-  const ordered: string[] = [];
-  const groupOffset = seed % groups.length;
-  const rotatedGroups = [...groups.slice(groupOffset), ...groups.slice(0, groupOffset)];
-
-  for (let round = 0; round < Math.max(...groups.map((group) => group.length)); round += 1) {
-    for (const group of rotatedGroups) {
-      const region = group[round];
-      if (region) ordered.push(region);
-    }
-  }
-  return ordered;
 }
 
 async function buildCourse(scope: string, region: string, params: URLSearchParams) {
@@ -251,12 +274,13 @@ async function buildCourse(scope: string, region: string, params: URLSearchParam
   const duration = params.get("duration") || "반나절";
   const categories = courseCategories(duration, preferred, params.get("weatherIndoor") === "true");
   const uniqueCategories = [...new Set(categories)];
+  const district = params.get("district") || "전체";
   const pools = new Map<string, ScoredCandidate[]>();
 
   const loaded = await Promise.allSettled(uniqueCategories.map(async (category) => {
     const categoryParams = new URLSearchParams(params);
     categoryParams.set("category", category);
-    const raw = await loadCandidatePool(scope, region, category);
+    const raw = await loadCandidatePool(scope, region, category, district);
     const seen = new Set<string>();
     const candidates = raw.flatMap((place, index) => {
       const candidate = toCandidate(place, index, categoryParams);
@@ -321,41 +345,42 @@ async function buildCourse(scope: string, region: string, params: URLSearchParam
 function toCourseBundle(region: string, params: URLSearchParams, course: ScoredCandidate[]): CourseBundle {
   const duration = params.get("duration") || "반나절";
   const relationship = params.get("relationship") || "개인";
+  const district = params.get("district") || "전체";
+  const location = district === "전체" ? region : `${region} ${district}`;
   return {
-    id: `${region}-${duration}-${course.map((item) => item.id).join("-")}`,
-    region,
-    title: `${region} ${relationship} ${duration} 코스`,
+    id: `${location}-${duration}-${course.map((item) => item.id).join("-")}`,
+    region: location,
+    title: `${location} ${relationship} ${duration} 코스`,
     duration,
     items: course.map(toPublicCandidate),
   };
 }
 
 async function buildNationwideCourses(params: URLSearchParams) {
-  const preferred = tourCategory(params.get("category") || "카페");
-  const duration = params.get("duration") || "반나절";
-  const stopCount = courseCategories(
-    duration,
-    preferred,
-    params.get("weatherIndoor") === "true",
-  ).length;
-  const targetCount = Math.max(2, Math.floor(MAX_COURSE_PLACES / stopCount));
-  const regionOrder = nationwideRegionOrder(params);
-  const courses: CourseBundle[] = [];
-  const maximumAttempts = Math.min(regionOrder.length, targetCount + 4);
+  const groupOrders = nationwideGroupOrders(params);
+  const courses = new Array<CourseBundle | null>(NATIONWIDE_COURSE_COUNT).fill(null);
+  const maximumRounds = 3;
 
-  for (let index = 0; index < maximumAttempts && courses.length < targetCount; index += targetCount) {
-    const batch = regionOrder.slice(index, Math.min(index + targetCount, maximumAttempts));
-    const settled = await Promise.allSettled(batch.map(async (region) => {
-      const course = await buildCourse("내 지역", region, params);
-      return course.length >= 2 ? toCourseBundle(region, params, course) : null;
+  for (let round = 0; round < maximumRounds && courses.some((course) => course === null); round += 1) {
+    const attempts = groupOrders.flatMap((group, groupIndex) => {
+      if (courses[groupIndex]) return [];
+      const region = group[round];
+      return region ? [{ groupIndex, region }] : [];
+    });
+    const settled = await Promise.allSettled(attempts.map(async ({ groupIndex, region }) => {
+      const courseParams = new URLSearchParams(params);
+      courseParams.set("district", "전체");
+      const course = await buildCourse("내 지역", region, courseParams);
+      return { groupIndex, bundle: course.length >= 2 ? toCourseBundle(region, courseParams, course) : null };
     }));
     for (const result of settled) {
-      if (result.status === "fulfilled" && result.value) courses.push(result.value);
-      if (courses.length >= targetCount) break;
+      if (result.status === "fulfilled" && result.value.bundle) {
+        courses[result.value.groupIndex] = result.value.bundle;
+      }
     }
   }
 
-  return courses;
+  return courses.filter((course): course is CourseBundle => course !== null);
 }
 
 export async function GET(request: NextRequest) {
@@ -422,7 +447,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const rawPlaces = await loadCandidatePool(scope, region, category);
+    const rawPlaces = await loadCandidatePool(scope, region, category, params.get("district") || "전체");
     const seen = new Set<string>();
 
     const candidates = rawPlaces.flatMap((place, index): Candidate[] => {
