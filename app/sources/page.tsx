@@ -32,9 +32,18 @@ export default function SourcesPage() {
           </section>
           <section>
             <h2>사진 사용 원칙</h2>
-            <p className="legal-note">현재 공개 화면은 이미지별 공공누리 유형과 원권리자를 확인하지 못한 TourAPI 사진을 표시하지 않습니다.</p>
-            <p>향후 이미지를 표시할 때는 항목별 출처·저작권 유형을 저장하고, 출처 표시와 변경 금지 등 개별 조건을 충족하는 이미지만 사용합니다.</p>
-            <p><a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noreferrer">공공누리 이용조건 확인</a></p>
+            <p className="legal-note">대표 사진은 한국관광공사 TourAPI 이미지정보의 저작권 구분 코드가 공공누리 제1유형 또는 제3유형으로 확인된 경우에만 표시합니다.</p>
+            <ul>
+              <li>제1유형: 출처를 표시하고 카드·썸네일 크기에 맞춰 표시할 수 있습니다.</li>
+              <li>제3유형: 변경 금지 조건에 따라 원본 비율을 유지하며 자르기·필터·확대 효과를 적용하지 않습니다.</li>
+              <li>사진마다 “한국관광공사 TourAPI · 공공누리 유형”을 함께 표시합니다.</li>
+              <li>저작권 유형을 확인할 수 없거나 이미지정보가 없는 장소는 KO-PICK 자체 카테고리 일러스트를 표시합니다.</li>
+              <li>TourAPI 사진은 기업 CI·BI 또는 피사체의 명예·인격권을 침해하는 용도로 사용하지 않습니다.</li>
+            </ul>
+            <p>
+              <a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noreferrer">공공누리 이용조건 확인</a>{" · "}
+              <a href="https://www.data.go.kr/data/15101578/openapi.do" target="_blank" rel="noreferrer">TourAPI 데이터 상세</a>
+            </p>
           </section>
           <section>
             <h2>Open-Meteo 날씨 예보</h2>

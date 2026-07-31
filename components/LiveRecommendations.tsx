@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
-import { springApiUrl } from "@/utils/spring-api";
 import { naverMapSearchUrl } from "@/utils/naver-maps";
 import NaverBookingButton from "@/components/NaverBookingButton";
 
@@ -14,6 +13,10 @@ interface Place {
   title: string;
   description: string;
   imageUrl: string | null;
+  imageCopyrightCode?: "Type1" | "Type3" | null;
+  imageLicenseLabel?: string | null;
+  imageAttribution?: string | null;
+  imageModificationAllowed?: boolean;
   icon: string;
   popularityScore: number;
   viewCount: number;
@@ -48,10 +51,11 @@ export default function LiveRecommendations() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [realtimeEnabled, setRealtimeEnabled] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
 
   const fetchPlaces = useCallback(async () => {
     try {
-      const response = await fetch(`${springApiUrl}/api/public/trending-places?t=${Date.now()}`, {
+      const response = await fetch(`/api/trending-places?t=${Date.now()}`, {
         cache: "no-store",
       });
       if (!response.ok) throw new Error("인기 추천을 불러오지 못했습니다.");
@@ -113,6 +117,12 @@ export default function LiveRecommendations() {
           const activityTotal =
             place.detailCount + place.outboundCount + place.favoriteCount;
           const mapUrl = naverMapSearchUrl(place.title, place.location);
+          const showImage = Boolean(
+            place.imageUrl &&
+              place.imageAttribution &&
+              (place.imageCopyrightCode === "Type1" || place.imageCopyrightCode === "Type3") &&
+              !failedImages.has(place.id)
+          );
 
           return (
             <article
@@ -123,6 +133,23 @@ export default function LiveRecommendations() {
               <div
                 className={`kp-recommendation-image ${paletteClasses[index % paletteClasses.length]}`}
               >
+                {showImage && (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      className={place.imageModificationAllowed ? "" : "is-no-derivatives"}
+                      src={place.imageUrl ?? ""}
+                      alt={`${place.title} 대표 사진`}
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={() => setFailedImages((current) => new Set(current).add(place.id))}
+                    />
+                    <span className="kp-recommendation-image-credit">
+                      {place.imageAttribution}
+                    </span>
+                  </>
+                )}
                 <span className="kp-card-category">{place.category}</span>
                 <button
                   className={`kp-save-button ${favorite ? "is-active" : ""}`}

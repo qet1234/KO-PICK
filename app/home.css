@@ -1034,6 +1034,30 @@ button {
   transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1), filter 300ms ease;
 }
 
+.kp-recommendation-image img.is-no-derivatives {
+  filter: none !important;
+  object-fit: contain;
+  transform: none !important;
+}
+
+.kp-recommendation-image-credit {
+  max-width: calc(100% - 112px);
+  padding: 5px 7px;
+  position: absolute;
+  right: 13px;
+  bottom: 13px;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 7px;
+  color: #fff;
+  background: rgba(16, 16, 16, 0.76);
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .recommendation-beige {
   background: #eee8dc;
 }

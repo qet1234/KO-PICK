@@ -13,3 +13,41 @@
 @media(max-width:600px){.course-bundle-heading{align-items:flex-start;flex-direction:column}.course-bundle-heading>div:last-child{width:100%}.course-bundle-heading button{flex:1}}
 
 .recommend-district-field select{width:100%;box-sizing:border-box;border:1px solid #d9e1dc;border-radius:16px;padding:16px 18px;font-size:16px;background:#fbfcfb;color:#243d30}.recommend-district-field small{display:block;margin-top:9px;color:#68776f;line-height:1.5}
+
+/* TourAPI representative images with per-image copyright metadata */
+.place-card-media {
+  height: 190px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 17px;
+  background: #eef1ee;
+}
+
+.place-card-media img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.place-card-media img.is-no-derivatives {
+  object-fit: contain;
+}
+
+.place-card-media span {
+  max-width: calc(100% - 16px);
+  padding: 5px 7px;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  overflow: hidden;
+  border-radius: 7px;
+  color: #fff;
+  background: rgba(17, 17, 17, 0.76);
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

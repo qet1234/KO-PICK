@@ -878,6 +878,17 @@ select {
   background: #eee;
   object-fit: cover;
 }
+
+.kp-explore-info-window .kp-explore-info-window-image.is-no-derivatives {
+  object-fit: contain;
+}
+
+.kp-explore-info-window .kp-explore-info-window-credit {
+  color: #65655f;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.35;
+}
 /* END KOREAPICK MAP PHOTO V4 */
 
 /* BEGIN KOREAPICK CATEGORY PHOTO FALLBACK */
@@ -945,6 +956,29 @@ select {
 .kp-explore-card-image img {
   z-index: 2;
   background: #ecece7;
+}
+
+.kp-explore-card-image img.is-no-derivatives {
+  object-fit: contain;
+  transform: none !important;
+}
+
+.kp-explore-image-credit {
+  max-width: calc(100% - 78px);
+  padding: 4px 6px;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(17, 17, 17, 0.74);
+  font-size: 7px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kp-explore-card-image > small {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { loadVerifiedTourImages } from "@/utils/tourapi-image";
 
 type TourPlace = {
   id?: string | number;
@@ -24,6 +25,13 @@ type Candidate = {
   score: number;
   reason: string;
   source: "한국관광공사 TourAPI";
+  imageUrl: string | null;
+  imageCopyrightCode: "Type1" | "Type3" | null;
+  imageLicenseLabel: string | null;
+  imageAttribution: string | null;
+  imageModificationAllowed: boolean;
+  imageLicenseUrl: string | null;
+  imageSourceUrl: string | null;
 };
 
 type ScoredCandidate = Candidate & {
@@ -98,6 +106,7 @@ async function fetchTourPlaces(region: string, category: string, pageSize: numbe
     category,
     page: "1",
     pageSize: String(Math.max(1, Math.min(30, pageSize))),
+    includeImages: "false",
   });
   if (district && district !== "전체") {
     const subregions = await fetchTourSubregions(region);
@@ -229,6 +238,13 @@ function toCandidate(place: TourPlace, index: number, params: URLSearchParams): 
     score,
     reason: reasonFor(score, params),
     source: "한국관광공사 TourAPI",
+    imageUrl: null,
+    imageCopyrightCode: null,
+    imageLicenseLabel: null,
+    imageAttribution: null,
+    imageModificationAllowed: false,
+    imageLicenseUrl: null,
+    imageSourceUrl: null,
     latitude: Number.isFinite(latitude) ? latitude : null,
     longitude: Number.isFinite(longitude) ? longitude : null,
   };
@@ -246,7 +262,33 @@ function toPublicCandidate(candidate: ScoredCandidate): Candidate {
     score: candidate.score,
     reason: candidate.reason,
     source: candidate.source,
+    imageUrl: candidate.imageUrl,
+    imageCopyrightCode: candidate.imageCopyrightCode,
+    imageLicenseLabel: candidate.imageLicenseLabel,
+    imageAttribution: candidate.imageAttribution,
+    imageModificationAllowed: candidate.imageModificationAllowed,
+    imageLicenseUrl: candidate.imageLicenseUrl,
+    imageSourceUrl: candidate.imageSourceUrl,
   };
+}
+
+async function withVerifiedCandidateImages<T extends Candidate>(candidates: T[]) {
+  const verifiedImages = await loadVerifiedTourImages(
+    candidates.map((candidate) => ({ contentId: candidate.id }))
+  );
+  return candidates.map((candidate) => {
+    const image = verifiedImages.get(candidate.id);
+    return {
+      ...candidate,
+      imageUrl: image?.imageUrl ?? null,
+      imageCopyrightCode: image?.copyrightCode ?? null,
+      imageLicenseLabel: image?.licenseLabel ?? null,
+      imageAttribution: image?.attribution ?? null,
+      imageModificationAllowed: image?.modificationAllowed ?? false,
+      imageLicenseUrl: image?.licenseUrl ?? null,
+      imageSourceUrl: image?.sourceUrl ?? null,
+    };
+  });
 }
 
 function distanceKm(a: ScoredCandidate, b: ScoredCandidate) {
@@ -370,7 +412,7 @@ async function buildCourse(scope: string, region: string, params: URLSearchParam
     }
   }
 
-  return selected;
+  return withVerifiedCandidateImages(selected);
 }
 
 function toCourseBundle(region: string, params: URLSearchParams, course: ScoredCandidate[]): CourseBundle {
@@ -498,10 +540,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const visibleCandidates = await withVerifiedCandidateImages(
+      candidates.slice(0, requestedCount)
+    );
+
     return NextResponse.json({
       scope,
       totalCount: candidates.length,
-      items: candidates.slice(0, requestedCount),
+      items: visibleCandidates,
       source: "한국관광공사 TourAPI",
       attributionUrl: "https://api.visitkorea.or.kr/",
     });
