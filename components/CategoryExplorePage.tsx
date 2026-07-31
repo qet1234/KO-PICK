@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
-import { springApiUrl } from "@/utils/spring-api";
+import { tourPlacesApiUrl } from "@/utils/spring-api";
 import NaverBookingButton from "@/components/NaverBookingButton";
 import {
   loadNaverMaps,
@@ -339,7 +339,7 @@ export default function CategoryExplorePage({
 
       try {
         const response = await fetch(
-          `${springApiUrl}/api/public/tour/places?mode=subregions&region=` +
+          `${tourPlacesApiUrl}?mode=subregions&region=` +
             encodeURIComponent(selectedRegion)
         );
         const payload = await response.json();
@@ -396,7 +396,7 @@ export default function CategoryExplorePage({
         }
 
         const response = await fetch(
-          `${springApiUrl}/api/public/tour/places?` + params.toString()
+          `${tourPlacesApiUrl}?` + params.toString()
         );
         const payload = await response.json();
 
