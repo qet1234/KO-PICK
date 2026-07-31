@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [activeProvider, setActiveProvider] = useState<SocialProvider | null>(null);
   const [message, setMessage] = useState("");
+  const [accepted, setAccepted] = useState(false);
 
   const handleSocialLogin = async (
     provider: SupabaseOAuthProvider,
@@ -17,6 +18,10 @@ export default function LoginPage() {
     providerLabel: string,
   ) => {
     if (loading) return;
+    if (!accepted) {
+      setMessage("이용약관과 개인정보처리방침에 동의해 주세요.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -52,6 +57,10 @@ export default function LoginPage() {
 
   const handleNaverLogin = () => {
     if (loading) return;
+    if (!accepted) {
+      setMessage("이용약관과 개인정보처리방침에 동의해 주세요.");
+      return;
+    }
 
     setLoading(true);
     setActiveProvider("naver");
@@ -121,11 +130,23 @@ export default function LoginPage() {
 
           <div className="quick-signup-note">5초 만에 빠른 회원가입</div>
 
+          <label className="login-consent">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(event) => setAccepted(event.target.checked)}
+            />
+            <span>
+              <a href="/terms" target="_blank">이용약관</a> 및{" "}
+              <a href="/privacy" target="_blank">개인정보처리방침</a>에 동의합니다.
+            </span>
+          </label>
+
           <button
             className="kakao-button"
             type="button"
             onClick={() => void handleSocialLogin("kakao", "kakao", "카카오")}
-            disabled={loading}
+            disabled={loading || !accepted}
           >
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M12 3C6.48 3 2 6.5 2 10.82c0 2.76 1.83 5.18 4.58 6.57l-1.16 3.72a.55.55 0 0 0 .83.62l4.4-2.93c.44.05.89.08 1.35.08 5.52 0 10-3.5 10-8.06S17.52 3 12 3Z" />
@@ -141,7 +162,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleNaverLogin}
-              disabled={loading}
+              disabled={loading || !accepted}
               aria-label="네이버로 로그인"
             >
               <span className="quick-login-icon is-naver">N</span>
@@ -150,22 +171,8 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => setMessage("Apple 로그인은 제공 준비 중입니다.")}
-              disabled={loading}
-              aria-label="Apple로 로그인"
-            >
-              <span className="quick-login-icon is-apple">
-                <svg aria-hidden="true" viewBox="0 0 384 512">
-                  <path fill="currentColor" d="M319.1 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7-55.8.9-115.1 44.5-115.1 133.2 0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9ZM262.5 104.5c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3Z" />
-                </svg>
-              </span>
-              <small>Apple</small>
-            </button>
-
-            <button
-              type="button"
               onClick={() => void handleSocialLogin("google", "google", "Google")}
-              disabled={loading}
+              disabled={loading || !accepted}
               aria-label="Google 계정으로 로그인"
             >
               <span className="quick-login-icon is-google">

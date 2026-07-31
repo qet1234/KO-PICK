@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { getCurrentUser, logoutFromSpring, springJson } from "@/utils/spring-api";
+import {
+  clearLocalServiceData,
+  getVisitorId,
+} from "@/utils/privacy-client";
 import "./account.css";
 
 const DELETE_CONFIRM_TEXT = "회원탈퇴";
@@ -54,8 +58,12 @@ export default function AccountPage() {
     setErrorMessage("");
 
     try {
-      await springJson<{ success: boolean }>("/api/web/account", { method: "DELETE" });
+      await springJson<{ success: boolean }>("/api/web/account", {
+        method: "DELETE",
+        body: JSON.stringify({ visitorId: getVisitorId() }),
+      });
 
+      clearLocalServiceData();
       window.location.replace("/login?deleted=1");
     } catch (error) {
       setErrorMessage(
@@ -104,9 +112,9 @@ export default function AccountPage() {
             <h2>회원탈퇴</h2>
 
             <p>
-              회원탈퇴 시 개인정보, 프로필, 즐겨찾기,
-              추천 기록 및 서비스 이용 데이터가
-              삭제됩니다.
+              회원탈퇴 시 개인정보, 프로필, 함께 공간
+              구성원 정보, 추천 기록 및 이 기기의 서비스
+              이용 식별정보가 삭제됩니다.
             </p>
 
             <p>
@@ -155,8 +163,9 @@ export default function AccountPage() {
 
             <ul>
               <li>회원 프로필과 개인정보</li>
-              <li>저장한 장소와 즐겨찾기</li>
-              <li>추천 기록 및 서비스 이용 데이터</li>
+              <li>본인이 만든 개인 공간과 단독 저장 데이터</li>
+              <li>추천 기록과 이 기기의 방문자 식별정보</li>
+              <li>함께 공간은 다른 구성원에게 소유권 이전 후 본인만 탈퇴</li>
             </ul>
 
             <p className="account-google-notice">

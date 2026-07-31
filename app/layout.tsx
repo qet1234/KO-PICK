@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import LegalFooter from "@/components/LegalFooter";
 import "./globals.css";
+import "./legal.css";
 
 export const metadata: Metadata = {
   title: "코리아픽 | 전국 추천 플랫폼",
@@ -13,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        {children}
+        <LegalFooter />
+      </body>
     </html>
   );
 }

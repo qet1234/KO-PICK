@@ -28,6 +28,21 @@ const VERIFIED_NAVER_BOOKINGS = [
   },
 ] as const;
 
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const client = request.headers.get("x-real-ip")?.trim() || forwarded || "unknown";
+  const now = Date.now();
+  const current = rateBuckets.get(client);
+  if (!current || current.resetAt <= now) {
+    rateBuckets.set(client, { count: 1, resetAt: now + 60_000 });
+    return false;
+  }
+  current.count += 1;
+  return current.count > 30;
+}
+
 function stripHtml(value = "") {
   return value
     .replace(/<[^>]*>/g, "")
@@ -190,6 +205,12 @@ function verifiedBookingUrl(name: string, address: string) {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (isRateLimited(request)) {
+    return NextResponse.json(
+      { matched: false, reason: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429 },
+    );
+  }
   const name = (request.nextUrl.searchParams.get("name") || "").trim().slice(0, 120);
   const address = (request.nextUrl.searchParams.get("address") || "").trim().slice(0, 240);
   const source = (request.nextUrl.searchParams.get("source") || "").trim().toLowerCase();

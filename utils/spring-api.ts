@@ -81,7 +81,7 @@ export function warmSpringApi() {
   });
 }
 
-export function socialLoginUrl(_provider?: "google" | "kakao" | "naver") {
+export function socialLoginUrl() {
   return "/login";
 }
 

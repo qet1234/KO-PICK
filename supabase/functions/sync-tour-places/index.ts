@@ -192,8 +192,8 @@ Deno.serve(async (request) => {
   const maxPages = Math.max(1, Math.min(10, Number(body?.maxPages || 5)));
   const pageSize = 1000;
 
-  let state = await readState(admin);
-  let runId = reset || !state?.run_id || state?.status === "complete"
+  const state = await readState(admin);
+  const runId = reset || !state?.run_id || state?.status === "complete"
     ? crypto.randomUUID()
     : String(state.run_id);
   let nextPage = reset || !state?.next_page || state?.status === "complete"

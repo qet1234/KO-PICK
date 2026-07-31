@@ -860,18 +860,6 @@ export default function CategoryExplorePage({
                         <b>{displayCategory(place.category)}</b>
                         <em>대표 사진 준비 중</em>
                       </div>
-                      {place.imageUrl && (
-                        <img
-                          src={place.imageUrl}
-                          alt={place.name + " 대표 사진"}
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                          onError={(event) => {
-                            event.currentTarget.style.display = "none";
-                          }}
-                        />
-                      )}
                       <small>{displayCategory(place.category)}</small>
                     </div>
 

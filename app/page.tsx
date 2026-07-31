@@ -83,7 +83,12 @@ export default function Home() {
             <article><span>02</span><strong>공간 정보 비공개</strong><p>개인·커플·친구·가족 공간의 일정과 기록은 해당 공간의 구성원만 확인할 수 있도록 접근 권한을 제한합니다.</p></article>
             <article><span>03</span><strong>탈퇴 시 안전하게 삭제</strong><p>회원탈퇴 시 개인정보와 저장 데이터는 관련 법령상 보관 의무가 있는 경우를 제외하고 삭제합니다.</p></article>
           </div>
-          <div className="kp-privacy-footer"><span>© 2026 KOREA PICK</span><a href="/account">개인정보·계정 관리 →</a></div>
+          <div className="kp-privacy-footer">
+            <span>© 2026 KOREA PICK</span>
+            <a href="/privacy">개인정보처리방침 →</a>
+            <a href="/sources">데이터 출처·저작권 →</a>
+            <a href="/account">개인정보·계정 관리 →</a>
+          </div>
         </div>
       </footer>
     </main>
