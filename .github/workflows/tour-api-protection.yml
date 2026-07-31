@@ -21,6 +21,7 @@ jobs:
           required=(
             "supabase/functions/kopick-api/index.ts"
             "supabase/config.toml"
+            "app/api/tour/places/route.ts"
             "components/CategoryExplorePage.tsx"
             "utils/spring-api.ts"
           )
@@ -34,7 +35,10 @@ jobs:
           set -euo pipefail
           grep -q 'TOUR_API_SERVICE_KEY' supabase/functions/kopick-api/index.ts
           grep -q 'apis.data.go.kr/B551011/KorService2' supabase/functions/kopick-api/index.ts
-          grep -q '/api/public/tour/places' components/CategoryExplorePage.tsx
+          grep -q 'TOUR_API_SERVICE_KEY' app/api/tour/places/route.ts
+          grep -q 'apis.data.go.kr/B551011/KorService2' app/api/tour/places/route.ts
+          grep -q 'tourPlacesApiUrl' components/CategoryExplorePage.tsx
+          grep -q 'export const tourPlacesApiUrl = "/api/tour/places"' utils/spring-api.ts
           grep -q '/functions/v1/kopick-api' utils/spring-api.ts
           ! grep -R --line-number --exclude-dir=node_modules --exclude-dir=.git \
             'NEXT_PUBLIC_TOUR_API\|NEXT_PUBLIC_.*SERVICE_KEY' app components utils
