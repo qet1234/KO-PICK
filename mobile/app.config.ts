@@ -3,7 +3,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
+const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'KO-PICK',
   slug: 'ko-pick',
@@ -56,3 +56,5 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     typedRoutes: true,
   },
 });
+
+export default createExpoConfig;

@@ -22,6 +22,7 @@ export function PlaceImage({
     <View style={styles.wrapper}>
       <Image
         accessibilityLabel={`${name} 대표 사진`}
+        alt={`${name} 대표 사진`}
         source={{ uri: imageUrl ?? '' }}
         resizeMode={modificationAllowed ? 'cover' : 'contain'}
         style={styles.image}
