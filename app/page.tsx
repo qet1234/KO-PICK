@@ -27,11 +27,11 @@ export default function Home() {
           </nav>
           <a
             className="kp-header-place-button"
-            href="/explore"
-            aria-label="전국 장소 찾기 화면으로 이동"
+            href="/recommend"
+            aria-label="맞춤 코스 설정 화면으로 이동"
           >
-            <span aria-hidden="true">⌖</span>
-            장소 찾기
+            <span aria-hidden="true">↗</span>
+            코스 설정
           </a>
           <AuthHeader />
         </div>
