@@ -6,3 +6,8 @@
 
 .course-weather > span { display: grid; gap: 5px; }
 .course-weather > span a { color: #355e48; font-size: 10px; }
+
+.course-collection{display:grid;gap:30px}.course-collection.is-nationwide{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.course-bundle{min-width:0}.course-bundle-heading{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;margin-bottom:14px;padding:20px;border:1px solid #dce8e0;border-radius:20px;background:linear-gradient(135deg,#eef6f1,#fff)}.course-bundle-heading>div:first-child{display:grid;gap:5px}.course-bundle-heading span{width:max-content;padding:5px 9px;border-radius:999px;background:#183f2c;color:#fff;font-size:11px;font-weight:900}.course-bundle-heading h3{margin:0;font-size:22px}.course-bundle-heading p{margin:0;color:#607067;font-size:13px}.course-bundle-heading>div:last-child{display:flex;gap:7px}.course-bundle-heading button{border:1px solid #cad8cf;border-radius:999px;padding:9px 12px;background:#fff;color:#183f2c;font-weight:800;cursor:pointer}.course-collection.is-nationwide .place-grid.is-course-mode .place-card{padding:78px 22px 22px;min-height:0}.course-collection.is-nationwide .place-grid.is-course-mode:before{display:none}.course-collection.is-nationwide .place-grid.is-course-mode .place-rank{left:18px;top:16px}.course-collection.is-nationwide .course-time{position:absolute;left:88px;top:28px}
+
+@media(max-width:980px){.course-collection.is-nationwide{grid-template-columns:1fr}}
+@media(max-width:600px){.course-bundle-heading{align-items:flex-start;flex-direction:column}.course-bundle-heading>div:last-child{width:100%}.course-bundle-heading button{flex:1}}
