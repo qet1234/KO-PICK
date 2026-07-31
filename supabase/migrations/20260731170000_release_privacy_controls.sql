@@ -104,30 +104,24 @@ begin
   end if;
 
   if to_regclass('public.place_activity_events') is not null then
-    delete from public.place_activity_events
-    where user_id = p_user_id
-       or (
-         p_visitor_id is not null
-         and p_visitor_id <> ''
-         and visitor_id = left(p_visitor_id, 120)
-       );
+    execute
+      'delete from public.place_activity_events
+       where user_id = $1
+          or ($2 is not null and $2 <> '''' and visitor_id = left($2, 120))'
+      using p_user_id, p_visitor_id;
   end if;
 
   if to_regclass('public.keyword_search_events') is not null then
-    delete from public.keyword_search_events
-    where user_id = p_user_id
-       or (
-         p_visitor_id is not null
-         and p_visitor_id <> ''
-         and visitor_id = left(p_visitor_id, 120)
-       );
+    execute
+      'delete from public.keyword_search_events
+       where user_id = $1
+          or ($2 is not null and $2 <> '''' and visitor_id = left($2, 120))'
+      using p_user_id, p_visitor_id;
   end if;
 
-  if to_regclass('public.support_requests') is not null then
-    delete from public.support_requests
-    where status = 'closed'
-      and coalesce(closed_at, created_at) < now() - interval '1 year';
-  end if;
+  delete from public.support_requests
+  where status = 'closed'
+    and coalesce(closed_at, created_at) < now() - interval '1 year';
 end;
 $$;
 
@@ -139,13 +133,15 @@ set search_path = ''
 as $$
 begin
   if to_regclass('public.place_activity_events') is not null then
-    delete from public.place_activity_events
-    where created_at < now() - interval '90 days';
+    execute
+      'delete from public.place_activity_events
+       where created_at < now() - interval ''90 days''';
   end if;
 
   if to_regclass('public.keyword_search_events') is not null then
-    delete from public.keyword_search_events
-    where created_at < now() - interval '90 days';
+    execute
+      'delete from public.keyword_search_events
+       where created_at < now() - interval ''90 days''';
   end if;
 end;
 $$;
@@ -160,7 +156,18 @@ grant execute on function public.prepare_account_deletion(uuid, text)
 grant execute on function public.prune_service_activity_events()
   to service_role;
 
-create index if not exists place_activity_events_visitor_idx
-  on public.place_activity_events(visitor_id, created_at desc);
-create index if not exists keyword_search_events_visitor_idx
-  on public.keyword_search_events(visitor_id, created_at desc);
+do $$
+begin
+  if to_regclass('public.place_activity_events') is not null then
+    execute
+      'create index if not exists place_activity_events_visitor_idx
+       on public.place_activity_events(visitor_id, created_at desc)';
+  end if;
+
+  if to_regclass('public.keyword_search_events') is not null then
+    execute
+      'create index if not exists keyword_search_events_visitor_idx
+       on public.keyword_search_events(visitor_id, created_at desc)';
+  end if;
+end;
+$$;
