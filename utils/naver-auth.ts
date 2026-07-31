@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export const NAVER_STATE_COOKIE = "ko_pick_naver_oauth_state";
+export const NAVER_MOBILE_STATE_COOKIE = "ko_pick_naver_mobile_oauth_state";
+export const NAVER_CLIENT_ID =
+  process.env.NAVER_CLIENT_ID?.trim() || "2q4Cf2az1due2FFaiXnu";
 
 export function readNaverOAuthStates(value?: string) {
   if (!value) return [];
@@ -61,5 +64,30 @@ export function createNaverErrorRedirect(
     secure: destination.protocol === "https:",
   });
 
+  return response;
+}
+
+export function createMobileNaverRedirect(options: {
+  requestUrl: string;
+  error?: string;
+  tokenHash?: string;
+}) {
+  const destination = new URL("kopick://auth/callback");
+  const params = new URLSearchParams({ provider: "naver" });
+  if (options.error) params.set("error_description", options.error);
+  if (options.tokenHash) params.set("token_hash", options.tokenHash);
+  destination.hash = params.toString();
+
+  const response = NextResponse.redirect(destination);
+  response.headers.set("Cache-Control", "private, no-store");
+  for (const cookieName of [NAVER_MOBILE_STATE_COOKIE, NAVER_STATE_COOKIE]) {
+    response.cookies.set(cookieName, "", {
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+      secure: getAppUrl(options.requestUrl).protocol === "https:",
+    });
+  }
   return response;
 }

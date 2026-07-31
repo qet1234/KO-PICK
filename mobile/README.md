@@ -2,7 +2,7 @@
 
 KO-PICK의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도로 배포되지만 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 사용합니다.
 
-## 현재 준비된 항목
+## 현재 구현된 항목
 
 - Expo SDK 57 + React Native + TypeScript
 - Expo Router 기반 화면 구조
@@ -11,7 +11,13 @@ KO-PICK의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도�
 - 앱 활성·백그라운드 상태에 따른 Supabase 토큰 자동 갱신
 - Google Play·Apple App Store 공용 식별자 `com.koreapick.app`
 - EAS 내부 테스트·프로덕션 빌드 프로필과 자동 빌드 번호 증가
-- 기존 운영 웹으로 이동하는 기본 화면
+- 카카오·Google 모바일 OAuth와 iOS 네이티브 Apple 로그인
+- 기존 네이버 로그인 콜백을 재사용하는 모바일 네이버 로그인
+- 로그인 전 이용약관·개인정보 수집 동의와 DB 동의 이력 기록
+- TourAPI 추천·장소 API 연결
+- Android·iOS 네이티브 네이버 지도와 장소 마커
+- 장소별 길찾기 지도 선택, 네이버지도·카카오맵 선택값 기기 저장
+- 추천·장소 찾기·내 계정 하단 탭
 
 ## 로컬 실행
 
@@ -34,9 +40,14 @@ Windows에서도 Android 앱을 개발할 수 있습니다. iOS 시뮬레이터�
 EXPO_PUBLIC_WEB_URL=https://koreapick.duckdns.org
 EXPO_PUBLIC_SUPABASE_URL=https://<PROJECT_REF>.supabase.co
 EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY>
+EXPO_PUBLIC_NAVER_MAP_CLIENT_ID=<NAVER_MAP_CLIENT_ID>
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY`, OAuth Client Secret, TourAPI 키는 앱에 넣으면 안 됩니다. 이 값들은 계속 Supabase Edge Functions와 인증 공급자 설정에서만 관리합니다.
+
+네이버 지도는 네이티브 모듈이므로 Expo Go에서는 표시되지 않습니다. `development` EAS 프로필로 개발 빌드를 만든 뒤 테스트합니다. 현재 위치 권한은 요청하지 않으며, 지역·장소 좌표만 지도에 표시합니다.
+
+Supabase Auth의 Redirect URLs에는 `kopick://**`를 추가합니다. Google·Kakao는 기존 Supabase OAuth callback을 유지하고, 네이버 로그인은 기존 운영 callback `/auth/naver/callback`을 모바일에서도 재사용합니다. 상세 설정은 [`../docs/mobile-step-3-setup.md`](../docs/mobile-step-3-setup.md)를 확인하세요.
 
 ## 앱 식별자와 버전
 
@@ -57,6 +68,8 @@ Expo 계정과 EAS 프로젝트를 연결한 뒤 실행합니다. EAS project ID
 cd mobile
 npx eas-cli login
 npx eas-cli init
+npx eas-cli build --platform android --profile development
+npx eas-cli build --platform ios --profile development
 npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
@@ -70,10 +83,9 @@ npx eas-cli submit --platform ios --profile production
 
 ## 다음 구현 순서
 
-1. KO-PICK 디자인 시스템과 하단 탭
-2. Google·Kakao·Naver·Apple 모바일 OAuth 및 필수 약관 동의
-3. 홈 추천과 `/explore` 장소 탐색
-4. 개인·커플·친구·가족 공간 및 공동 일정
-5. 알림, 앱 링크, 스토어 테스트 빌드
+1. 실기기 OAuth·네이버 지도 운영키 검증
+2. 개인·커플·친구·가족 공간 및 공동 일정
+3. 즐겨찾기·코스 저장·공유
+4. 알림, App Links·Universal Links, 스토어 테스트 빌드
 
 전체 설계는 [`../docs/mobile-app-architecture.md`](../docs/mobile-app-architecture.md), 실제 등록 순서는 [`../docs/store-release-checklist.md`](../docs/store-release-checklist.md)를 확인하세요.

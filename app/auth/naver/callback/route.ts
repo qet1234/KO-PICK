@@ -3,8 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import {
   createNaverErrorRedirect,
+  createMobileNaverRedirect,
   getAppUrl,
   getNaverCallbackUrl,
+  NAVER_MOBILE_STATE_COOKIE,
   NAVER_STATE_COOKIE,
   readNaverOAuthStates,
 } from "@/utils/naver-auth";
@@ -43,6 +45,15 @@ export async function GET(request: NextRequest) {
     const storedStates = readNaverOAuthStates(
       request.cookies.get(NAVER_STATE_COOKIE)?.value,
     );
+    const mobileStates = readNaverOAuthStates(
+      request.cookies.get(NAVER_MOBILE_STATE_COOKIE)?.value,
+    );
+    const isWebState = Boolean(
+      state && storedStates.some((storedState) => statesMatch(state, storedState)),
+    );
+    const isMobileState = Boolean(
+      state && mobileStates.some((storedState) => statesMatch(state, storedState)),
+    );
     let consentValid = false;
     try {
       consentValid = verifyLegalConsentCookie(request.cookies.get(LEGAL_CONSENT_COOKIE)?.value);
@@ -51,6 +62,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (oauthError || oauthErrorDescription) {
+      if (isMobileState) {
+        return createMobileNaverRedirect({
+          requestUrl: request.url,
+          error: oauthErrorDescription ?? oauthError ?? "네이버 인증이 취소되었습니다.",
+        });
+      }
       return createNaverErrorRedirect(
         request.url,
         oauthErrorDescription ??
@@ -62,7 +79,7 @@ export async function GET(request: NextRequest) {
     if (
       !code ||
       !state ||
-      !storedStates.some((storedState) => statesMatch(state, storedState))
+      (!isWebState && !isMobileState)
     ) {
       console.error("네이버 OAuth state 검증에 실패했습니다.");
       return createNaverErrorRedirect(
@@ -71,7 +88,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!consentValid) {
+    if (!isMobileState && !consentValid) {
       return createNaverErrorRedirect(
         request.url,
         "로그인 동의가 만료되었습니다. 필수 항목에 다시 동의해 주세요.",
@@ -85,10 +102,10 @@ export async function GET(request: NextRequest) {
 
     if (!supabaseUrl || !supabasePublishableKey) {
       console.error("네이버 로그인용 Supabase 환경변수가 없습니다.");
-      return createNaverErrorRedirect(
-        request.url,
-        "네이버 로그인 서버 설정이 완료되지 않았습니다.",
-      );
+      const message = "네이버 로그인 서버 설정이 완료되지 않았습니다.";
+      return isMobileState
+        ? createMobileNaverRedirect({ requestUrl: request.url, error: message })
+        : createNaverErrorRedirect(request.url, message);
     }
 
     const exchangeResponse = await fetch(
@@ -115,11 +132,18 @@ export async function GET(request: NextRequest) {
         error: exchange?.error,
         description: exchange?.error_description,
       });
-      return createNaverErrorRedirect(
-        request.url,
-        exchange?.error_description ||
-          `네이버 인증 정보를 확인하지 못했습니다. (${exchangeResponse.status})`,
-      );
+      const message = exchange?.error_description ||
+        `네이버 인증 정보를 확인하지 못했습니다. (${exchangeResponse.status})`;
+      return isMobileState
+        ? createMobileNaverRedirect({ requestUrl: request.url, error: message })
+        : createNaverErrorRedirect(request.url, message);
+    }
+
+    if (isMobileState) {
+      return createMobileNaverRedirect({
+        requestUrl: request.url,
+        tokenHash: exchange.token_hash,
+      });
     }
 
     const successResponse = NextResponse.redirect(
@@ -194,9 +218,9 @@ export async function GET(request: NextRequest) {
     return successResponse;
   } catch (error) {
     console.error("네이버 로그인 처리 중 예외:", error);
-    return createNaverErrorRedirect(
-      request.url,
-      "네이버 로그인 처리 중 오류가 발생했습니다.",
-    );
+    const message = "네이버 로그인 처리 중 오류가 발생했습니다.";
+    return request.cookies.has(NAVER_MOBILE_STATE_COOKIE)
+      ? createMobileNaverRedirect({ requestUrl: request.url, error: message })
+      : createNaverErrorRedirect(request.url, message);
   }
 }
