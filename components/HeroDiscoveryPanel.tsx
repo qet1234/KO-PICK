@@ -38,7 +38,6 @@ export default function HeroDiscoveryPanel() {
           <h2>누구와 가나요?</h2>
           <p>예약 중심이 아니라 함께하는 사람과 목적에 맞춰 전국의 장소를 탐색합니다.</p>
         </div>
-        <a href="/explore?category=전체">모든 장소 보기 →</a>
       </div>
 
       <div className="kp-relationship-grid">
