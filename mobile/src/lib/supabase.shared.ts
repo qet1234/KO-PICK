@@ -16,6 +16,7 @@ export function createKoPickSupabaseClient(storage: SupportedStorage) {
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        flowType: 'pkce',
       },
     },
   );

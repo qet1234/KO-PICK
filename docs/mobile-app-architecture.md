@@ -6,7 +6,8 @@
 Next.js 웹 ─────────────┐
                        ├─ Supabase Auth · PostgreSQL · RLS · RPC
 Expo Android·iOS 앱 ───┤
-                       └─ Supabase Edge Functions ─ TourAPI · Kakao Local
+                       ├─ KO-PICK Next.js API ─ TourAPI
+                       └─ 네이버 지도 네이티브 SDK · 외부 길찾기
 ```
 
 웹은 현재 Vercel 배포를 그대로 유지합니다. 모바일은 `mobile/`의 Expo React Native 앱으로 별도 빌드하며, 데이터와 권한 정책은 운영 중인 Supabase 프로젝트를 공유합니다. 기존 `backend/` Spring 코드는 복구 참고용이므로 새 앱에서 사용하지 않습니다.
@@ -48,7 +49,7 @@ Supabase Authentication의 Redirect URLs에는 앱 로그인 구현 시 아래 �
 kopick://**
 ```
 
-Google·Kakao·Naver 공급자 콘솔에는 Supabase가 안내하는 OAuth callback을 유지하고, 각 콘솔의 모바일 플랫폼 항목에는 `com.koreapick.app`을 등록합니다. iOS가 제3자 소셜 로그인을 제공하므로 Apple 심사 전 동등한 Apple 로그인 옵션을 구현합니다.
+Google·Kakao 공급자 콘솔에는 Supabase가 안내하는 OAuth callback을 유지하고, 각 콘솔의 모바일 플랫폼 항목에는 `com.koreapick.app`을 등록합니다. 네이버는 기존 `/auth/naver/callback`을 웹·모바일에서 함께 사용하며 OAuth state 쿠키로 흐름을 분리합니다. iOS는 Expo Apple Authentication으로 네이티브 Apple 로그인을 제공합니다.
 
 ## 딥링크
 
@@ -65,7 +66,7 @@ Google·Kakao·Naver 공급자 콘솔에는 Supabase가 안내하는 OAuth callb
 
 ## API 원칙
 
-- 장소·인기 조회는 현재 `kopick-api` Edge Function을 공용으로 사용
+- 장소 조회는 운영 웹의 `/api/tour/places`, 추천 조회는 `/api/recommend`를 공용으로 사용
 - 로그인 사용자의 요청은 `Authorization: Bearer <Supabase access token>` 전달
 - 앱에서 외부 API를 직접 호출하거나 비밀키를 보관하지 않음
 - 새 응답 필드는 선택 항목으로 추가하고 기존 필드 의미를 변경하지 않음
@@ -73,11 +74,20 @@ Google·Kakao·Naver 공급자 콘솔에는 Supabase가 안내하는 OAuth callb
 
 ## 단계별 개발 순서
 
-### 1단계 · 공용 기반
+### 완료 · 로그인·지도·API 연동
+
+- 카카오·Google OAuth, 네이버 전용 모바일 브리지, iOS Apple 로그인
+- SecureStore 기반 PKCE 세션과 자동 갱신
+- 필수 약관 동의 기록
+- TourAPI 장소·추천 API 클라이언트
+- Android·iOS 네이티브 네이버 지도와 마커
+- 네이버지도·카카오맵 길찾기 선택 및 기기별 기본값 저장
+
+### 다음 · 공용 기반 보완
 
 - 앱 아이콘·스플래시·브랜드 색상
 - 하단 탭과 공통 로딩·오류 화면
-- Google·Kakao·Naver·Apple 모바일 OAuth, 약관 동의, 로그아웃, 회원탈퇴
+- 실기기 OAuth·지도 인증 검증, 로그아웃, 앱 내부 회원탈퇴
 - 오류 수집과 개인정보 마스킹
 
 ### 2단계 · 핵심 기능
