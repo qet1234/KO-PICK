@@ -160,7 +160,16 @@ grant execute on function public.prepare_account_deletion(uuid, text)
 grant execute on function public.prune_service_activity_events()
   to service_role;
 
-create index if not exists place_activity_events_visitor_idx
-  on public.place_activity_events(visitor_id, created_at desc);
-create index if not exists keyword_search_events_visitor_idx
-  on public.keyword_search_events(visitor_id, created_at desc);
+do $$
+begin
+  if to_regclass('public.place_activity_events') is not null then
+    execute 'create index if not exists place_activity_events_visitor_idx
+      on public.place_activity_events(visitor_id, created_at desc)';
+  end if;
+
+  if to_regclass('public.keyword_search_events') is not null then
+    execute 'create index if not exists keyword_search_events_visitor_idx
+      on public.keyword_search_events(visitor_id, created_at desc)';
+  end if;
+end;
+$$;
