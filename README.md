@@ -119,3 +119,10 @@ npm run build
 ```
 
 GitHub Actions는 Next.js 타입 검사·빌드와 두 Supabase Edge Function의 Deno 검사를 수행합니다.
+
+## Android·iOS 앱
+
+향후 앱 기능은 웹을 WebView로 감싸지 않고 [`mobile/`](mobile/)의 Expo React Native 공용 프로젝트에서 개발합니다. 웹과 앱은 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 공유하며 Vercel 웹 배포와 앱 빌드는 서로 분리됩니다.
+
+- 모바일 시작 문서: [`mobile/README.md`](mobile/README.md)
+- 전체 확장 설계: [`docs/mobile-app-architecture.md`](docs/mobile-app-architecture.md)

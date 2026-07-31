@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "KO-PICK",
+    "slug": "ko-pick",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "kopick",
+    "userInterfaceStyle": "automatic",
+    "ios": {},
+    "android": {
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
