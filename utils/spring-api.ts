@@ -15,6 +15,11 @@ const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() 
 // 기존 컴포넌트가 사용하는 이름은 유지하지만 실제 대상은 Supabase Edge Function입니다.
 export const springApiUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/kopick-api` : "";
 
+// TourAPI requests must run through the same-origin Next.js route. Supabase Edge
+// egress can be rejected by data.go.kr with HTTP 403 even when the same key works
+// from the production Vercel and Render runtimes.
+export const tourPlacesApiUrl = "/api/tour/places";
+
 let sharedBrowserClient: ReturnType<typeof createClient> | null = null;
 function browserClient() {
   if (!sharedBrowserClient) sharedBrowserClient = createClient();

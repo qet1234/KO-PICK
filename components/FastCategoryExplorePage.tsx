@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
-import { springApiUrl } from "@/utils/spring-api";
+import { tourPlacesApiUrl } from "@/utils/spring-api";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
@@ -111,7 +111,7 @@ function rawRequestUrl(input: RequestInfo | URL) {
 }
 
 function isTourPlacesRequest(input: RequestInfo | URL) {
-  return rawRequestUrl(input).startsWith(`${springApiUrl}/api/public/tour/places`);
+  return new URL(rawRequestUrl(input), window.location.origin).pathname === tourPlacesApiUrl;
 }
 
 function requestGroup(url: string) {
