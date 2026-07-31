@@ -33,6 +33,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Verify legal course sharing safeguards
+        run: npm run verify:legal-share
+
       - name: Build Next.js
         env:
           NEXT_TELEMETRY_DISABLED: "1"

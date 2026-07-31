@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
+import { prepareKakaoShare, shareCourseOnKakao } from "@/utils/kakao-share";
+import type { CreatedCourseShare, OwnedCourseShare } from "@/utils/course-share";
 import "./recommend.css";
 
 type Place = {
@@ -165,6 +167,10 @@ export default function RecommendPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [variation, setVariation] = useState(0);
+  const [activeShares, setActiveShares] = useState<OwnedCourseShare[]>([]);
+  const [latestShare, setLatestShare] = useState<CreatedCourseShare | null>(null);
+  const [latestShareDescription, setLatestShareDescription] = useState("");
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -183,6 +189,16 @@ export default function RecommendPage() {
         setProfileLoaded(true);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const loadShares = async () => {
+      const response = await fetch("/api/course-shares", { cache: "no-store" }).catch(() => null);
+      if (!response?.ok) return;
+      const data = await response.json() as { shares?: OwnedCourseShare[] };
+      setActiveShares(Array.isArray(data.shares) ? data.shares : []);
+    };
+    void loadShares();
   }, []);
 
   const visiblePlaces = useMemo(
@@ -324,25 +340,87 @@ export default function RecommendPage() {
   };
 
   const shareItinerary = async (course?: CourseBundle) => {
-    const title = itineraryTitle(course);
-    const sharedPlaces = course?.items || visiblePlaces;
-    const text = [
-      `KO-PICK · ${title}`,
-      weather ? `${weather.condition} · 강수 ${weather.precipitationProbability}% · ${weather.minTemperature}~${weather.maxTemperature}°` : "",
-      ...sharedPlaces.map((place, index) => `${index + 1}. ${place.name} (${place.address})\n${place.mapUrl}`),
-    ].filter(Boolean).join("\n");
+    if (sharing) return;
+    const region = course?.region || form.region;
+    const duration = course?.duration || form.duration;
+    const sharedPlaces = (course?.items || visiblePlaces).slice(0, 6);
+    setSharing(true);
+    setError("");
     try {
-      if (navigator.share) {
-        await navigator.share({ title, text });
-        setNotice("코스 공유 화면을 열었습니다.");
-      } else {
-        await navigator.clipboard.writeText(text);
-        setNotice("공유할 코스 내용을 복사했습니다.");
-      }
+      const response = await fetch("/api/course-shares", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ region, duration, places: sharedPlaces }),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => null) as { error?: string; share?: CreatedCourseShare } | null;
+      if (!response.ok || !data?.share) throw new Error(data?.error || "공유 링크를 만들지 못했습니다.");
+
+      const share = data.share;
+      setLatestShare(share);
+      setActiveShares((current) => [share, ...current.filter((item) => item.id !== share.id)]);
+      const description = sharedPlaces.map((place) => place.name).join(" → ");
+      setLatestShareDescription(description);
+      setNotice("공개 링크를 만들었습니다. 아래 카카오톡으로 보내기 버튼을 눌러 공유하세요. 링크는 30일 뒤 자동 만료됩니다.");
+      void prepareKakaoShare().catch((kakaoError) => console.error("카카오 SDK 준비 오류:", kakaoError));
     } catch (shareError) {
       if (shareError instanceof DOMException && shareError.name === "AbortError") return;
-      setError("코스를 공유하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      setError(shareError instanceof Error ? shareError.message : "코스를 공유하지 못했습니다.");
+    } finally {
+      setSharing(false);
     }
+  };
+
+  const copyShareLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice("공유 링크를 복사했습니다.");
+    } catch {
+      setError("링크를 복사하지 못했습니다.");
+    }
+  };
+
+  const sendLatestShare = async () => {
+    if (!latestShare) return;
+    try {
+      await shareCourseOnKakao({
+        title: `KO-PICK · ${latestShare.title}`,
+        description: latestShareDescription,
+        url: latestShare.url,
+      });
+      setNotice("카카오톡 공유 화면을 열었습니다.");
+    } catch (kakaoError) {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: latestShare.title, text: latestShareDescription, url: latestShare.url });
+          setNotice("기기 공유 화면을 열었습니다. 카카오 JavaScript 키가 설정되면 카카오톡으로 바로 공유할 수 있습니다.");
+        } else {
+          await navigator.clipboard.writeText(latestShare.url);
+          setNotice("공유 링크를 복사했습니다.");
+        }
+      } catch (fallbackError) {
+        if (fallbackError instanceof DOMException && fallbackError.name === "AbortError") return;
+        setError("공유 화면을 열지 못했습니다.");
+      }
+      if (kakaoError instanceof Error && kakaoError.message !== "KAKAO_SDK_NOT_CONFIGURED") {
+        console.error("카카오톡 공유 오류:", kakaoError);
+      }
+    }
+  };
+
+  const revokeShare = async (id: string) => {
+    const response = await fetch(`/api/course-shares/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) {
+      setError(data?.error || "공유 링크를 취소하지 못했습니다.");
+      return;
+    }
+    setActiveShares((current) => current.filter((item) => item.id !== id));
+    if (latestShare?.id === id) setLatestShare(null);
+    setNotice("공유를 취소했습니다. 기존 링크는 더 이상 열리지 않습니다.");
   };
 
   const deleteItinerary = (id: string) => {
@@ -472,11 +550,18 @@ export default function RecommendPage() {
               <p className="result-profile">장소 원천: 한국관광공사 TourAPI · 지도 확인: 네이버 지도 외부 링크</p>
             </div>
             <div className="result-controls">
-              {form.mode === "course" && form.region !== "전국" && <><button type="button" onClick={() => saveItinerary()}>코스 저장</button><button type="button" onClick={() => void shareItinerary()}>코스 공유</button></>}
+              {form.mode === "course" && form.region !== "전국" && <><button type="button" onClick={() => saveItinerary()}>코스 저장</button><button type="button" onClick={() => void shareItinerary()} disabled={sharing}>{sharing ? "링크 만드는 중..." : "공유 링크 만들기"}</button></>}
               {form.mode === "course" && form.region === "전국" && <button type="button" onClick={refreshNationwideCourses} disabled={loading}>{loading ? "새 코스 찾는 중..." : "다른 전국 코스"}</button>}
               <button type="button" onClick={() => setStep("situation")}>조건 수정</button>
             </div>
           </div>
+
+          {latestShare && (
+            <div className="course-share-receipt">
+              <div><small>개인정보를 제외한 공개 링크</small><strong>{latestShare.title}</strong><span>{latestShare.url}</span></div>
+              <div><button type="button" onClick={() => void sendLatestShare()}>카카오톡으로 보내기</button><button type="button" onClick={() => void copyShareLink(latestShare.url)}>링크 복사</button><button type="button" onClick={() => void revokeShare(latestShare.id)}>공유 취소</button></div>
+            </div>
+          )}
 
           {weather && (
             <div className={`course-weather ${weather.indoorRecommended ? "is-indoor" : "is-outdoor"}`}>
@@ -492,7 +577,7 @@ export default function RecommendPage() {
                   {visibleCourses.length > 1 && (
                     <div className="course-bundle-heading">
                       <div><span>{course.region}</span><h3>{course.title}</h3><p>{course.items.length}곳을 이동하기 좋은 순서로 묶었어요.</p></div>
-                      <div><button type="button" onClick={() => saveItinerary(course)}>이 코스 저장</button><button type="button" onClick={() => void shareItinerary(course)}>공유</button></div>
+                      <div><button type="button" onClick={() => saveItinerary(course)}>이 코스 저장</button><button type="button" onClick={() => void shareItinerary(course)} disabled={sharing}>{sharing ? "준비 중..." : "공유 링크 만들기"}</button></div>
                     </div>
                   )}
                   <div className="place-grid is-list-mode is-course-mode">
@@ -522,6 +607,20 @@ export default function RecommendPage() {
               <article key={itinerary.id}>
                 <div><small>{new Date(itinerary.savedAt).toLocaleDateString("ko-KR")} 저장</small><strong>{itinerary.title}</strong><span>{itinerary.places.map((place) => place.name).join(" → ")}</span></div>
                 <button type="button" onClick={() => deleteItinerary(itinerary.id)}>삭제</button>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {activeShares.length > 0 && (
+        <section className="active-share-section">
+          <div className="saved-itinerary-heading"><div><p className="recommend-eyebrow">ACTIVE SHARE LINKS</p><h2>내 공유 링크 관리</h2></div><span>계정·닉네임·방문일·메모는 공유되지 않아요</span></div>
+          <div className="active-share-list">
+            {activeShares.map((share) => (
+              <article key={share.id}>
+                <div><strong>{share.title}</strong><small>{new Date(share.expiresAt).toLocaleDateString("ko-KR")} 자동 만료</small></div>
+                <button type="button" onClick={() => void revokeShare(share.id)}>공유 취소</button>
               </article>
             ))}
           </div>

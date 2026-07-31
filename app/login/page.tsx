@@ -10,7 +10,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [activeProvider, setActiveProvider] = useState<SocialProvider | null>(null);
   const [message, setMessage] = useState("");
-  const [accepted, setAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const allRequiredAccepted = termsAccepted && privacyAccepted;
+
+  const prepareRequiredConsent = async () => {
+    if (!allRequiredAccepted) {
+      throw new Error("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
+    }
+
+    const response = await fetch("/api/auth/consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ termsAccepted, privacyAccepted }),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => null) as { error?: string } | null;
+    if (!response.ok) throw new Error(data?.error || "로그인 동의를 처리하지 못했습니다.");
+  };
 
   const handleSocialLogin = async (
     provider: SupabaseOAuthProvider,
@@ -18,8 +35,8 @@ export default function LoginPage() {
     providerLabel: string,
   ) => {
     if (loading) return;
-    if (!accepted) {
-      setMessage("이용약관과 개인정보처리방침에 동의해 주세요.");
+    if (!allRequiredAccepted) {
+      setMessage("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
       return;
     }
 
@@ -27,6 +44,8 @@ export default function LoginPage() {
       setLoading(true);
       setActiveProvider(activeKey);
       setMessage(`${providerLabel} 로그인 페이지로 이동하고 있어요.`);
+
+      await prepareRequiredConsent();
 
       const next = new URLSearchParams(window.location.search).get("next") || "/";
       const callback = new URL("/auth/callback", window.location.origin);
@@ -55,17 +74,24 @@ export default function LoginPage() {
     }
   };
 
-  const handleNaverLogin = () => {
+  const handleNaverLogin = async () => {
     if (loading) return;
-    if (!accepted) {
-      setMessage("이용약관과 개인정보처리방침에 동의해 주세요.");
+    if (!allRequiredAccepted) {
+      setMessage("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
       return;
     }
 
-    setLoading(true);
-    setActiveProvider("naver");
-    setMessage("네이버 로그인 페이지로 이동하고 있어요.");
-    window.location.assign("/auth/naver");
+    try {
+      setLoading(true);
+      setActiveProvider("naver");
+      setMessage("네이버 로그인 페이지로 이동하고 있어요.");
+      await prepareRequiredConsent();
+      window.location.assign("/auth/naver");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "네이버 로그인을 준비하지 못했습니다.");
+      setLoading(false);
+      setActiveProvider(null);
+    }
   };
 
   useEffect(() => {
@@ -133,12 +159,27 @@ export default function LoginPage() {
           <label className="login-consent">
             <input
               type="checkbox"
-              checked={accepted}
-              onChange={(event) => setAccepted(event.target.checked)}
+              checked={termsAccepted}
+              onChange={(event) => setTermsAccepted(event.target.checked)}
             />
             <span>
-              <a href="/terms" target="_blank">이용약관</a> 및{" "}
-              <a href="/privacy" target="_blank">개인정보처리방침</a>에 동의합니다.
+              <strong>[필수]</strong> <a href="/terms" target="_blank">이용약관</a>에 동의합니다.
+            </span>
+          </label>
+
+          <label className="login-consent">
+            <input
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(event) => setPrivacyAccepted(event.target.checked)}
+            />
+            <span>
+              <strong>[필수]</strong> <a href="/privacy" target="_blank">개인정보 수집·이용</a>에 동의합니다.
+              <small className="login-consent-detail">
+                목적: 회원 식별·로그인·저장 기능 제공 · 항목: 소셜 제공자 식별자, 이메일,
+                닉네임, 프로필 이미지 · 보유: 회원탈퇴 시까지 · 거부 시 회원 기능 이용 불가
+                (비회원 장소 탐색은 가능)
+              </small>
             </span>
           </label>
 
@@ -146,7 +187,7 @@ export default function LoginPage() {
             className="kakao-button"
             type="button"
             onClick={() => void handleSocialLogin("kakao", "kakao", "카카오")}
-            disabled={loading || !accepted}
+            disabled={loading || !allRequiredAccepted}
           >
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M12 3C6.48 3 2 6.5 2 10.82c0 2.76 1.83 5.18 4.58 6.57l-1.16 3.72a.55.55 0 0 0 .83.62l4.4-2.93c.44.05.89.08 1.35.08 5.52 0 10-3.5 10-8.06S17.52 3 12 3Z" />
@@ -161,8 +202,8 @@ export default function LoginPage() {
           <div className="quick-login-options" aria-label="간편 로그인 선택">
             <button
               type="button"
-              onClick={handleNaverLogin}
-              disabled={loading || !accepted}
+              onClick={() => void handleNaverLogin()}
+              disabled={loading || !allRequiredAccepted}
               aria-label="네이버로 로그인"
             >
               <span className="quick-login-icon is-naver">N</span>
@@ -172,7 +213,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => void handleSocialLogin("google", "google", "Google")}
-              disabled={loading || !accepted}
+              disabled={loading || !allRequiredAccepted}
               aria-label="Google 계정으로 로그인"
             >
               <span className="quick-login-icon is-google">
