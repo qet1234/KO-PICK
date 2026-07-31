@@ -37,6 +37,17 @@ export default function SourcesPage() {
             <p><a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noreferrer">공공누리 이용조건 확인</a></p>
           </section>
           <section>
+            <h2>Open-Meteo 날씨 예보</h2>
+            <p>현재·시간대별·방문일 날씨 예보는 Open-Meteo API를 사용하며, KO-PICK은 강수확률 등에 따라 실내·야외 추천 순서를 자체 조정합니다.</p>
+            <ul>
+              <li>날씨 데이터 라이선스: Creative Commons Attribution 4.0 International (CC BY 4.0)</li>
+              <li>현재 비상업 무료 운영 범위에서는 Open-Meteo free/open-access endpoint를 사용하며, 향후 상업화 전에는 해당 시점의 이용 플랜을 다시 검토합니다.</li>
+              <li>예보는 실제 관측 및 현장 상황과 다를 수 있으므로 중요한 일정은 공식 기상정보를 함께 확인해 주세요.</li>
+              <li>KO-PICK이 날씨 데이터를 수정하는 경우 추천용 반올림·분류·문구 변환 범위로 한정합니다.</li>
+            </ul>
+            <p><a href="https://open-meteo.com/en/licence" target="_blank" rel="noreferrer">Open-Meteo 라이선스와 데이터 출처</a></p>
+          </section>
+          <section>
             <h2>지도와 예약</h2>
             <div className="legal-table-wrap">
               <table>

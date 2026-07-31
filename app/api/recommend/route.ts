@@ -26,6 +26,11 @@ type Candidate = {
   source: "한국관광공사 TourAPI";
 };
 
+type ScoredCandidate = Candidate & {
+  latitude: number | null;
+  longitude: number | null;
+};
+
 const NATIONWIDE_REGIONS = [
   "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
   "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주",
@@ -103,15 +108,140 @@ function scorePlace(place: TourPlace, index: number, params: URLSearchParams) {
   if (params.get("indoor") === "실내" && /(카페|식당|박물관|미술관|전시)/.test(text)) {
     score += 5;
   }
+  const weatherIndoor = params.get("weatherIndoor") === "true";
+  if (weatherIndoor && /(카페|식당|박물관|미술관|전시|실내)/.test(text)) score += 9;
+  if (!weatherIndoor && /(공원|해변|산|축제|정원|수목원|산책)/.test(text)) score += 6;
   return Math.max(65, Math.min(96, score));
 }
 
 function reasonFor(score: number, params: URLSearchParams) {
   const relationship = params.get("relationship") || "개인";
   const mood = params.get("mood") || "조용한";
-  if (score >= 90) return `${relationship} 일정과 ${mood} 분위기 조건에 특히 잘 맞는 장소예요.`;
-  if (score >= 82) return "선택한 지역·카테고리와 취향 조건이 고르게 맞아요.";
-  return "한국관광공사 장소 중 현재 선택 조건에 가까운 후보예요.";
+  const weather = params.get("weatherCondition")?.trim();
+  const weatherReason = weather ? ` ${weather} 예보도 반영했어요.` : "";
+  if (score >= 90) return `${relationship} 일정과 ${mood} 분위기 조건에 특히 잘 맞는 장소예요.${weatherReason}`;
+  if (score >= 82) return `선택한 지역·카테고리와 취향 조건이 고르게 맞아요.${weatherReason}`;
+  return `한국관광공사 장소 중 현재 선택 조건에 가까운 후보예요.${weatherReason}`;
+}
+
+function toCandidate(place: TourPlace, index: number, params: URLSearchParams): ScoredCandidate | null {
+  const category = tourCategory(params.get("category") || "카페");
+  const name = String(place.name ?? place.title ?? "").trim();
+  const address = String(place.address ?? "").trim();
+  if (!name || !address) return null;
+  const id = String(place.id ?? `${name}|${address}`);
+  const score = scorePlace(place, index, params);
+  const mapQuery = encodeURIComponent(`${name} ${address}`);
+  const latitudeValue = String(place.latitude ?? "").trim();
+  const longitudeValue = String(place.longitude ?? "").trim();
+  const latitude = latitudeValue ? Number(latitudeValue) : Number.NaN;
+  const longitude = longitudeValue ? Number(longitudeValue) : Number.NaN;
+  return {
+    id,
+    name,
+    category: String(place.category ?? category),
+    address,
+    description: "한국관광공사 TourAPI 제공 장소 정보",
+    mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
+    reservationUrl: "",
+    score,
+    reason: reasonFor(score, params),
+    source: "한국관광공사 TourAPI",
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
+  };
+}
+
+function toPublicCandidate(candidate: ScoredCandidate): Candidate {
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    category: candidate.category,
+    address: candidate.address,
+    description: candidate.description,
+    mapUrl: candidate.mapUrl,
+    reservationUrl: candidate.reservationUrl,
+    score: candidate.score,
+    reason: candidate.reason,
+    source: candidate.source,
+  };
+}
+
+function distanceKm(a: ScoredCandidate, b: ScoredCandidate) {
+  if (a.latitude === null || a.longitude === null || b.latitude === null || b.longitude === null) {
+    return null;
+  }
+  const radians = (degrees: number) => degrees * Math.PI / 180;
+  const latDistance = radians(b.latitude - a.latitude);
+  const lonDistance = radians(b.longitude - a.longitude);
+  const value = Math.sin(latDistance / 2) ** 2
+    + Math.cos(radians(a.latitude)) * Math.cos(radians(b.latitude))
+    * Math.sin(lonDistance / 2) ** 2;
+  const normalized = Math.max(0, Math.min(1, value));
+  return 6371 * 2 * Math.atan2(Math.sqrt(normalized), Math.sqrt(1 - normalized));
+}
+
+function courseCategories(duration: string, preferred: string, weatherIndoor: boolean) {
+  if (duration === "2시간") {
+    return preferred === "카페" ? ["관광지", "카페"] : [preferred, "카페"];
+  }
+  if (duration === "하루") {
+    return weatherIndoor
+      ? ["관광지", "음식", "카페", "관광지"]
+      : ["관광지", "음식", "축제", "카페"];
+  }
+  return weatherIndoor
+    ? ["음식", "관광지", "카페"]
+    : ["관광지", "음식", "카페"];
+}
+
+async function buildCourse(scope: string, region: string, params: URLSearchParams) {
+  const preferred = tourCategory(params.get("category") || "카페");
+  const duration = params.get("duration") || "반나절";
+  const categories = courseCategories(duration, preferred, params.get("weatherIndoor") === "true");
+  const uniqueCategories = [...new Set(categories)];
+  const pools = new Map<string, ScoredCandidate[]>();
+
+  const loaded = await Promise.allSettled(uniqueCategories.map(async (category) => {
+    const categoryParams = new URLSearchParams(params);
+    categoryParams.set("category", category);
+    const raw = await loadCandidatePool(scope, region, category);
+    const seen = new Set<string>();
+    const candidates = raw.flatMap((place, index) => {
+      const candidate = toCandidate(place, index, categoryParams);
+      if (!candidate) return [];
+      const key = `${candidate.name}|${candidate.address}`;
+      if (seen.has(key)) return [];
+      seen.add(key);
+      return [candidate];
+    });
+    candidates.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ko"));
+    return { category, candidates };
+  }));
+
+  for (const result of loaded) {
+    if (result.status === "fulfilled") pools.set(result.value.category, result.value.candidates);
+  }
+
+  const selected: ScoredCandidate[] = [];
+  const used = new Set<string>();
+  for (const category of categories) {
+    const available = (pools.get(category) ?? []).filter((candidate) => !used.has(candidate.id));
+    const previous = selected.at(-1);
+    const ranked = available.map((candidate) => {
+      const distance = previous ? distanceKm(previous, candidate) : null;
+      const nearbyBonus = previous && candidate.address.split(" ").slice(0, 2).join(" ")
+        === previous.address.split(" ").slice(0, 2).join(" ") ? 8 : 0;
+      const distancePenalty = distance === null ? 0 : Math.min(18, distance / 3);
+      return { candidate, courseScore: candidate.score + nearbyBonus - distancePenalty };
+    }).sort((a, b) => b.courseScore - a.courseScore);
+    const next = ranked[0]?.candidate;
+    if (!next) continue;
+    used.add(next.id);
+    selected.push(next);
+  }
+
+  return selected;
 }
 
 export async function GET(request: NextRequest) {
@@ -124,30 +254,48 @@ export async function GET(request: NextRequest) {
     const scope = params.get("scope") || "내 지역";
     const region = params.get("region") || "서울";
     const category = tourCategory(params.get("category") || "카페");
+    const mode = params.get("mode") === "course" ? "course" : "single";
+
+    if (mode === "course") {
+      if (scope === "전국" || region === "전국") {
+        return NextResponse.json(
+          { error: "이동 가능한 코스를 만들려면 시·도를 하나 선택해 주세요." },
+          { status: 400 },
+        );
+      }
+      const course = await buildCourse(scope, region, params);
+      if (course.length < 2) {
+        return NextResponse.json(
+          { error: "코스로 묶을 장소가 부족합니다. 지역이나 선호 카테고리를 바꿔보세요." },
+          { status: 404 },
+        );
+      }
+      return NextResponse.json({
+        scope,
+        mode,
+        totalCount: course.length,
+        items: course.map(toPublicCandidate),
+        course: {
+          date: params.get("date") || null,
+          duration: params.get("duration") || "반나절",
+          weatherCondition: params.get("weatherCondition") || null,
+          indoorRecommended: params.get("weatherIndoor") === "true",
+        },
+        source: "한국관광공사 TourAPI",
+        attributionUrl: "https://api.visitkorea.or.kr/",
+      });
+    }
+
     const rawPlaces = await loadCandidatePool(scope, region, category);
     const seen = new Set<string>();
 
     const candidates = rawPlaces.flatMap((place, index): Candidate[] => {
-      const name = String(place.name ?? place.title ?? "").trim();
-      const address = String(place.address ?? "").trim();
-      const id = String(place.id ?? `${name}|${address}`);
-      const dedupeKey = `${name}|${address}`;
-      if (!name || !address || seen.has(dedupeKey)) return [];
+      const candidate = toCandidate(place, index, params);
+      if (!candidate) return [];
+      const dedupeKey = `${candidate.name}|${candidate.address}`;
+      if (seen.has(dedupeKey)) return [];
       seen.add(dedupeKey);
-      const score = scorePlace(place, index, params);
-      const mapQuery = encodeURIComponent(`${name} ${address}`);
-      return [{
-        id,
-        name,
-        category: String(place.category ?? category),
-        address,
-        description: "한국관광공사 TourAPI 제공 장소 정보",
-        mapUrl: `https://map.naver.com/p/search/${mapQuery}`,
-        reservationUrl: "",
-        score,
-        reason: reasonFor(score, params),
-        source: "한국관광공사 TourAPI",
-      }];
+      return [toPublicCandidate(candidate)];
     });
 
     candidates.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, "ko"));

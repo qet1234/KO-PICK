@@ -616,6 +616,20 @@
   white-space: nowrap;
 }
 
+.kp-weather-dashboard-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kp-weather-dashboard-links .kp-weather-attribution {
+  padding: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 9px;
+  text-decoration: underline;
+}
+
 @keyframes kp-weather-pulse {
   50% { opacity: .45; transform: scale(.75); }
 }
@@ -658,5 +672,6 @@
   .kp-weather-now-primary { align-items: flex-start; }
   .kp-weather-weekly-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .kp-weather-dashboard-footer { align-items: flex-start; flex-direction: column; }
-  .kp-weather-dashboard-footer a { width: 100%; justify-content: center; text-align: center; }
+  .kp-weather-dashboard-links { width: 100%; align-items: stretch; flex-direction: column; }
+  .kp-weather-dashboard-links a { justify-content: center; text-align: center; }
 }
