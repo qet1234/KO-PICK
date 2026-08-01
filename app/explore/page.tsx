@@ -1,8 +1,6 @@
 import FastCategoryExplorePage from "@/components/FastCategoryExplorePage";
-import CoupleSafeExplorePage from "@/components/CoupleSafeExplorePage";
 import "./explore.css";
 import "./journey-explore.css";
-import "./couple-safe.css";
 
 const allowedCategories = [
   "전체",
@@ -46,23 +44,12 @@ export default async function ExplorePage({
   )
     ? (normalizedCategory as AllowedCategory)
     : "전체";
-  const initialDetail = firstValue(params.detail) ?? "전체";
-  const journey = firstValue(params.journey) ?? "";
-
-  if (journey === "커플") {
-    return (
-      <CoupleSafeExplorePage
-        initialCategory={initialCategory}
-        initialDetail={initialDetail}
-      />
-    );
-  }
 
   return (
     <FastCategoryExplorePage
       initialCategory={initialCategory}
-      initialDetail={initialDetail}
-      journey={journey}
+      initialDetail={firstValue(params.detail) ?? "전체"}
+      journey={firstValue(params.journey) ?? ""}
     />
   );
 }
