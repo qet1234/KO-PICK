@@ -1,4 +1,5 @@
 import FastCategoryExplorePage from "@/components/FastCategoryExplorePage";
+import CouplePopularExplorePage from "@/components/CouplePopularExplorePage";
 import "./explore.css";
 import "./journey-explore.css";
 
@@ -44,12 +45,23 @@ export default async function ExplorePage({
   )
     ? (normalizedCategory as AllowedCategory)
     : "전체";
+  const initialDetail = firstValue(params.detail) ?? "전체";
+  const journey = firstValue(params.journey) ?? "";
+
+  if (journey === "커플") {
+    return (
+      <CouplePopularExplorePage
+        initialCategory={initialCategory}
+        initialDetail={initialDetail}
+      />
+    );
+  }
 
   return (
     <FastCategoryExplorePage
       initialCategory={initialCategory}
-      initialDetail={firstValue(params.detail) ?? "전체"}
-      journey={firstValue(params.journey) ?? ""}
+      initialDetail={initialDetail}
+      journey={journey}
     />
   );
 }
