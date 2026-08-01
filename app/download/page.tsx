@@ -3,12 +3,6 @@ import Link from "next/link";
 import DownloadLauncher from "./DownloadLauncher";
 import styles from "./download.module.css";
 
-const defaultAndroidApkUrl =
-  "https://github.com/qet1234/KO-PICK/releases/download/android-latest/koreapick-latest.apk";
-
-const androidApkUrl =
-  process.env.NEXT_PUBLIC_ANDROID_APK_URL?.trim() || defaultAndroidApkUrl;
-
 export const metadata: Metadata = {
   title: "코리아픽 앱 다운로드",
   description: "코리아픽 Android 앱 설치 파일을 다운로드합니다.",
@@ -31,7 +25,7 @@ export default function DownloadPage() {
           잠시 후 최신 Android 설치 파일(APK) 다운로드가 자동으로 시작됩니다.
         </p>
 
-        <DownloadLauncher apkUrl={androidApkUrl} />
+        <DownloadLauncher />
 
         <div className={styles.notice}>
           <strong>설치 전에 확인해 주세요</strong>
