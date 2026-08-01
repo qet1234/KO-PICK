@@ -1,13 +1,22 @@
 const supportEmail = "jjs092200@gmail.com";
 
-function mailtoUrl(type: "inquiry" | "feedback") {
+function gmailComposeUrl(type: "inquiry" | "feedback") {
   const isFeedback = type === "feedback";
   const subject = isFeedback ? "[KO-PICK 테스트 피드백]" : "[KO-PICK 테스트 문의]";
   const body = isFeedback
     ? "KO-PICK 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:"
     : "KO-PICK 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:";
 
-  return `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const params = new URLSearchParams({
+    view: "cm",
+    fs: "1",
+    tf: "1",
+    to: supportEmail,
+    su: subject,
+    body,
+  });
+
+  return `https://mail.google.com/mail/?${params.toString()}`;
 }
 
 export default function SupportPage() {
@@ -18,20 +27,26 @@ export default function SupportPage() {
           <a href="/">← 코리아픽 홈</a>
           <small>TEST SUPPORT</small>
           <h1>고객지원</h1>
-          <p>테스트 기간의 문의와 피드백은 KO-PICK 담당자 이메일로 접수합니다.</p>
+          <p>테스트 기간의 문의와 피드백은 KO-PICK 담당자 Gmail로 접수합니다.</p>
         </header>
         <div className="legal-content">
           <section>
             <h2>담당자 이메일</h2>
             <p>
-              <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+              <a href={gmailComposeUrl("inquiry")} target="_blank" rel="noreferrer">
+                {supportEmail}
+              </a>
             </p>
             <div className="legal-actions">
-              <a href={mailtoUrl("inquiry")}>문의 접수</a>
-              <a href={mailtoUrl("feedback")}>피드백 보내기</a>
+              <a href={gmailComposeUrl("inquiry")} target="_blank" rel="noreferrer">
+                문의 접수
+              </a>
+              <a href={gmailComposeUrl("feedback")} target="_blank" rel="noreferrer">
+                피드백 보내기
+              </a>
             </div>
             <p className="legal-note">
-              버튼을 누르면 기기의 기본 메일 앱이 열리고 수신자와 제목이 자동 입력됩니다.
+              버튼을 누르면 Google Gmail 작성 화면이 열리고 수신자와 제목이 자동 입력됩니다.
               내용을 작성한 뒤 보내기를 눌러야 접수가 완료됩니다.
             </p>
           </section>
