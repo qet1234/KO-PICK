@@ -224,8 +224,10 @@ export default function RecommendCalendarEnhancer() {
 
   useEffect(() => {
     let disposed = false;
+    let mounted: { input: HTMLInputElement; host: HTMLDivElement } | null = null;
+
     const mount = () => {
-      if (disposed || target) return;
+      if (disposed || mounted) return;
       const input = document.querySelector<HTMLInputElement>(
         '.recommend-date-field input[type="date"]',
       );
@@ -235,25 +237,24 @@ export default function RecommendCalendarEnhancer() {
       const host = document.createElement("div");
       host.className = "recommend-calendar-host";
       input.insertAdjacentElement("afterend", host);
-      setTarget({ input, host });
+      mounted = { input, host };
+      setTarget(mounted);
     };
 
     mount();
     const observer = new MutationObserver(mount);
     observer.observe(document.body, { childList: true, subtree: true });
+
     return () => {
       disposed = true;
       observer.disconnect();
-      setTarget((current) => {
-        current?.host.remove();
-        if (current?.input) {
-          current.input.classList.remove("is-calendar-source");
-          delete current.input.dataset.calendarEnhanced;
-        }
-        return null;
-      });
+      if (mounted) {
+        mounted.host.remove();
+        mounted.input.classList.remove("is-calendar-source");
+        delete mounted.input.dataset.calendarEnhanced;
+      }
     };
-  }, [target]);
+  }, []);
 
   return target ? createPortal(<CalendarPicker input={target.input} />, target.host) : null;
 }
