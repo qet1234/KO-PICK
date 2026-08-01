@@ -118,7 +118,7 @@ jobs:
 
       - name: Set up Supabase CLI for Naver
         if: steps.credentials.outputs.naver_ready == 'true'
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: latest
 
