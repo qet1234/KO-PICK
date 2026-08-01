@@ -55,6 +55,13 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   experiments: {
     typedRoutes: true,
   },
+  extra: {
+    ...config.extra,
+    eas: {
+      ...config.extra?.eas,
+      projectId: '8914e5dd-3545-482a-ad4d-4290b399e4b1',
+    },
+  },
 });
 
 export default createExpoConfig;
