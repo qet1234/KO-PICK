@@ -71,6 +71,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: 15px;
   color: #fff;
   background: #11110f;
@@ -79,6 +80,11 @@
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
+}
+
+.downloadButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .downloadButton:hover {
