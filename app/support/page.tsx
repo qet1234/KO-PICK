@@ -2,9 +2,9 @@ const supportEmail = "jjs092200@gmail.com";
 
 function gmailComposeUrl(type: "inquiry" | "feedback") {
   const isFeedback = type === "feedback";
-  const subject = isFeedback ? "[KO-PICK 테스트 피드백]" : "[KO-PICK 테스트 문의]";
+  const subject = isFeedback ? "[코리아픽 테스트 피드백]" : "[KO-PICK 테스트 문의]";
   const body = isFeedback
-    ? "KO-PICK 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:"
+    ? "코리아픽 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:"
     : "KO-PICK 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:";
 
   const params = new URLSearchParams({
