@@ -1,5 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
 
@@ -11,6 +12,14 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   scheme: 'kopick',
   userInterfaceStyle: 'automatic',
+  runtimeVersion: {
+    policy: 'fingerprint',
+  },
+  updates: {
+    url: `https://u.expo.dev/${easProjectId}`,
+    checkAutomatically: 'ON_LOAD',
+    fallbackToCacheTimeout: 0,
+  },
   ios: {
     ...config.ios,
     bundleIdentifier: 'com.koreapick.app',
@@ -59,7 +68,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     ...config.extra,
     eas: {
       ...config.extra?.eas,
-      projectId: '8914e5dd-3545-482a-ad4d-4290b399e4b1',
+      projectId: easProjectId,
     },
   },
 });
