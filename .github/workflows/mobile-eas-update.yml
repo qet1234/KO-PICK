@@ -1,0 +1,54 @@
+name: Mobile APK automatic update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-eas-update.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-eas-update-preview
+  cancel-in-progress: true
+
+jobs:
+  publish-preview-update:
+    name: Publish preview OTA update
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Check for EXPO_TOKEN
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "Add EXPO_TOKEN to the repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish automatic update
+        run: eas update --channel preview --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment production --non-interactive
