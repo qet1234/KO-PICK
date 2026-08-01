@@ -47,7 +47,8 @@ export default function SupportPage() {
             </div>
             <p className="legal-note">
               버튼을 누르면 Google Gmail 작성 화면이 열리고 수신자와 제목이 자동 입력됩니다.
-              내용을 작성한 뒤 보내기를 눌러야 접수가 완료됩니다.
+              내용을 작성한 뒤 보내기를 눌러야 접수가 완료됩니다. 접수된 메일과 첨부파일은
+              문의 종결일부터 1년 동안 보관한 뒤 삭제합니다.
             </p>
           </section>
 

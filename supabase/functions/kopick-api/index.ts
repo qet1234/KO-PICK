@@ -450,12 +450,118 @@ async function handleTrendingKeywords(req: Request, url: URL) {
   return json({ updatedAt: new Date().toISOString(), realtimeEnabled: true, keywords });
 }
 
+function base64Url(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlJson(value: Record<string, unknown>) {
+  return base64Url(new TextEncoder().encode(JSON.stringify(value)));
+}
+
+function decodeJwtPayload(token: string) {
+  const encoded = token.split(".")[1];
+  if (!encoded) return {} as Record<string, unknown>;
+  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  try {
+    return JSON.parse(atob(padded)) as Record<string, unknown>;
+  } catch {
+    return {} as Record<string, unknown>;
+  }
+}
+
+async function appleClientSecret(clientId: string) {
+  const teamId = Deno.env.get("APPLE_TEAM_ID")?.trim();
+  const keyId = Deno.env.get("APPLE_KEY_ID")?.trim();
+  const privateKey = Deno.env.get("APPLE_PRIVATE_KEY")?.trim().replace(/\\n/g, "\n");
+  if (!teamId || !keyId || !privateKey) {
+    throw new Error("Apple 연동 해제 서버 환경변수가 설정되지 않았습니다.");
+  }
+
+  const keyBody = privateKey
+    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+    .replace(/-----END PRIVATE KEY-----/g, "")
+    .replace(/\s/g, "");
+  const keyBytes = Uint8Array.from(atob(keyBody), (character) => character.charCodeAt(0));
+  const signingKey = await crypto.subtle.importKey(
+    "pkcs8",
+    keyBytes,
+    { name: "ECDSA", namedCurve: "P-256" },
+    false,
+    ["sign"],
+  );
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const unsigned = `${base64UrlJson({ alg: "ES256", kid: keyId, typ: "JWT" })}.${base64UrlJson({
+    iss: teamId,
+    iat: issuedAt,
+    exp: issuedAt + 300,
+    aud: "https://appleid.apple.com",
+    sub: clientId,
+  })}`;
+  const signature = await crypto.subtle.sign(
+    { name: "ECDSA", hash: "SHA-256" },
+    signingKey,
+    new TextEncoder().encode(unsigned),
+  );
+  return `${unsigned}.${base64Url(new Uint8Array(signature))}`;
+}
+
+async function revokeAppleAuthorization(authorizationCode: string, user: any) {
+  const clientId = Deno.env.get("APPLE_CLIENT_ID")?.trim() || "com.koreapick.app";
+  const clientSecret = await appleClientSecret(clientId);
+  const tokenResponse = await fetch("https://appleid.apple.com/auth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: authorizationCode,
+      grant_type: "authorization_code",
+    }),
+  });
+  const tokenPayload = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
+  if (!tokenResponse.ok) {
+    throw new Error(String(tokenPayload.error_description || tokenPayload.error || "Apple 토큰 교환에 실패했습니다."));
+  }
+
+  const idToken = typeof tokenPayload.id_token === "string" ? tokenPayload.id_token : "";
+  const appleSubject = String(decodeJwtPayload(idToken).sub || "");
+  const appleIdentity = (user.identities || []).find((identity: any) => identity.provider === "apple");
+  const expectedSubject = String(appleIdentity?.identity_data?.sub || appleIdentity?.id || "");
+  if (!appleSubject || !expectedSubject || appleSubject !== expectedSubject) {
+    throw new Error("Apple 인증 계정이 현재 코리아픽 계정과 일치하지 않습니다.");
+  }
+
+  const token = typeof tokenPayload.refresh_token === "string"
+    ? tokenPayload.refresh_token
+    : typeof tokenPayload.access_token === "string" ? tokenPayload.access_token : "";
+  if (!token) throw new Error("Apple 연동 해제 토큰을 받지 못했습니다.");
+  const revokeResponse = await fetch("https://appleid.apple.com/auth/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      token,
+      token_type_hint: typeof tokenPayload.refresh_token === "string" ? "refresh_token" : "access_token",
+    }),
+  });
+  if (!revokeResponse.ok) {
+    throw new Error(`Apple 연동 해제에 실패했습니다. (${revokeResponse.status})`);
+  }
+}
+
 async function handleAccountDelete(req: Request) {
   const caller = callerClient(req);
   const { data, error } = await caller.auth.getUser();
   if (error || !data.user) return json({ error: "로그인이 필요합니다." }, 401);
   const admin = supabaseAdmin();
-  const body = await req.json().catch(() => ({})) as { visitorId?: unknown };
+  const body = await req.json().catch(() => ({})) as {
+    visitorId?: unknown;
+    appleAuthorizationCode?: unknown;
+  };
   const visitorId = typeof body.visitorId === "string"
     ? body.visitorId.trim().slice(0, 120)
     : null;
@@ -464,9 +570,24 @@ async function handleAccountDelete(req: Request) {
     p_visitor_id: visitorId,
   });
   if (prepareError) throw prepareError;
+  const hasAppleIdentity = (data.user.identities || []).some((identity: any) => identity.provider === "apple");
+  let appleRevocation: "not_applicable" | "revoked" | "manual_required" = hasAppleIdentity
+    ? "manual_required"
+    : "not_applicable";
+  const appleAuthorizationCode = typeof body.appleAuthorizationCode === "string"
+    ? body.appleAuthorizationCode.trim()
+    : "";
+  if (hasAppleIdentity && appleAuthorizationCode) {
+    try {
+      await revokeAppleAuthorization(appleAuthorizationCode, data.user);
+      appleRevocation = "revoked";
+    } catch (error) {
+      console.error("Apple 연동 해제 오류", error);
+    }
+  }
   const { error: deleteError } = await admin.auth.admin.deleteUser(data.user.id);
   if (deleteError) throw deleteError;
-  return json({ success: true });
+  return json({ success: true, appleRevocation });
 }
 
 async function handleSupportRequest(req: Request) {

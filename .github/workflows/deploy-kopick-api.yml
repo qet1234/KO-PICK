@@ -27,6 +27,10 @@ jobs:
       PROJECT_REF: vbwaruzncfaxnjyybudm
       TOUR_API_SERVICE_KEY: ${{ secrets.TOUR_API_SERVICE_KEY }}
       TOUR_API_MOBILE_APP: ${{ secrets.TOUR_API_MOBILE_APP }}
+      APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_PRIVATE_KEY: ${{ secrets.APPLE_PRIVATE_KEY }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Mark deployment pending
@@ -68,6 +72,31 @@ jobs:
             args+=(TOUR_API_MOBILE_APP="KoreaPick")
           fi
           supabase secrets set "${args[@]}" --project-ref "$PROJECT_REF"
+
+      - name: Store Apple account deletion secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          values=(APPLE_CLIENT_ID APPLE_TEAM_ID APPLE_KEY_ID APPLE_PRIVATE_KEY)
+          configured=0
+          for key in "${values[@]}"; do
+            if [ -n "${!key:-}" ]; then
+              configured=$((configured + 1))
+            fi
+          done
+          if [ "$configured" -eq 0 ]; then
+            echo "Apple revocation secrets are not registered yet; account deletion will show the manual Apple unlink guide."
+          elif [ "$configured" -ne 4 ]; then
+            echo "Register all four Apple revocation secrets together."
+            exit 1
+          else
+            supabase secrets set \
+              APPLE_CLIENT_ID="$APPLE_CLIENT_ID" \
+              APPLE_TEAM_ID="$APPLE_TEAM_ID" \
+              APPLE_KEY_ID="$APPLE_KEY_ID" \
+              APPLE_PRIVATE_KEY="$APPLE_PRIVATE_KEY" \
+              --project-ref "$PROJECT_REF"
+          fi
 
       - name: Deploy core API function
         shell: bash

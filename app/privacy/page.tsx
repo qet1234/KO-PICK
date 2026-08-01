@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "코리아픽이 처리하는 개인정보와 보호 조치를 안내합니다.",
 };
 
-const effectiveDate = "2026년 7월 31일";
+const effectiveDate = "2026년 8월 2일";
 
 export default function PrivacyPage() {
   return (
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
             <h2>2. 처리 근거와 수집 방법</h2>
             <ul>
               <li>회원가입 화면에서 이용약관 동의와 개인정보 수집·이용 동의를 각각 받은 뒤 문서 버전과 동의 시각을 기록합니다.</li>
-              <li>Google·카카오·네이버 소셜 로그인 과정과 이용자가 서비스에 직접 입력한 내용으로 수집합니다.</li>
+              <li>Google·Apple·카카오·네이버 소셜 로그인 과정과 이용자가 서비스에 직접 입력한 내용으로 수집합니다.</li>
               <li>검색·장소 이용 활동은 서비스 이용 중 자동 생성됩니다. 방문자 식별자는 광고 식별자가 아닌 무작위 UUID입니다.</li>
               <li>동의를 거부할 수 있으나 회원 전용 저장·함께 공간 기능은 사용할 수 없습니다. 비회원 장소 탐색은 계속 이용할 수 있습니다.</li>
               <li>공개 코스에는 계정·이메일·닉네임·관계·방문일·기념일·메모·투표자·예약정보를 넣지 않습니다. 원본 공유 ID 대신 일방향 해시만 서버에 저장합니다.</li>
@@ -128,13 +128,25 @@ export default function PrivacyPage() {
                     <td>Google LLC<br /><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google 개인정보처리방침</a></td>
                     <td>로그인 요청 정보와 Google이 KO-PICK에 제공하는 고유 식별자·이메일·닉네임·프로필 이미지 · Google 소셜 로그인</td>
                     <td>미국 등 Google 운영 지역 · 이용자가 Google 로그인을 선택할 때 OAuth 암호화 전송</td>
-                    <td>이용자 동의 및 로그인 계약 이행 · Google 정책 및 연동 해제 시까지 · 거부 시 Google 로그인 대신 카카오·네이버 로그인 또는 비회원 탐색 이용</td>
+                    <td>이용자 동의 및 로그인 계약 이행 · Google 정책 및 연동 해제 시까지 · 거부 시 다른 로그인 또는 비회원 탐색 이용</td>
+                  </tr>
+                  <tr>
+                    <td>Apple Inc.<br /><a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noreferrer">Apple 개인정보처리방침</a></td>
+                    <td>로그인 요청 정보와 Apple이 KO-PICK에 제공하는 고유 식별자·이메일·이름 · Apple 소셜 로그인과 계정 연동 해제</td>
+                    <td>미국 등 Apple 운영 지역 · iOS에서 Apple 로그인을 선택하거나 Apple 계정의 회원탈퇴를 요청할 때 암호화 전송</td>
+                    <td>이용자 동의 및 로그인 계약 이행 · Apple 정책 및 연동 해제 시까지 · 거부 시 다른 로그인 또는 비회원 탐색 이용</td>
+                  </tr>
+                  <tr>
+                    <td>Google LLC (Gmail)<br /><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google 개인정보처리방침</a></td>
+                    <td>발신 이메일, 문의·피드백 내용과 이용자가 첨부한 파일 · 고객 문의·권리 행사·테스트 피드백 접수와 회신</td>
+                    <td>미국 등 Google 운영 지역 · 이용자가 Gmail 작성 화면에서 직접 보내기를 누를 때 TLS 암호화 전송</td>
+                    <td>문의 처리 계약 이행 · 문의 종결일부터 1년 · 거부 시 문의 이메일을 보내지 않거나 최소 정보만 기재</td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p>
-              카카오·네이버 로그인은 국내 사업자의 인증 경로를 사용합니다. 국외 이전을 원하지 않으면
+              카카오·네이버 로그인은 국내 사업자의 인증 경로를 사용합니다. Google·Apple·Gmail을 통한 국외 이전을 원하지 않으면
               소셜 로그인과 회원 기능을 사용하지 않고 비회원 장소 탐색을 이용할 수 있습니다.
               Supabase의 정확한 고객 데이터 저장 리전은 운영 프로젝트 설정을 기준으로 하며, 리전이나 수탁자가 변경되면 본 방침을 사전에 갱신합니다.
             </p>
@@ -147,6 +159,8 @@ export default function PrivacyPage() {
               <li>전자 파일은 복구하기 어려운 방식으로 삭제하며, 백업 사본은 백업 순환 주기에 따라 삭제됩니다.</li>
               <li>회원탈퇴 시 다른 구성원이 있는 함께 공간은 소유권을 이전하고 탈퇴자의 구성원 정보와 개인 데이터를 삭제합니다.</li>
               <li>이 기기의 방문자 UUID·추천 성향·저장 장소·선호 지도·임시 캐시도 함께 삭제합니다.</li>
+              <li>Gmail로 접수한 문의·피드백은 종결일을 기록해 매월 확인하고, 종결일부터 1년이 지난 메일과 첨부파일을 삭제합니다.</li>
+              <li>Apple 로그인 회원이 앱에서 탈퇴하면 Apple REST API로 코리아픽 연결 토큰 해제를 시도하며, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</li>
             </ul>
           </section>
 
