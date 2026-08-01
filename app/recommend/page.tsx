@@ -455,7 +455,6 @@ export default function RecommendPage() {
     <main className="recommend-page">
       <header className="recommend-header">
         <a href="/" className="recommend-brand"><span>K</span>코리아픽</a>
-        <div className="recommend-header-links"><a href="/spaces">함께 공간</a><a href="/explore" className="recommend-explore-link">직접 찾아보기</a></div>
       </header>
 
       <section className="recommend-hero">
