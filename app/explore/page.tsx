@@ -1,7 +1,8 @@
 import FastCategoryExplorePage from "@/components/FastCategoryExplorePage";
-import CouplePopularExplorePage from "@/components/CouplePopularExplorePage";
+import CoupleSafeExplorePage from "@/components/CoupleSafeExplorePage";
 import "./explore.css";
 import "./journey-explore.css";
+import "./couple-safe.css";
 
 const allowedCategories = [
   "전체",
@@ -50,7 +51,7 @@ export default async function ExplorePage({
 
   if (journey === "커플") {
     return (
-      <CouplePopularExplorePage
+      <CoupleSafeExplorePage
         initialCategory={initialCategory}
         initialDetail={initialDetail}
       />
