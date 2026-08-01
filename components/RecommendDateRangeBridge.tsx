@@ -62,14 +62,19 @@ export default function RecommendDateRangeBridge() {
             input.dataset.originalCalendarMax = input.max || "";
           }
           input.dataset.calendarMax = extendedMax;
-          input.max = extendedMax;
+          if (input.max !== extendedMax) input.max = extendedMax;
           enhanced.add(input);
         });
     };
 
     extendDateRange();
     const observer = new MutationObserver(extendDateRange);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["max"],
+    });
 
     return () => {
       observer.disconnect();
