@@ -88,7 +88,10 @@ export default function TermsPage() {
           </section>
           <section>
             <h2>제11조 운영자 문의</h2>
-            <p>운영 부서: KO-PICK 고객지원 · <a href="/support">문의 접수</a></p>
+            <p>
+              운영 부서: KO-PICK 고객지원 · <a href="/support">문의·피드백 접수</a> ·{" "}
+              <a href="mailto:jjs092200@gmail.com">jjs092200@gmail.com</a>
+            </p>
           </section>
         </div>
       </article>
