@@ -18,6 +18,18 @@ function providerLabel(provider: unknown) {
   return ({ google: 'Google', kakao: '카카오', naver: '네이버', apple: 'Apple' } as Record<string, string>)[String(provider)] || '소셜';
 }
 
+const supportEmail = 'jjs092200@gmail.com';
+
+function supportMailUrl(type: 'inquiry' | 'feedback') {
+  const isFeedback = type === 'feedback';
+  const subject = isFeedback ? '[KO-PICK 테스트 피드백]' : '[KO-PICK 테스트 문의]';
+  const body = isFeedback
+    ? 'KO-PICK 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:'
+    : 'KO-PICK 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:';
+
+  return `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export default function AccountScreen() {
   const { loading, session } = useSession();
 
@@ -63,7 +75,9 @@ export default function AccountScreen() {
           <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}><Text style={styles.link}>이용약관</Text></Pressable>
           <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}><Text style={styles.link}>개인정보처리방침</Text></Pressable>
           <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/account-deletion`)}><Text style={styles.link}>회원탈퇴 안내</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/support`)}><Text style={styles.link}>고객지원</Text></Pressable>
+          <Pressable onPress={() => void Linking.openURL(supportMailUrl('inquiry'))}><Text style={styles.link}>문의 접수</Text></Pressable>
+          <Pressable onPress={() => void Linking.openURL(supportMailUrl('feedback'))}><Text style={styles.link}>피드백 보내기</Text></Pressable>
+          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/support`)}><Text style={styles.link}>고객지원 안내</Text></Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
