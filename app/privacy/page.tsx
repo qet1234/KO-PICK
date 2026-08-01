@@ -61,8 +61,8 @@ export default function PrivacyPage() {
                   </tr>
                   <tr>
                     <td>고객지원</td>
-                    <td>문의 유형, 답변받을 이메일, 문의 내용, 처리 상태</td>
-                    <td>권리 행사, 계정 삭제, 저작권 및 서비스 문의 처리</td>
+                    <td>문의·피드백 유형, 발신 이메일, 문의·피드백 내용, 처리 상태</td>
+                    <td>권리 행사, 계정 삭제, 저작권·서비스 문의 및 테스트 피드백 처리</td>
                     <td>문의 종결일부터 1년</td>
                   </tr>
                   <tr>
@@ -177,8 +177,8 @@ export default function PrivacyPage() {
             <h2>8. 개인정보 보호 담당</h2>
             <p>
               담당 부서: KO-PICK 개인정보 보호 담당<br />
-              전자적 연락처: <a href="/support">KO-PICK 고객지원의 개인정보 권리 행사 접수</a><br />
-              접수 방법: 인터넷 문의 양식(24시간 접수, 답변받을 이메일 입력)
+              담당자 이메일: <a href="mailto:jjs092200@gmail.com">jjs092200@gmail.com</a><br />
+              접수 방법: <a href="/support">KO-PICK 고객지원</a>의 문의 접수 또는 이메일(24시간 접수)
             </p>
             <p>
               개인정보 침해 상담은 개인정보침해신고센터(국번 없이 118),
