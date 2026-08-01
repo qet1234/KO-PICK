@@ -27,6 +27,12 @@ type RankedPlace = {
   matches: number;
 };
 
+type NaverCredentials = {
+  endpoint: string;
+  headers: Record<string, string>;
+  hub: boolean;
+};
+
 const TYPE_PRESETS: Record<string, SearchPreset[]> = {
   카페: [
     { category: "카페", detailCategory: "감성 카페", keyword: "데이트 감성 카페", weight: 132 },
@@ -162,7 +168,7 @@ function matchesCategory(item: NaverLocalItem, category: CategoryValue) {
   return /축제|공연|문화|행사|테마파크|공원|시장/.test(source);
 }
 
-function credentials() {
+function credentials(): NaverCredentials | null {
   const hubId = process.env.NAVER_API_HUB_CLIENT_ID?.trim();
   const hubSecret = process.env.NAVER_API_HUB_CLIENT_SECRET?.trim();
   if (hubId && hubSecret) {
@@ -176,8 +182,10 @@ function credentials() {
     };
   }
 
-  const legacyId = process.env.NAVER_SEARCH_CLIENT_ID?.trim();
-  const legacySecret = process.env.NAVER_SEARCH_CLIENT_SECRET?.trim();
+  const legacyId =
+    process.env.NAVER_SEARCH_CLIENT_ID?.trim() || process.env.NAVER_CLIENT_ID?.trim();
+  const legacySecret =
+    process.env.NAVER_SEARCH_CLIENT_SECRET?.trim() || process.env.NAVER_CLIENT_SECRET?.trim();
   if (legacyId && legacySecret) {
     return {
       endpoint: "https://openapi.naver.com/v1/search/local.json",
@@ -292,6 +300,7 @@ export async function GET(request: NextRequest) {
         required: [
           "NAVER_API_HUB_CLIENT_ID / NAVER_API_HUB_CLIENT_SECRET",
           "NAVER_SEARCH_CLIENT_ID / NAVER_SEARCH_CLIENT_SECRET",
+          "NAVER_CLIENT_ID / NAVER_CLIENT_SECRET",
         ],
       },
       { status: 503 },
