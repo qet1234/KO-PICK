@@ -23,6 +23,9 @@ jobs:
       run:
         working-directory: mobile
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
       - name: Check for EXPO_TOKEN
         shell: bash
         run: |
@@ -30,9 +33,6 @@ jobs:
             echo "Add EXPO_TOKEN to the repository Actions secrets."
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v5
 
       - name: Setup Node
         uses: actions/setup-node@v6
