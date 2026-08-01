@@ -124,7 +124,7 @@ async function searchNaver(query: string, clientId: string, clientSecret: string
         "X-Naver-Client-Id": clientId,
         "X-Naver-Client-Secret": clientSecret,
       },
-      next: { revalidate: 3600 },
+      cache: "no-store",
       signal: controller.signal,
     });
     if (!response.ok) {
@@ -203,12 +203,14 @@ function verifiedBookingUrl(name: string, address: string) {
 }
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export async function GET(request: NextRequest) {
   if (isRateLimited(request)) {
     return NextResponse.json(
       { matched: false, reason: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
-      { status: 429 },
+      { status: 429, headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   }
   const name = (request.nextUrl.searchParams.get("name") || "").trim().slice(0, 120);
@@ -222,10 +224,13 @@ export async function GET(request: NextRequest) {
     !source.includes("tour") ||
     !/(?:음식|맛집|restaurant|카페|cafe)/i.test(category)
   ) {
-    return NextResponse.json({
-      matched: false,
-      reason: "TourAPI 음식점·카페 후보의 장소명과 주소가 모두 필요합니다.",
-    });
+    return NextResponse.json(
+      {
+        matched: false,
+        reason: "TourAPI 음식점·카페 후보의 장소명과 주소가 모두 필요합니다.",
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   }
 
   const clientId =
@@ -238,17 +243,20 @@ export async function GET(request: NextRequest) {
         matched: false,
         reason: "NAVER_SEARCH_CLIENT_ID와 NAVER_SEARCH_CLIENT_SECRET 설정이 필요합니다.",
       },
-      { status: 503 },
+      { status: 503, headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   }
 
   try {
     const best = await findBestMatch(name, address, clientId, clientSecret);
     if (!best) {
-      return NextResponse.json({
-        matched: false,
-        reason: "TourAPI 장소와 충분히 일치하는 네이버 음식점을 찾지 못했습니다.",
-      });
+      return NextResponse.json(
+        {
+          matched: false,
+          reason: "TourAPI 장소와 충분히 일치하는 네이버 음식점을 찾지 못했습니다.",
+        },
+        { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      );
     }
 
     const matchedName = stripHtml(best.item.title);
@@ -258,20 +266,23 @@ export async function GET(request: NextRequest) {
       directBookingUrl(best.item.link) ||
       verifiedBookingUrl(matchedName, matchedAddress);
 
-    return NextResponse.json({
-      matched: true,
-      bookable: Boolean(bookingUrl),
-      confidence: Number(best.score.toFixed(2)),
-      name: matchedName,
-      address: matchedAddress,
-      category: stripHtml(best.item.category),
-      mapUrl: `https://map.naver.com/p/search/${encodeURIComponent(exactQuery)}`,
-      bookingUrl,
-      reason: bookingUrl ? undefined : "네이버 예약을 지원하지 않는 매장입니다.",
-      notice: bookingUrl
-        ? "네이버의 실제 예약 가능 시간과 좌석은 이동 후 확인됩니다."
-        : undefined,
-    });
+    return NextResponse.json(
+      {
+        matched: true,
+        bookable: Boolean(bookingUrl),
+        confidence: Number(best.score.toFixed(2)),
+        name: matchedName,
+        address: matchedAddress,
+        category: stripHtml(best.item.category),
+        mapUrl: `https://map.naver.com/p/search/${encodeURIComponent(exactQuery)}`,
+        bookingUrl,
+        reason: bookingUrl ? undefined : "네이버 예약을 지원하지 않는 매장입니다.",
+        notice: bookingUrl
+          ? "네이버의 실제 예약 가능 시간과 좌석은 이동 후 확인됩니다."
+          : undefined,
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     const permissionError = [
@@ -285,7 +296,10 @@ export async function GET(request: NextRequest) {
           ? "네이버 개발자센터 애플리케이션에서 검색 API 권한을 활성화해 주세요."
           : "네이버 음식점·카페 확인 중 오류가 발생했습니다.",
       },
-      { status: permissionError ? 503 : 502 },
+      {
+        status: permissionError ? 503 : 502,
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      },
     );
   }
 }
