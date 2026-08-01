@@ -226,8 +226,22 @@ export default function RecommendCalendarEnhancer() {
     let disposed = false;
     let mounted: { input: HTMLInputElement; host: HTMLDivElement } | null = null;
 
-    const mount = () => {
-      if (disposed || mounted) return;
+    const clearMounted = () => {
+      if (!mounted) return;
+      mounted.host.remove();
+      mounted.input.classList.remove("is-calendar-source");
+      delete mounted.input.dataset.calendarEnhanced;
+      mounted = null;
+      setTarget(null);
+    };
+
+    const syncMount = () => {
+      if (disposed) return;
+      if (mounted && document.body.contains(mounted.input) && document.body.contains(mounted.host)) {
+        return;
+      }
+      if (mounted) clearMounted();
+
       const input = document.querySelector<HTMLInputElement>(
         '.recommend-date-field input[type="date"]',
       );
@@ -241,8 +255,8 @@ export default function RecommendCalendarEnhancer() {
       setTarget(mounted);
     };
 
-    mount();
-    const observer = new MutationObserver(mount);
+    syncMount();
+    const observer = new MutationObserver(syncMount);
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
