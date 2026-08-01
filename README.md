@@ -72,6 +72,10 @@ npx --yes supabase@2.75.0 functions deploy kopick-api --no-verify-jwt
 npx --yes supabase@2.75.0 functions deploy naver-userinfo --no-verify-jwt
 ```
 
+Apple 로그인 계정의 앱 내 회원탈퇴 시 연동 토큰까지 해제하려면 Supabase Edge Function
+secret에 `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`를 등록합니다.
+`APPLE_PRIVATE_KEY`는 Sign in with Apple이 활성화된 `.p8` 키의 전체 내용입니다.
+
 전체 운영 전환, OAuth 공급자 설정, Render 데이터 백업과 사용자 UUID 매핑 절차는 [`docs/supabase-cutover.md`](docs/supabase-cutover.md)를 따릅니다.
 
 ## 인증

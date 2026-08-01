@@ -1,16 +1,21 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import {
+  Alert,
   ActivityIndicator,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
 import { useSession } from '@/context/session-context';
+import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/apple-auth';
+import { deleteAccount } from '@/lib/api';
 import { appConfig } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
 
@@ -31,9 +36,45 @@ function supportGmailUrl(type: 'inquiry' | 'feedback') {
 
 export default function AccountScreen() {
   const { loading, session } = useSession();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const logout = async () => {
     await supabase.auth.signOut({ scope: 'local' });
+  };
+
+  const removeAccount = async () => {
+    if (confirmText !== '회원탈퇴' || deleting || !session) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const isApple = session.user.app_metadata.provider === 'apple'
+        || session.user.identities?.some((identity) => identity.provider === 'apple');
+      const appleCode = isApple ? await appleAuthorizationCodeForDeletion() : undefined;
+      const result = await deleteAccount(appleCode);
+      await supabase.auth.signOut({ scope: 'local' });
+      await clearAppleAuthState();
+      setDeleteOpen(false);
+      setConfirmText('');
+      if (result.appleRevocation === 'manual_required') {
+        Alert.alert(
+          '계정 삭제 완료',
+          '코리아픽 계정은 삭제됐습니다. Apple 계정 설정에서 코리아픽 연결도 해제해 주세요.',
+          [
+            { text: '나중에' },
+            { text: 'Apple 설정 열기', onPress: () => void Linking.openURL('https://account.apple.com/account/manage') },
+          ],
+        );
+      } else {
+        Alert.alert('회원탈퇴 완료', '코리아픽 계정과 삭제 대상 데이터가 처리되었습니다.');
+      }
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : '회원탈퇴 처리 중 오류가 발생했습니다.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -59,6 +100,9 @@ export default function AccountScreen() {
             <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.outlineButton}>
               <Text style={styles.outlineText}>로그아웃</Text>
             </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => setDeleteOpen(true)} style={styles.deleteButton}>
+              <Text style={styles.deleteButtonText}>회원탈퇴</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.card}>
@@ -78,6 +122,42 @@ export default function AccountScreen() {
           <Pressable onPress={() => void Linking.openURL(supportGmailUrl('feedback'))}><Text style={styles.link}>피드백 보내기</Text></Pressable>
           <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/support`)}><Text style={styles.link}>고객지원 안내</Text></Pressable>
         </View>
+
+        {deleteOpen ? (
+          <View style={styles.deleteCard}>
+            <Text style={styles.deleteTitle}>계정을 영구 삭제할까요?</Text>
+            <Text style={styles.deleteDescription}>
+              프로필과 개인 데이터가 삭제되며 복구할 수 없습니다. 계속하려면 회원탈퇴를 입력하세요.
+            </Text>
+            <TextInput
+              accessibilityLabel="회원탈퇴 확인 문구"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!deleting}
+              onChangeText={setConfirmText}
+              placeholder="회원탈퇴"
+              style={styles.deleteInput}
+              value={confirmText}
+            />
+            {deleteError ? <Text style={styles.deleteError}>{deleteError}</Text> : null}
+            <View style={styles.deleteActions}>
+              <Pressable
+                disabled={deleting}
+                onPress={() => { setDeleteOpen(false); setConfirmText(''); setDeleteError(''); }}
+                style={styles.cancelDelete}
+              >
+                <Text style={styles.cancelDeleteText}>취소</Text>
+              </Pressable>
+              <Pressable
+                disabled={confirmText !== '회원탈퇴' || deleting}
+                onPress={() => void removeAccount()}
+                style={[styles.confirmDelete, (confirmText !== '회원탈퇴' || deleting) && styles.disabledDelete]}
+              >
+                <Text style={styles.confirmDeleteText}>{deleting ? '삭제 중...' : '영구 탈퇴'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -101,6 +181,19 @@ const styles = StyleSheet.create({
   loginText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
   outlineButton: { width: '100%', marginTop: 22, alignItems: 'center', borderWidth: 1, borderColor: '#ccd8d1', borderRadius: 14, paddingVertical: 14 },
   outlineText: { color: '#3f4e45', fontSize: 14, fontWeight: '800' },
+  deleteButton: { width: '100%', marginTop: 10, alignItems: 'center', borderRadius: 14, paddingVertical: 13 },
+  deleteButtonText: { color: '#a43232', fontSize: 13, fontWeight: '800' },
   links: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 18 },
   link: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e2e8e4', color: '#405047', fontSize: 14, fontWeight: '700', paddingVertical: 16 },
+  deleteCard: { marginTop: 18, borderWidth: 1, borderColor: '#f0caca', borderRadius: 20, backgroundColor: '#fffafa', padding: 18 },
+  deleteTitle: { color: '#7d2424', fontSize: 18, fontWeight: '900' },
+  deleteDescription: { marginTop: 8, color: '#694545', fontSize: 13, lineHeight: 20 },
+  deleteInput: { marginTop: 15, borderWidth: 1, borderColor: '#dcbaba', borderRadius: 12, backgroundColor: '#ffffff', color: '#2b2525', paddingHorizontal: 13, paddingVertical: 12 },
+  deleteError: { marginTop: 10, color: '#a43232', fontSize: 12, lineHeight: 18 },
+  deleteActions: { marginTop: 14, flexDirection: 'row', gap: 10 },
+  cancelDelete: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#d6d6d6', borderRadius: 12, paddingVertical: 12 },
+  cancelDeleteText: { color: '#555555', fontSize: 13, fontWeight: '800' },
+  confirmDelete: { flex: 1, alignItems: 'center', borderRadius: 12, backgroundColor: '#a43232', paddingVertical: 12 },
+  disabledDelete: { opacity: 0.4 },
+  confirmDeleteText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
 });

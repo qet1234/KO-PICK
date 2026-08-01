@@ -86,6 +86,49 @@ async function fetchKoPick<T>(path: string) {
   }
 }
 
+export type AccountDeletionResult = {
+  success: boolean;
+  appleRevocation: 'not_applicable' | 'revoked' | 'manual_required';
+};
+
+export async function deleteAccount(appleAuthorizationCode?: string) {
+  if (!appConfig.isSupabaseConfigured) {
+    throw new Error('Supabase 앱 환경변수가 설정되지 않았습니다.');
+  }
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('로그인 정보가 없거나 만료되었습니다.');
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+  const endpoint = `${appConfig.supabaseUrl.replace(/\/$/, '')}/functions/v1/kopick-api/api/web/account`;
+  try {
+    const response = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        apikey: appConfig.supabasePublishableKey,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ appleAuthorizationCode }),
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => null) as (AccountDeletionResult & { error?: string }) | null;
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.error || `회원탈퇴에 실패했습니다. (${response.status})`);
+    }
+    return payload;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('회원탈퇴 요청 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function fetchTourPlaces(query: PlaceQuery) {
   const params = new URLSearchParams({
     category: query.category,

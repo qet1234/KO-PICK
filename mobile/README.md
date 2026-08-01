@@ -18,6 +18,9 @@ KO-PICK의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도�
 - Android·iOS 네이티브 네이버 지도와 장소 마커
 - 장소별 길찾기 지도 선택, 네이버지도·카카오맵 선택값 기기 저장
 - 추천·장소 찾기·내 계정 하단 탭
+- 앱 내부 영구 회원탈퇴와 Apple 로그인 토큰 연동 해제
+- 코리아픽 전용 아이콘·Android 어댑티브/단색 아이콘·스플래시
+- 정식 빌드 환경변수 누락 차단과 불필요한 Android 권한 제거
 
 ## 로컬 실행
 
@@ -62,7 +65,8 @@ Supabase Auth의 Redirect URLs에는 `kopick://**`를 추가합니다. Google·K
 
 ## EAS 빌드
 
-Expo 계정과 EAS 프로젝트를 연결한 뒤 실행합니다. EAS project ID는 계정에서 발급되는 값이므로 저장소에 임의로 넣지 않습니다.
+Expo 계정과 EAS 프로젝트를 연결한 뒤 실행합니다. 현재 EAS 프로젝트는
+`@use1234/ko-pick` (`8914e5dd-3545-482a-ad4d-4290b399e4b1`)에 연결되어 있습니다.
 
 ```bash
 cd mobile
@@ -73,6 +77,12 @@ npx eas-cli build --platform ios --profile development
 npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
+
+`production` 빌드는 EAS의 `production` 환경을 사용합니다. 공개 환경변수 4개 중 하나라도
+빠지면 손상된 앱을 만들지 않고 설정 오류로 빌드를 중단합니다.
+
+Apple 계정 탈퇴의 자동 연동 해제에는 앱 공개 환경변수가 아니라 Supabase Edge Function
+secret인 `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`가 필요합니다.
 
 Android 내부 테스트 업로드는 `internal` 제출 프로필을 사용합니다. 이 프로필은 자동 공개를 막기 위해 초안으로 업로드합니다.
 
