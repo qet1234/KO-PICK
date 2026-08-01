@@ -9,7 +9,7 @@ const relationshipJourneys = [
   {
     label: "커플",
     title: "데이트 장소 찾기",
-    description: "카페, 데이트 관광지, 축제와 음식 장소를 한 지도에서 찾아보세요.",
+    description: "네이버 검색 반응이 많은 카페·맛집·데이트 명소를 우선 확인하세요.",
     href: "/explore?category=전체&journey=커플",
     icon: "02",
   },
