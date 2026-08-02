@@ -1,14 +1,19 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { TourPlace } from '@/lib/api';
-
-export type NaverPlacesMapProps = {
-  places: TourPlace[];
-  selectedId: string | null;
-  onSelect: (place: TourPlace) => void;
+export type MapPlace = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
 };
 
-export function NaverPlacesMap({ places }: NaverPlacesMapProps) {
+export type NaverPlacesMapProps<T extends MapPlace = MapPlace> = {
+  places: T[];
+  selectedId: string | null;
+  onSelect: (place: T) => void;
+};
+
+export function NaverPlacesMap<T extends MapPlace>({ places }: NaverPlacesMapProps<T>) {
   return (
     <View style={styles.placeholder}>
       <Text style={styles.title}>네이버 지도</Text>

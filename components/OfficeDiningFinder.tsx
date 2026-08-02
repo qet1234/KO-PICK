@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import {
   loadNaverMaps,
@@ -11,7 +11,6 @@ import {
   type NaverMapInstance,
   type NaverMarkerInstance,
 } from "@/utils/naver-maps";
-import { tourPlacesApiUrl } from "@/utils/spring-api";
 
 type DiningMode = "회식" | "점심";
 
@@ -33,49 +32,8 @@ const regions = [
 
 const headcounts = ["2~4명", "5~8명", "9~12명", "13~20명", "21명 이상"];
 const foodTypes = ["전체", "한식", "고기·구이", "일식", "중식", "양식", "해산물", "주점"];
-const parkingOptions = ["상관없음", "주차 가능", "발렛파킹"];
 const dinnerBudgets = ["1인 2만원 이하", "1인 3만원 이하", "1인 5만원 이하", "1인 7만원 이하", "1인 10만원 이상"];
 const lunchBudgets = ["1인 1만원 이하", "1인 1.5만원 이하", "1인 2만원 이하", "1인 3만원 이하"];
-
-const tourDetailByFood: Record<string, string> = {
-  한식: "한식",
-  "고기·구이": "한식",
-  일식: "일식",
-  중식: "중식",
-  양식: "양식",
-  해산물: "해산물",
-  주점: "주점",
-};
-
-function makeConditionQuery({
-  mode,
-  region,
-  district,
-  officeArea,
-  headcount,
-  foodType,
-  parking,
-  budget,
-}: {
-  mode: DiningMode;
-  region: string;
-  district: string;
-  officeArea: string;
-  headcount: string;
-  foodType: string;
-  parking: string;
-  budget: string;
-}) {
-  return [
-    region,
-    district === "전체" ? "" : district,
-    officeArea.trim(),
-    foodType === "전체" ? "맛집" : foodType,
-    mode === "회식" ? `${headcount} 회식` : "직장인 점심",
-    parking === "상관없음" ? "" : parking,
-    budget,
-  ].filter(Boolean).join(" ");
-}
 
 export default function OfficeDiningFinder() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -88,7 +46,6 @@ export default function OfficeDiningFinder() {
   const [officeArea, setOfficeArea] = useState("");
   const [headcount, setHeadcount] = useState("5~8명");
   const [foodType, setFoodType] = useState("전체");
-  const [parking, setParking] = useState("상관없음");
   const [budget, setBudget] = useState("1인 3만원 이하");
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -104,21 +61,6 @@ export default function OfficeDiningFinder() {
 
   const districts = koreaRegionDistricts[region] ?? [];
   const budgets = mode === "회식" ? dinnerBudgets : lunchBudgets;
-  const conditionQuery = useMemo(
-    () => makeConditionQuery({
-      mode,
-      region,
-      district,
-      officeArea,
-      headcount,
-      foodType,
-      parking,
-      budget,
-    }),
-    [mode, region, district, officeArea, headcount, foodType, parking, budget]
-  );
-  const conditionSearchUrl = `https://map.naver.com/p/search/${encodeURIComponent(conditionQuery)}`;
-
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
     if (!clientId) return;
@@ -161,7 +103,19 @@ export default function OfficeDiningFinder() {
 
     const markers = places.map((place) => {
       const position = new maps.LatLng(place.latitude, place.longitude);
-      const marker = new maps.Marker({ position, map, title: place.name });
+      const markerContent = document.createElement("div");
+      markerContent.className = "od-map-marker";
+      const markerName = document.createElement("span");
+      markerName.textContent = place.name;
+      const markerPin = document.createElement("i");
+      markerPin.setAttribute("aria-hidden", "true");
+      markerContent.append(markerName, markerPin);
+      const marker = new maps.Marker({
+        position,
+        map,
+        title: place.name,
+        icon: { content: markerContent },
+      });
       bounds.extend(position);
 
       maps.Event.addListener(marker, "click", () => {
@@ -204,7 +158,6 @@ export default function OfficeDiningFinder() {
   const selectMode = (nextMode: DiningMode) => {
     setMode(nextMode);
     setBudget(nextMode === "회식" ? "1인 3만원 이하" : "1인 1만원 이하");
-    if (nextMode === "점심") setParking("상관없음");
   };
 
   const search = async () => {
@@ -214,42 +167,28 @@ export default function OfficeDiningFinder() {
 
     try {
       const params = new URLSearchParams({
-        category: "음식",
-        includeImages: "false",
-        page: "1",
-        pageSize: "30",
+        mode,
         region,
+        district,
+        officeArea: officeArea.trim(),
+        foodType,
+        headcount,
+        budget,
       });
-      const detailType = tourDetailByFood[foodType];
-      if (detailType) params.set("detailType", detailType);
-
-      if (district !== "전체") {
-        const subregionResponse = await fetch(
-          `${tourPlacesApiUrl}?mode=subregions&region=${encodeURIComponent(region)}`
-        );
-        const subregionPayload = await subregionResponse.json();
-        if (!subregionResponse.ok) {
-          throw new Error(subregionPayload.error ?? "시·군·구 정보를 불러오지 못했습니다.");
-        }
-        const subregion = (subregionPayload.subregions ?? []).find(
-          (item: { code?: string; name?: string }) => item.name === district
-        );
-        if (subregion?.code) params.set("sigunguCode", subregion.code);
-      }
-
-      const response = await fetch(`${tourPlacesApiUrl}?${params.toString()}`);
+      const response = await fetch(`/api/naver/dining-search?${params.toString()}`);
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "식당을 불러오지 못했습니다.");
+      if (!response.ok) throw new Error(payload.error ?? "네이버 음식점을 불러오지 못했습니다.");
 
-      const nextPlaces = ((payload.places ?? []) as Place[]).filter((place) =>
-        district === "전체" || [place.city, place.address].some((value) => value?.includes(district))
-      );
+      const nextPlaces = (payload.places ?? []) as Place[];
       setPlaces(nextPlaces);
       setSelectedId(nextPlaces[0]?.id ?? null);
+      window.setTimeout(() => {
+        mapContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
     } catch (nextError) {
       setPlaces([]);
       setSelectedId(null);
-      setError(nextError instanceof Error ? nextError.message : "식당을 불러오지 못했습니다.");
+      setError(nextError instanceof Error ? nextError.message : "네이버 음식점을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
     }
@@ -296,7 +235,7 @@ export default function OfficeDiningFinder() {
         <div className="od-hero-copy">
           <p>OFFICE DINING</p>
           <h1>오늘 점심부터<br />팀 회식까지 한 번에</h1>
-          <span>조건을 고르면 코리아픽 장소를 네이버 지도에 표시하고, 선택한 조건 그대로 네이버 지도에서도 찾아볼 수 있습니다.</span>
+          <span>지역·음식 종류·금액대를 고르면 네이버 음식점명을 지도 마커로 바로 비교할 수 있습니다.</span>
         </div>
         <div className="od-hero-steps" aria-label="이용 순서">
           <span><b>1</b>조건 선택</span><span><b>2</b>지도 비교</span><span><b>3</b>네이버 길찾기</span>
@@ -315,7 +254,7 @@ export default function OfficeDiningFinder() {
               onClick={() => selectMode(item)}
             >
               <strong>{item === "회식" ? "팀 회식" : "빠른 점심"}</strong>
-              <span>{item === "회식" ? "인원·주차·예산까지" : "근처에서 부담 없는 한 끼"}</span>
+              <span>{item === "회식" ? "인원·음식·금액대별" : "근처에서 부담 없는 한 끼"}</span>
             </button>
           ))}
         </div>
@@ -335,31 +274,27 @@ export default function OfficeDiningFinder() {
           <ChoiceGroup label="인원" values={headcounts} selected={headcount} onSelect={setHeadcount} />
         )}
         <ChoiceGroup label="음식 종류" values={foodTypes} selected={foodType} onSelect={setFoodType} />
-        {mode === "회식" && (
-          <ChoiceGroup label="주차" values={parkingOptions} selected={parking} onSelect={setParking} />
-        )}
         <ChoiceGroup label="금액대" values={budgets} selected={budget} onSelect={setBudget} />
 
         <div className="od-actions">
           <button className="od-search-button" type="button" disabled={loading} onClick={() => void search()}>
             {loading ? "식당을 찾고 있어요…" : `${mode} 장소 찾아보기`}
           </button>
-          <a className="od-naver-condition-button" href={conditionSearchUrl} target="_blank" rel="noopener noreferrer">N 선택 조건으로 네이버 지도 검색 ↗</a>
         </div>
-        <p className="od-data-note">장소·주소·좌표는 한국관광공사 데이터입니다. 인원 수용, 실제 가격, 주차·발렛 제공 여부는 매장별로 달라 네이버 지도에서 최종 확인해 주세요.</p>
+        <p className="od-data-note">선택한 금액대는 네이버 음식점 검색어에 반영됩니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</p>
       </section>
 
       <section className="od-results" aria-live="polite">
         <div className="od-map-panel">
-          <div className="od-map-heading"><div><small>NAVER MAP</small><h2>지도에서 비교하기</h2></div>{places.length > 0 && <span>{places.length}곳</span>}</div>
+          <div className="od-map-heading"><div><small>NAVER MAP</small><h2>음식점명과 마커로 비교하기</h2></div>{places.length > 0 && <span>{places.length}곳</span>}</div>
           {mapError && <div className="od-map-message">{mapError}</div>}
           <div className="od-map" ref={mapContainerRef} hidden={Boolean(mapError)} />
         </div>
 
         <div className="od-list-panel">
-          <div className="od-list-heading"><small>RESTAURANT PICKS</small><h2>{searched ? `${region}${district === "전체" ? "" : ` ${district}`} 추천` : "조건을 선택해 찾아보세요"}</h2></div>
+          <div className="od-list-heading"><small>NAVER RESTAURANTS</small><h2>{searched ? `${region}${district === "전체" ? "" : ` ${district}`} · ${budget}` : "조건을 선택해 찾아보세요"}</h2></div>
           {error && <p className="od-error">{error}</p>}
-          {searched && !loading && !error && places.length === 0 && <p className="od-empty">선택한 지역의 식당을 찾지 못했습니다. 지역 범위를 넓히거나 네이버 조건 검색을 이용해 주세요.</p>}
+          {searched && !loading && !error && places.length === 0 && <p className="od-empty">선택한 조건의 식당을 찾지 못했습니다. 회사·역·동네를 더 구체적으로 입력하거나 지역 범위를 넓혀 주세요.</p>}
           <div className="od-place-list">
             {places.map((place, index) => (
               <article className={selectedId === place.id ? "od-place-card is-selected" : "od-place-card"} key={place.id}>
@@ -368,7 +303,7 @@ export default function OfficeDiningFinder() {
                   <span className="od-place-copy"><small>{place.category}</small><strong>{place.name}</strong><span>{place.address ?? `${place.region} ${place.city ?? ""}`}</span></span>
                 </button>
                 <div className="od-place-actions">
-                  <a href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">네이버 지도 보기</a>
+                  <a href={naverMapSearchUrl(place.name, null, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">음식점명으로 보기</a>
                   <button type="button" onClick={() => startNaverRoute(place)}>네이버 길찾기</button>
                 </div>
               </article>
