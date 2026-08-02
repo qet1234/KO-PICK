@@ -347,14 +347,14 @@
 
 .od-results {
   padding: 28px 0 70px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr);
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
 }
 
 .od-map-panel,
 .od-list-panel {
+  width: 100%;
   padding: 24px;
   border: 1px solid var(--od-line);
   border-radius: 28px;
@@ -435,11 +435,14 @@
 
 .od-place-list {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .od-place-card {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--od-line);
   border-radius: 18px;
   background: white;
@@ -453,6 +456,7 @@
 
 .od-place-main {
   width: 100%;
+  flex: 1;
   padding: 15px;
   display: flex;
   align-items: flex-start;
@@ -570,8 +574,8 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .od-results {
-    grid-template-columns: 1fr;
+  .od-place-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .od-map {
@@ -628,5 +632,9 @@
 
   .od-map {
     height: 340px;
+  }
+
+  .od-place-list {
+    grid-template-columns: 1fr;
   }
 }
