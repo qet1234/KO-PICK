@@ -1,5 +1,66 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import type { BottomTabBarButtonProps } from 'expo-router/build/layouts/Tabs';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text } from 'react-native';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function AnimatedTabButton({ onPressIn, onPressOut, style, ...props }: BottomTabBarButtonProps) {
+  const [scale] = useState(() => new Animated.Value(1));
+  const [translateY] = useState(() => new Animated.Value(0));
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => subscription.remove();
+  }, []);
+
+  const pressIn: NonNullable<BottomTabBarButtonProps['onPressIn']> = (event) => {
+    onPressIn?.(event);
+    if (reduceMotion) return;
+
+    scale.stopAnimation();
+    translateY.stopAnimation();
+    Animated.parallel([
+      Animated.timing(scale, { toValue: 0.88, duration: 90, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 2, duration: 90, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const pressOut: NonNullable<BottomTabBarButtonProps['onPressOut']> = (event) => {
+    onPressOut?.(event);
+    if (reduceMotion) return;
+
+    scale.stopAnimation();
+    translateY.stopAnimation();
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1,
+        damping: 8,
+        stiffness: 260,
+        mass: 0.45,
+        useNativeDriver: true,
+      }),
+      Animated.spring(translateY, {
+        toValue: 0,
+        damping: 9,
+        stiffness: 280,
+        mass: 0.45,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  return (
+    <AnimatedPressable
+      {...props}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      style={[style, styles.tabButton, { transform: [{ scale }, { translateY }] }]}
+    />
+  );
+}
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -17,7 +78,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#146b45',
         tabBarInactiveTintColor: '#879089',
         tabBarLabelStyle: { fontSize: 11, fontWeight: '800' },
-        tabBarStyle: { height: 66, paddingTop: 6, paddingBottom: 8 },
+        tabBarActiveBackgroundColor: '#e9f7ef',
+        tabBarItemStyle: { marginHorizontal: 4, marginVertical: 5, borderRadius: 15 },
+        tabBarStyle: { height: 68, paddingHorizontal: 5, paddingTop: 2, paddingBottom: 4 },
+        tabBarButton: (props) => <AnimatedTabButton {...props} />,
       }}>
       <Tabs.Screen
         name="index"
@@ -50,3 +114,9 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabButton: {
+    borderRadius: 15,
+  },
+});
