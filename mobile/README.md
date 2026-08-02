@@ -74,6 +74,7 @@ npx eas-cli login
 npx eas-cli init
 npx eas-cli build --platform android --profile development
 npx eas-cli build --platform ios --profile development
+npx eas-cli build --platform ios --profile testflight
 npx eas-cli build --platform android --profile production
 npx eas-cli build --platform ios --profile production
 ```
@@ -85,11 +86,25 @@ Apple 계정 탈퇴의 자동 연동 해제에는 앱 공개 환경변수가 아
 secret인 `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`가 필요합니다.
 
 Android 내부 테스트 업로드는 `internal` 제출 프로필을 사용합니다. 이 프로필은 자동 공개를 막기 위해 초안으로 업로드합니다.
+출시 전 iPhone 배포는 `testflight` 빌드·제출 프로필을 사용합니다. 이 빌드는 App Store에
+자동 출시되지 않고 App Store Connect의 TestFlight에만 올라갑니다.
 
 ```bash
 npx eas-cli submit --platform android --profile internal
+npx eas-cli submit --platform ios --profile testflight
 npx eas-cli submit --platform ios --profile production
 ```
+
+최초 Apple 인증과 App Store Connect 앱 생성이 끝난 뒤에는 빌드와 제출을 한 번에 실행할
+수 있습니다.
+
+```bash
+npx eas-cli build --platform ios --profile testflight --auto-submit-with-profile testflight
+```
+
+외부 테스터 그룹의 공개 링크를 만든 뒤 Vercel 운영 환경변수 `IOS_TESTFLIGHT_URL`에
+`https://testflight.apple.com/join/...` 링크를 설정하면
+`https://koreapick.duckdns.org/download`의 iPhone 버튼이 활성화됩니다.
 
 ## 다음 구현 순서
 
