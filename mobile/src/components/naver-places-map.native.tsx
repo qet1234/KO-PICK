@@ -4,10 +4,10 @@ import {
 } from '@mj-studio/react-native-naver-map';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { NaverPlacesMapProps } from '@/components/naver-places-map';
+import type { MapPlace, NaverPlacesMapProps } from '@/components/naver-places-map';
 import { appConfig } from '@/lib/config';
 
-export function NaverPlacesMap({ places, selectedId, onSelect }: NaverPlacesMapProps) {
+export function NaverPlacesMap<T extends MapPlace>({ places, selectedId, onSelect }: NaverPlacesMapProps<T>) {
   const first = places[0];
 
   if (!appConfig.isNaverMapConfigured) {

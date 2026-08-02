@@ -46,6 +46,10 @@ export interface NaverMapsApi {
     position: NaverLatLng;
     map?: NaverMapInstance;
     title?: string;
+    icon?: {
+      content: HTMLElement | string;
+      anchor?: object;
+    };
   }) => NaverMarkerInstance;
   InfoWindow: new (options: {
     content: HTMLElement;

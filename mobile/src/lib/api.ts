@@ -20,6 +20,17 @@ export type TourPlace = {
   imageSourceUrl: string | null;
 };
 
+export type NaverDiningPlace = {
+  id: string;
+  name: string;
+  region: string;
+  city: string | null;
+  category: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+};
+
 export type Recommendation = {
   id: string;
   name: string;
@@ -152,6 +163,20 @@ export async function fetchTourPlaces(query: PlaceQuery) {
       totalPages: number;
     };
   }>(`/api/tour/places?${params.toString()}`);
+}
+
+export async function fetchNaverDiningPlaces(query: {
+  mode: '회식' | '점심';
+  region: string;
+  officeArea: string;
+  foodType: string;
+  headcount: string;
+  budget: string;
+}) {
+  const params = new URLSearchParams(query);
+  return fetchKoPick<{ places: NaverDiningPlace[]; query: string; budget: string }>(
+    `/api/naver/dining-search?${params.toString()}`,
+  );
 }
 
 export async function fetchRecommendations(query: RecommendationQuery) {

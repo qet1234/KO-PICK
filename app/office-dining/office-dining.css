@@ -310,9 +310,7 @@
 
 .od-actions {
   margin-top: 30px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  display: block;
 }
 
 .od-actions > * {
@@ -328,6 +326,7 @@
 }
 
 .od-search-button {
+  width: 100%;
   border: 1px solid var(--od-green);
   color: white;
   background: var(--od-green);
@@ -336,12 +335,6 @@
 .od-search-button:disabled {
   cursor: wait;
   opacity: 0.65;
-}
-
-.od-naver-condition-button {
-  border: 1px solid #03c75a;
-  color: #075b2d;
-  background: #eafff1;
 }
 
 .od-data-note,
@@ -378,6 +371,42 @@
   overflow: hidden;
   border-radius: 20px;
   background: #e9eeea;
+}
+
+.od-map-marker {
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.od-map-marker span {
+  max-width: 180px;
+  overflow: hidden;
+  padding: 7px 10px;
+  border: 1px solid rgba(23, 35, 28, 0.16);
+  border-radius: 10px;
+  color: var(--od-ink);
+  background: white;
+  box-shadow: 0 7px 20px rgba(22, 49, 34, 0.2);
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.od-map-marker i {
+  width: 14px;
+  height: 14px;
+  margin-top: -2px;
+  border: 3px solid white;
+  border-radius: 50% 50% 50% 0;
+  background: var(--od-green);
+  box-shadow: 0 3px 8px rgba(22, 49, 34, 0.25);
+  transform: rotate(-45deg);
 }
 
 .od-map-message,
