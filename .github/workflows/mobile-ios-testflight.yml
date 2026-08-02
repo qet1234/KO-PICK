@@ -1,0 +1,49 @@
+name: Mobile iOS TestFlight
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-ios-testflight
+  cancel-in-progress: false
+
+jobs:
+  build-and-submit:
+    name: Build and submit iOS beta
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check for EXPO_TOKEN
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "Add EXPO_TOKEN to the repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and submit TestFlight beta
+        run: >-
+          eas build --platform ios --profile testflight --non-interactive --wait
+          --auto-submit-with-profile testflight

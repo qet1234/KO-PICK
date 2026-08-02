@@ -56,6 +56,8 @@ npx eas-cli build --platform ios --profile production
 - Google Play 신규 개인 계정은 비공개 테스트에 최소 12명이 14일 연속 참여한 뒤 프로덕션 접근을 신청
 - Android 최초 업로드는 내부 테스트 트랙의 초안으로 시작
 - iOS 빌드는 App Store Connect 처리 후 TestFlight에서 내부 테스트
+- 외부 사용자가 링크로 설치해야 하면 TestFlight 외부 테스트 그룹과 공개 링크 생성
+- Vercel 운영 환경변수 `IOS_TESTFLIGHT_URL`에 TestFlight 공개 링크 등록
 - 실제 기기에서 로그인, 딥링크, 네트워크 단절, 토큰 만료, 회원탈퇴를 검증
 - 앱 충돌·개인정보가 포함된 로그·깨진 외부 링크가 없는지 확인
 
