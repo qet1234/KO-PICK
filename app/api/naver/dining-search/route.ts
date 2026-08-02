@@ -117,8 +117,9 @@ const BUDGET_QUERY: Record<string, readonly string[]> = {
   "1인 7만원 이하": ["7만원 이하", "5만원대", "6만원대"],
   "1인 10만원 이상": ["10만원 이상", "고급", "프리미엄"],
 };
-const MAX_RESULTS = 20;
-const MAX_QUERIES = 12;
+const MAX_RESULTS = 50;
+const MAX_QUERIES = 16;
+const MAX_SEARCHES = 24;
 const QUERY_BATCH_SIZE = 4;
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
@@ -190,19 +191,19 @@ function makeQueries({
   const primaryBudget = budgetTerms[0] ?? budget;
   const purpose = mode === "회식" ? `${headcount} 회식` : "직장인 점심";
 
-  const queries = [
-    `${location} ${primaryFood} ${purpose} ${primaryBudget}`,
-    `${location} ${primaryFood} ${primaryBudget}`,
-    `${location} ${primaryFood} ${purpose}`,
-    `${location} ${primaryFood}`,
-  ];
+  // Naver Local Search returns at most five places per query and cannot be
+  // paginated. Search each food term on its own first so detailed categories
+  // contribute different restaurants instead of repeating one broad top five.
+  const queries = foodTerms.map((food) => `${location} ${food}`);
 
-  for (const food of foodTerms.slice(1)) {
-    queries.push(
-      `${location} ${food} ${purpose} ${primaryBudget}`,
-      `${location} ${food} ${primaryBudget}`,
-    );
+  for (const food of foodTerms) {
+    queries.push(`${location} ${food} ${primaryBudget}`);
   }
+
+  queries.push(
+    `${location} ${primaryFood} ${purpose}`,
+    `${location} ${primaryFood} ${purpose} ${primaryBudget}`,
+  );
   for (const price of budgetTerms.slice(1)) {
     queries.push(`${location} ${primaryFood} ${purpose} ${price}`);
   }
@@ -212,11 +213,16 @@ function makeQueries({
   )).slice(0, MAX_QUERIES);
 }
 
-async function searchNaver(query: string, clientId: string, clientSecret: string) {
+async function searchNaver(
+  query: string,
+  sort: "random" | "comment",
+  clientId: string,
+  clientSecret: string,
+) {
   const url = new URL("https://openapi.naver.com/v1/search/local.json");
   url.searchParams.set("query", query);
   url.searchParams.set("display", "5");
-  url.searchParams.set("sort", "random");
+  url.searchParams.set("sort", sort);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6_000);
@@ -272,14 +278,20 @@ export async function GET(request: NextRequest) {
   }
 
   const queries = makeQueries({ mode, region, district, officeArea, foodType, foodDetail, headcount, budget });
+  const searches = [
+    ...queries.map((query) => ({ query, sort: "random" as const })),
+    ...queries.map((query) => ({ query, sort: "comment" as const })),
+  ].slice(0, MAX_SEARCHES);
   const found = new Map<string, NaverLocalItem>();
 
   try {
     let successfulQueries = 0;
     let lastError: unknown;
-    for (let offset = 0; offset < queries.length && found.size < MAX_RESULTS; offset += QUERY_BATCH_SIZE) {
+    for (let offset = 0; offset < searches.length && found.size < MAX_RESULTS; offset += QUERY_BATCH_SIZE) {
       const batch = await Promise.allSettled(
-        queries.slice(offset, offset + QUERY_BATCH_SIZE).map((query) => searchNaver(query, clientId, clientSecret)),
+        searches
+          .slice(offset, offset + QUERY_BATCH_SIZE)
+          .map(({ query, sort }) => searchNaver(query, sort, clientId, clientSecret)),
       );
       for (const result of batch) {
         if (result.status === "rejected") {

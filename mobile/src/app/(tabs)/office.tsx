@@ -142,7 +142,7 @@ export default function OfficeDiningScreen() {
           <Pressable disabled={loading} onPress={() => void search()} style={[styles.searchButton, loading && styles.disabled]}>
             {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>{mode} 장소 찾아보기</Text>}
           </Pressable>
-          <Text style={styles.note}>금액대와 세부 음식 조건으로 최대 20곳을 찾아봅니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
+          <Text style={styles.note}>여러 세부 음식 검색 결과를 합쳐 최대 50곳의 음식점명을 보여드립니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
