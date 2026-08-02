@@ -86,6 +86,7 @@ function makeQueries({
     `${location} ${food} ${purpose} ${budget}`,
     `${location} ${food} ${budget}`,
     `${location} ${food} ${purpose}`,
+    `${location} ${food}`,
   ].map((query) => query.replace(/\s+/g, " ").trim())));
 }
 
