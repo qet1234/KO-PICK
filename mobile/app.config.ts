@@ -3,9 +3,10 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
-const isProductionBuild = process.env.EAS_BUILD_PROFILE === 'production';
+const releaseBuildProfiles = new Set(['production', 'testflight']);
+const isReleaseBuild = releaseBuildProfiles.has(process.env.EAS_BUILD_PROFILE ?? '');
 
-if (isProductionBuild) {
+if (isReleaseBuild) {
   const requiredEnvironmentVariables = [
     'EXPO_PUBLIC_SUPABASE_URL',
     'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
@@ -14,7 +15,7 @@ if (isProductionBuild) {
   ] as const;
   const missing = requiredEnvironmentVariables.filter((name) => !process.env[name]?.trim());
   if (missing.length > 0) {
-    throw new Error(`KO-PICK production build is missing: ${missing.join(', ')}`);
+    throw new Error(`KO-PICK release build is missing: ${missing.join(', ')}`);
   }
 }
 
