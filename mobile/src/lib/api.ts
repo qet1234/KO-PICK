@@ -170,6 +170,7 @@ export async function fetchNaverDiningPlaces(query: {
   region: string;
   officeArea: string;
   foodType: string;
+  foodDetail: string;
   headcount: string;
   budget: string;
 }) {
