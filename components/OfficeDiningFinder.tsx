@@ -310,7 +310,7 @@ export default function OfficeDiningFinder() {
             {loading ? "식당을 찾고 있어요…" : `${mode} 장소 찾아보기`}
           </button>
         </div>
-        <p className="od-data-note">금액대와 세부 음식 조건으로 최대 20곳을 찾아봅니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</p>
+        <p className="od-data-note">여러 세부 음식 검색 결과를 합쳐 최대 50곳의 음식점명을 보여드립니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</p>
       </section>
 
       <section className="od-results" aria-live="polite">
