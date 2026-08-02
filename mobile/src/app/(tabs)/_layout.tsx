@@ -34,6 +34,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="office"
+        options={{
+          title: '직장인 식사',
+          tabBarIcon: ({ focused }) => <TabIcon label="식" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="account"
         options={{
           title: '내 계정',

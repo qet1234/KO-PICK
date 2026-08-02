@@ -25,14 +25,24 @@ export default function Home() {
           <nav className="kp-navigation" aria-label="주요 메뉴">
             <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a>
           </nav>
-          <a
-            className="kp-header-place-button"
-            href="/recommend"
-            aria-label="맞춤 코스 설정 화면으로 이동"
-          >
-            <span aria-hidden="true">↗</span>
-            코스 설정
-          </a>
+          <div className="kp-header-service-buttons">
+            <a
+              className="kp-header-office-button"
+              href="/office-dining"
+              aria-label="직장인 점심과 회식 장소 찾기"
+            >
+              <span aria-hidden="true">식</span>
+              직장인 식사
+            </a>
+            <a
+              className="kp-header-place-button"
+              href="/recommend"
+              aria-label="맞춤 코스 설정 화면으로 이동"
+            >
+              <span aria-hidden="true">↗</span>
+              코스 설정
+            </a>
+          </div>
           <AuthHeader />
         </div>
       </header>

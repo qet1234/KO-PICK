@@ -46,6 +46,7 @@ export type PlaceQuery = {
   page?: number;
   pageSize?: number;
   sigunguCode?: string;
+  detailType?: string;
 };
 
 export type RecommendationQuery = {
@@ -138,6 +139,9 @@ export async function fetchTourPlaces(query: PlaceQuery) {
     region: query.region,
   });
   if (query.sigunguCode) params.set('sigunguCode', query.sigunguCode);
+  if (query.detailType && query.detailType !== '전체') {
+    params.set('detailType', query.detailType);
+  }
 
   return fetchKoPick<{
     places: TourPlace[];

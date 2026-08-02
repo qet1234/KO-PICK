@@ -161,3 +161,26 @@ export function naverMapSearchUrl(
 
   return `https://map.naver.com/p/search/${encodeURIComponent(query)}${center}`;
 }
+
+export function naverMapAppRouteUrl(
+  name: string,
+  latitude: number | string,
+  longitude: number | string,
+  appName: string
+) {
+  const latitudeValue = Number(latitude);
+  const longitudeValue = Number(longitude);
+
+  if (!Number.isFinite(latitudeValue) || !Number.isFinite(longitudeValue)) {
+    return null;
+  }
+
+  const params = new URLSearchParams({
+    dlat: String(latitudeValue),
+    dlng: String(longitudeValue),
+    dname: name.trim(),
+    appname: appName,
+  });
+
+  return `nmap://route/public?${params.toString()}`;
+}

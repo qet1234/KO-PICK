@@ -46,6 +46,18 @@ function naverUrls(place: RoutablePlace) {
   };
 }
 
+export async function openNaverSearch(query: string) {
+  const encodedQuery = encodeURIComponent(query.trim());
+  const appUrl = `nmap://search?query=${encodedQuery}&appname=${APP_PACKAGE_NAME}`;
+  const webUrl = `https://map.naver.com/p/search/${encodedQuery}`;
+
+  try {
+    await Linking.openURL(appUrl);
+  } catch {
+    await Linking.openURL(webUrl);
+  }
+}
+
 function kakaoUrl(place: RoutablePlace) {
   if (hasCoordinates(place)) {
     return `https://map.kakao.com/link/to/${encodeURIComponent(place.name)},${place.latitude},${place.longitude}`;
