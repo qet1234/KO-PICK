@@ -2198,3 +2198,537 @@ button {
   background: #f7f7f4;
 }
 
+.kp-subregion-filter > small {
+  display: block;
+  margin-bottom: 12px;
+  color: #111;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.kp-subregion-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.kp-subregion-buttons button {
+  min-height: 32px;
+  padding: 6px 13px;
+  border: 1px solid #d5d5ce;
+  border-radius: 999px;
+  background: #fff;
+  color: #333;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.kp-subregion-buttons button:hover,
+.kp-subregion-buttons button.is-active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .kp-subregion-filter {
+    margin-top: 18px;
+    padding: 14px;
+  }
+
+  .kp-subregion-buttons {
+    gap: 6px;
+  }
+
+  .kp-subregion-buttons button {
+    padding: 6px 11px;
+  }
+}
+
+/* BEGIN KOREAPICK PAGINATION UI */
+.kp-place-summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  margin-top: 20px;
+  padding: 12px 16px 12px 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 59, 59, 0.14);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 59, 59, 0.08), rgba(255, 255, 255, 0.94) 58%),
+    #ffffff;
+  box-shadow: 0 10px 28px rgba(31, 41, 55, 0.07);
+  color: #303642;
+  animation: kp-summary-enter 420ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.kp-place-summary::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg, #ff6b6b, #ff2f44);
+  content: "";
+}
+
+.kp-place-summary strong {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+.kp-place-summary .is-error {
+  color: #d92d20;
+  font-weight: 700;
+}
+
+.kp-place-pagination {
+  --kp-page-red: #ff3b3b;
+  --kp-page-red-dark: #e92d3f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 16px auto 0;
+  padding: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 14px 35px rgba(15, 23, 42, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: kp-pagination-enter 460ms 80ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.kp-pagination-button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 86px;
+  height: 42px;
+  padding: 0 14px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition:
+    transform 180ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.kp-pagination-button::after {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.kp-pagination-button--prev {
+  border-color: #e5e7eb;
+  background: #ffffff;
+  color: #444b57;
+}
+
+.kp-pagination-button--next {
+  background: linear-gradient(135deg, #ff5a5f, var(--kp-page-red-dark));
+  box-shadow: 0 8px 18px rgba(255, 59, 59, 0.24);
+  color: #ffffff;
+}
+
+.kp-pagination-button:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+.kp-pagination-button--prev:not(:disabled):hover {
+  border-color: rgba(255, 59, 59, 0.35);
+  background: #fff7f7;
+  color: var(--kp-page-red-dark);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.kp-pagination-button--next:not(:disabled):hover {
+  box-shadow: 0 12px 24px rgba(255, 59, 59, 0.32);
+}
+
+.kp-pagination-button:not(:disabled):active {
+  transform: translateY(1px) scale(0.96);
+}
+
+.kp-pagination-button:not(:disabled):active::after {
+  animation: kp-pagination-ripple 420ms ease-out;
+}
+
+.kp-pagination-button:focus-visible {
+  outline: 3px solid rgba(255, 59, 59, 0.22);
+  outline-offset: 3px;
+}
+
+.kp-pagination-button:disabled {
+  border-color: #edf0f3;
+  background: #f4f5f7;
+  box-shadow: none;
+  color: #b5bbc4;
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.kp-pagination-arrow {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+
+.kp-pagination-button--prev:not(:disabled):hover .kp-pagination-arrow {
+  transform: translateX(-2px);
+}
+
+.kp-pagination-button--next:not(:disabled):hover .kp-pagination-arrow {
+  transform: translateX(2px);
+}
+
+.kp-pagination-status {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  min-width: 94px;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 59, 59, 0.13);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fffafa, #fff2f2);
+  color: #7a818c;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  animation: kp-page-number-change 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.kp-pagination-status strong {
+  color: var(--kp-page-red-dark);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+@keyframes kp-summary-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kp-pagination-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes kp-page-number-change {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes kp-pagination-ripple {
+  0% {
+    opacity: 0.18;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(8);
+  }
+}
+
+@media (max-width: 520px) {
+  .kp-place-summary {
+    padding-right: 13px;
+  }
+
+  .kp-place-pagination {
+    width: 100%;
+  }
+
+  .kp-pagination-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 10px;
+  }
+
+  .kp-pagination-status {
+    min-width: 82px;
+    padding-inline: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-place-summary,
+  .kp-place-pagination,
+  .kp-pagination-status,
+  .kp-pagination-button,
+  .kp-pagination-arrow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* END KOREAPICK PAGINATION UI */
+
+/* BEGIN KOREAPICK CATEGORY CARDS V4 */
+.kp-category-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  border: 0;
+}
+
+.kp-category-grid > article {
+  min-width: 0;
+  min-height: 214px;
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  border-radius: 18px;
+  color: var(--kp-black);
+  background: linear-gradient(145deg, #fff 0%, #f7f7f3 100%);
+  box-shadow: 0 12px 30px rgba(17, 17, 17, 0.06);
+  animation: kp-category-v4-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 200ms ease, background 200ms ease, box-shadow 240ms ease,
+    border-color 200ms ease;
+}
+
+.kp-category-grid > article:nth-child(2) { animation-delay: 60ms; }
+.kp-category-grid > article:nth-child(3) { animation-delay: 120ms; }
+.kp-category-grid > article:nth-child(4) { animation-delay: 180ms; }
+.kp-category-grid > article:nth-child(5) { animation-delay: 240ms; }
+
+.kp-category-grid > article::before {
+  width: 4px;
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 0;
+  border-radius: 0 999px 999px 0;
+  background: var(--kp-red);
+  content: "";
+  transform: scaleY(0.34);
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kp-category-grid .kp-category-number {
+  width: fit-content;
+  padding: 5px 8px;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(17, 17, 17, 0.11);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  font-size: 9px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-category-grid .kp-category-card-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.kp-category-grid .kp-category-card-copy small {
+  color: var(--kp-red);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.kp-category-grid .kp-category-card-copy > strong {
+  margin-top: 11px;
+  font-size: 23px;
+  font-weight: 950;
+  letter-spacing: -0.055em;
+}
+
+.kp-category-grid .kp-category-card-copy > span {
+  margin-top: 7px;
+  padding-right: 52px;
+  color: var(--kp-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.kp-category-grid .kp-category-arrow {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(17, 17, 17, 0.18);
+  border-radius: 999px;
+  color: var(--kp-black);
+  background: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.kp-category-grid .kp-category-arrow::before {
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.kp-category-grid .kp-category-arrow > span {
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+}
+
+@media (hover: hover) {
+  .kp-category-grid > article:hover {
+    z-index: 2;
+    border-color: rgba(255, 59, 59, 0.34);
+    color: #fff;
+    background: linear-gradient(145deg, #171717, #262626);
+    box-shadow: 0 20px 42px rgba(17, 17, 17, 0.17);
+    transform: translateY(-6px);
+  }
+
+  .kp-category-grid > article:hover::before { transform: scaleY(1); }
+  .kp-category-grid > article:hover .kp-category-card-copy > span {
+    color: rgba(255, 255, 255, 0.68);
+  }
+  .kp-category-grid > article:hover .kp-category-number {
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .kp-category-grid .kp-category-arrow:hover {
+    border-color: var(--kp-red);
+    color: #fff;
+    background: var(--kp-red);
+    box-shadow: 0 9px 22px rgba(255, 59, 59, 0.32);
+    transform: translateY(-2px) rotate(45deg) scale(1.1);
+  }
+}
+
+.kp-category-grid .kp-category-arrow:active {
+  transform: rotate(45deg) scale(0.86) !important;
+}
+
+.kp-category-grid .kp-category-arrow:active::before {
+  animation: kp-category-v4-ripple 420ms ease-out;
+}
+
+.kp-category-grid .kp-category-arrow:focus-visible {
+  outline: 3px solid rgba(255, 59, 59, 0.3);
+  outline-offset: 3px;
+}
+
+@keyframes kp-category-v4-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes kp-category-v4-ripple {
+  from { opacity: 0.2; transform: translate(-50%, -50%) scale(0); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(8); }
+}
+
+@media (max-width: 900px) {
+  .kp-category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .kp-category-grid { grid-template-columns: 1fr; gap: 10px; }
+  .kp-category-grid > article { min-height: 190px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp-hero-main,
+  .kp-editor-pick,
+  .kp-editor-note,
+  .kp-hero-live-status i,
+  .kp-live-pick-pagination button,
+  .kp-popular-star {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .kp-category-grid > article,
+  .kp-category-grid .kp-category-arrow,
+  .kp-privacy-grid article,
+  .kp-privacy-footer a {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* END KOREAPICK CATEGORY CARDS V4 */
