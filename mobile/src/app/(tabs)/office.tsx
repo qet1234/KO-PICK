@@ -22,7 +22,24 @@ const regions = [
   '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주',
 ] as const;
 const headcounts = ['2~4명', '5~8명', '9~12명', '13~20명', '21명 이상'] as const;
-const foodTypes = ['전체', '한식', '고기·구이', '일식', '중식', '양식', '해산물', '주점'] as const;
+const foodTypes = [
+  '전체', '한식', '고기·구이', '일식', '중식', '양식', '아시아', '분식',
+  '해산물', '뷔페', '카페·디저트', '주점',
+] as const;
+const foodDetails: Record<string, readonly string[]> = {
+  전체: ['전체', '백반·가정식', '국밥·탕', '고기', '초밥', '중화요리', '파스타', '분식', '해산물'],
+  한식: ['전체', '백반·가정식', '국밥·탕', '찌개·전골', '한정식', '냉면·국수', '족발·보쌈', '닭요리'],
+  '고기·구이': ['전체', '삼겹살', '소고기', '갈비', '곱창·막창', '닭갈비', '오리구이', '양꼬치'],
+  일식: ['전체', '초밥', '돈카츠', '라멘', '우동·소바', '덮밥', '이자카야', '오마카세'],
+  중식: ['전체', '짜장·짬뽕', '마라탕', '중화요리', '딤섬', '훠궈', '양꼬치'],
+  양식: ['전체', '파스타', '피자', '스테이크', '햄버거', '브런치', '멕시칸'],
+  아시아: ['전체', '베트남', '태국', '인도', '동남아', '중동'],
+  분식: ['전체', '김밥', '떡볶이', '라면', '만두', '샌드위치'],
+  해산물: ['전체', '회·사시미', '조개구이', '해물탕', '생선구이', '장어', '대게·킹크랩'],
+  뷔페: ['전체', '한식뷔페', '샐러드바', '호텔뷔페', '고기뷔페', '초밥뷔페'],
+  '카페·디저트': ['전체', '카페', '베이커리', '디저트', '아이스크림', '브런치카페'],
+  주점: ['전체', '호프·맥주', '이자카야', '포차', '와인바', '전통주', '요리주점'],
+};
 const dinnerBudgets = ['1인 2만원 이하', '1인 3만원 이하', '1인 5만원 이하', '1인 7만원 이하', '1인 10만원 이상'] as const;
 const lunchBudgets = ['1인 1만원 이하', '1인 1.5만원 이하', '1인 2만원 이하', '1인 3만원 이하'] as const;
 
@@ -34,12 +51,14 @@ export default function OfficeDiningScreen() {
   const [officeArea, setOfficeArea] = useState('');
   const [headcount, setHeadcount] = useState('5~8명');
   const [foodType, setFoodType] = useState('전체');
+  const [foodDetail, setFoodDetail] = useState('전체');
   const [budget, setBudget] = useState('1인 3만원 이하');
   const [places, setPlaces] = useState<NaverDiningPlace[]>([]);
   const [selected, setSelected] = useState<NaverDiningPlace | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const budgets = mode === '회식' ? dinnerBudgets : lunchBudgets;
+  const availableFoodDetails = foodDetails[foodType] ?? foodDetails.전체;
 
   const changeMode = (nextMode: DiningMode) => {
     setMode(nextMode);
@@ -55,6 +74,7 @@ export default function OfficeDiningScreen() {
         region,
         officeArea: officeArea.trim(),
         foodType,
+        foodDetail,
         headcount,
         budget,
       });
@@ -106,13 +126,23 @@ export default function OfficeDiningScreen() {
             />
           </View>
           {mode === '회식' ? <ChoiceChips label="인원" values={headcounts} selected={headcount} onSelect={setHeadcount} wrap /> : null}
-          <ChoiceChips label="음식 종류" values={foodTypes} selected={foodType} onSelect={setFoodType} wrap />
+          <ChoiceChips
+            label="음식 대분류"
+            values={foodTypes}
+            selected={foodType}
+            onSelect={(value) => {
+              setFoodType(value);
+              setFoodDetail('전체');
+            }}
+            wrap
+          />
+          <ChoiceChips label="세부 분류" values={availableFoodDetails} selected={foodDetail} onSelect={setFoodDetail} wrap />
           <ChoiceChips label="금액대" values={budgets} selected={budget} onSelect={setBudget} wrap />
 
           <Pressable disabled={loading} onPress={() => void search()} style={[styles.searchButton, loading && styles.disabled]}>
             {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>{mode} 장소 찾아보기</Text>}
           </Pressable>
-          <Text style={styles.note}>선택한 금액대는 네이버 음식점 검색어에 반영됩니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
+          <Text style={styles.note}>금액대와 세부 음식 조건으로 최대 20곳을 찾아봅니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
@@ -143,7 +173,7 @@ export default function OfficeDiningScreen() {
             ) : null}
 
             <View style={styles.results}>
-              <Text style={styles.resultTitle}>{region} · {budget} 음식점 {places.length}곳</Text>
+              <Text style={styles.resultTitle}>{region} · {foodDetail === '전체' ? foodType : foodDetail} · {budget} 음식점 {places.length}곳</Text>
               <Text style={styles.source}>장소: 네이버 지역검색 · 지도: 네이버 지도</Text>
               {places.map((place) => (
                 <Pressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
