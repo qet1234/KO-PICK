@@ -173,14 +173,19 @@ button {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border: 1px solid #146b45;
+  border: 1px solid #3157c8;
   border-radius: 999px;
-  color: #146b45 !important;
-  background: #e9f7ef;
+  color: #3157c8 !important;
+  background: #eef3ff;
   font-size: 12px;
   font-weight: 950;
   white-space: nowrap;
-  transition: transform 170ms ease, background 170ms ease;
+  transition:
+    border-color 170ms ease,
+    color 170ms ease,
+    background 170ms ease,
+    box-shadow 170ms ease,
+    transform 170ms ease;
 }
 
 .kp-header-office-button > span {
@@ -189,14 +194,17 @@ button {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: white;
-  background: #146b45;
+  color: #182036;
+  background: #ff9d42;
   font-size: 10px;
 }
 
 .kp-header-office-button:hover,
 .kp-header-office-button:focus-visible {
-  background: #d8f3e4;
+  border-color: #101d47;
+  color: #101d47 !important;
+  background: #dfe8ff;
+  box-shadow: 0 5px 14px rgba(49, 87, 200, 0.18);
   transform: translateY(-2px);
 }
 
