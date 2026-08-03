@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import DownloadLauncher from "./DownloadLauncher";
 import styles from "./download.module.css";
 
@@ -36,10 +35,6 @@ export default function DownloadPage() {
             설치한 뒤 코리아픽 베타에 참여할 수 있습니다.
           </p>
         </div>
-
-        <Link className={styles.homeLink} href="/">
-          코리아픽 홈으로 돌아가기
-        </Link>
       </section>
     </main>
   );
