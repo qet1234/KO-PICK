@@ -52,6 +52,20 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.koreapick.app',
     versionCode: 1,
     allowBackup: false,
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [
+          {
+            scheme: 'https',
+            host: 'koreapick.duckdns.org',
+            pathPrefix: '/auth/mobile/callback',
+          },
+        ],
+      },
+    ],
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',

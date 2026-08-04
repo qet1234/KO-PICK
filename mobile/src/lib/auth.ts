@@ -1,6 +1,7 @@
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { Provider, Session } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 import { PRIVACY_VERSION, TERMS_VERSION } from '@/lib/legal';
@@ -10,10 +11,14 @@ WebBrowser.maybeCompleteAuthSession();
 
 export type MobileAuthProvider = 'apple' | 'google' | 'kakao' | 'naver';
 
-const redirectTo = makeRedirectUri({
+const customSchemeRedirectTo = makeRedirectUri({
   scheme: 'kopick',
   path: 'auth/callback',
 });
+const androidAppLinkRedirectTo = 'https://koreapick.duckdns.org/auth/mobile/callback';
+const redirectTo = Platform.OS === 'android'
+  ? androidAppLinkRedirectTo
+  : customSchemeRedirectTo;
 
 function authParams(url: string) {
   const queryStart = url.indexOf('?');
@@ -135,5 +140,7 @@ export async function signInWithNaver() {
   if (!appConfig.isSupabaseConfigured) {
     throw new Error('Supabase 앱 환경변수를 먼저 설정해 주세요.');
   }
-  return finishBrowserLogin(`${appConfig.webUrl}/auth/mobile/naver`, 'naver');
+  const startUrl = new URL('/auth/mobile/naver', appConfig.webUrl);
+  startUrl.searchParams.set('platform', Platform.OS);
+  return finishBrowserLogin(startUrl.toString(), 'naver');
 }

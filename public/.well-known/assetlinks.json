@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.koreapick.app",
+      "sha256_cert_fingerprints": [
+        "29:95:8C:7F:31:2B:EF:B4:49:AE:85:52:37:6A:D4:04:98:B2:50:E7:5F:4B:F1:1C:17:C4:AD:60:DE:78:30:5F"
+      ]
+    }
+  }
+]

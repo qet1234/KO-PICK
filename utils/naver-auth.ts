@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 export const NAVER_STATE_COOKIE = "ko_pick_naver_oauth_state";
 export const NAVER_MOBILE_STATE_COOKIE = "ko_pick_naver_mobile_oauth_state";
+export const NAVER_MOBILE_PLATFORM_COOKIE = "ko_pick_naver_mobile_platform";
 export const NAVER_CLIENT_ID =
   process.env.NAVER_CLIENT_ID?.trim() || "2q4Cf2az1due2FFaiXnu";
 
@@ -71,8 +72,11 @@ export function createMobileNaverRedirect(options: {
   requestUrl: string;
   error?: string;
   tokenHash?: string;
+  useAppLink?: boolean;
 }) {
-  const destination = new URL("kopick://auth/callback");
+  const destination = options.useAppLink
+    ? new URL("/auth/mobile/callback", getAppUrl(options.requestUrl))
+    : new URL("kopick://auth/callback");
   const params = new URLSearchParams({ provider: "naver" });
   if (options.error) params.set("error_description", options.error);
   if (options.tokenHash) params.set("token_hash", options.tokenHash);
@@ -80,7 +84,11 @@ export function createMobileNaverRedirect(options: {
 
   const response = NextResponse.redirect(destination);
   response.headers.set("Cache-Control", "private, no-store");
-  for (const cookieName of [NAVER_MOBILE_STATE_COOKIE, NAVER_STATE_COOKIE]) {
+  for (const cookieName of [
+    NAVER_MOBILE_STATE_COOKIE,
+    NAVER_MOBILE_PLATFORM_COOKIE,
+    NAVER_STATE_COOKIE,
+  ]) {
     response.cookies.set(cookieName, "", {
       httpOnly: true,
       maxAge: 0,
