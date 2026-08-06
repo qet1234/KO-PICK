@@ -443,8 +443,8 @@ export default function CoupleSpace() {
     <main className="couple-page">
       <header className="couple-topbar">
         <a className="couple-brand" href="/">
-          <span>K</span>
-          코리아픽
+          <span>?</span>
+          오늘어디
         </a>
         <div className="couple-private-badge">🔒 두 사람만 볼 수 있어요</div>
       </header>
@@ -853,7 +853,7 @@ export default function CoupleSpace() {
                 <h2>커플 공간 연결 해제</h2>
                 <span>
                   두 계정의 연결과 공유 기념일·일정·초대 정보가 모두 영구
-                  삭제됩니다. 코리아픽 계정과 로그인 정보는 삭제되지 않습니다.
+                  삭제됩니다. 오늘어디 계정과 로그인 정보는 삭제되지 않습니다.
                 </span>
               </div>
               <button

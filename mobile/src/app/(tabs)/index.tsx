@@ -53,7 +53,7 @@ export default function RecommendationScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.brand}>KO-PICK</Text>
+        <Text style={styles.brand}>오늘어디</Text>
         <Text style={styles.title}>지금 갈 곳을{`\n`}취향대로 골라드려요</Text>
         <Text style={styles.subtitle}>전국 TourAPI 장소를 예산과 관계에 맞춰 추천합니다.</Text>
 

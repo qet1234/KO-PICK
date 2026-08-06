@@ -9,7 +9,7 @@ type Props = { params: Promise<{ token: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
   const course = await getSharedCourse(token);
-  const title = course ? `${course.title} | 코리아픽` : "공유가 종료된 코스 | 코리아픽";
+  const title = course ? `${course.title} | 오늘어디` : "공유가 종료된 코스 | 오늘어디";
   const description = course
     ? `${course.region}에서 ${course.snapshot.places.length}곳을 잇는 ${course.duration} 추천 코스입니다.`
     : "만료되었거나 공유가 취소된 코스입니다.";
@@ -30,7 +30,7 @@ export default async function SharedCoursePage({ params }: Props) {
     <main className="shared-course-page">
       <article className="shared-course-shell">
         <header className="shared-course-header">
-          <a href="/" className="shared-course-brand"><span>K</span>코리아픽</a>
+          <a href="/" className="shared-course-brand"><span>?</span>오늘어디</a>
           <p>SHARED COURSE</p>
           <h1>{course.title}</h1>
           <div className="shared-course-summary">

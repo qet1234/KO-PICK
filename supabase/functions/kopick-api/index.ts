@@ -531,7 +531,7 @@ async function revokeAppleAuthorization(authorizationCode: string, user: any) {
   const appleIdentity = (user.identities || []).find((identity: any) => identity.provider === "apple");
   const expectedSubject = String(appleIdentity?.identity_data?.sub || appleIdentity?.id || "");
   if (!appleSubject || !expectedSubject || appleSubject !== expectedSubject) {
-    throw new Error("Apple 인증 계정이 현재 코리아픽 계정과 일치하지 않습니다.");
+    throw new Error("Apple 인증 계정이 현재 오늘어디 계정과 일치하지 않습니다.");
   }
 
   const token = typeof tokenPayload.refresh_token === "string"

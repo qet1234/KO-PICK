@@ -247,7 +247,7 @@ export default function OfficeDiningFinder() {
   return (
     <main className="od-page">
       <header className="od-header">
-        <a className="od-brand" href="/"><span>K</span>코리아픽</a>
+        <a className="od-brand" href="/"><span>?</span>오늘어디</a>
         <a className="od-back" href="/">홈으로</a>
       </header>
 

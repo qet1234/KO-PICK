@@ -1,4 +1,4 @@
-# KO-PICK Supabase 전환 실행서
+# 오늘어디 Supabase 전환 실행서
 
 이 문서는 기존 Vercel + Render Spring Boot + Render PostgreSQL 구성을
 Vercel + Supabase Auth/Postgres/RLS/Edge Functions 구성으로 전환하는 절차입니다.

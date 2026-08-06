@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
       console.error("네이버 Supabase 세션 생성 오류:", sessionError);
       return createNaverErrorRedirect(
         request.url,
-        "KO-PICK 로그인 세션을 만들지 못했습니다.",
+        "오늘어디 로그인 세션을 만들지 못했습니다.",
       );
     }
 

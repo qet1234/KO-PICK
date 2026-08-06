@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getSharedCourse } from "@/utils/course-share-server";
 
-export const alt = "KO-PICK shared course";
+export const alt = "오늘어디 공유 코스";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -17,8 +17,8 @@ export default async function Image({ params }: { params: Promise<{ token: strin
       background: "linear-gradient(135deg, #123b28, #2f7b55)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "22px", fontSize: 42, fontWeight: 800 }}>
-        <div style={{ width: 74, height: 74, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 24, background: "#f4ce52", color: "#173f2c" }}>K</div>
-        KO-PICK
+        <div style={{ width: 74, height: 74, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 24, background: "#f4ce52", color: "#173f2c" }}>?</div>
+        오늘어디
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
         <div style={{ fontSize: 82, fontWeight: 900 }}>SHARED COURSE</div>

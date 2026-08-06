@@ -1,4 +1,4 @@
-# KO-PICK Spring Boot API
+# 오늘어디 Spring Boot API
 
 ## 인증 구조
 

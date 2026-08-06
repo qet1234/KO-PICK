@@ -14,7 +14,7 @@
   <groupId>com.kopick</groupId>
   <artifactId>kopick-backend</artifactId>
   <version>0.1.0</version>
-  <name>KO-PICK Backend</name>
+  <name>오늘어디 Backend</name>
 
   <properties>
     <java.version>17</java.version>

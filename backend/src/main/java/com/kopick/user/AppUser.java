@@ -63,7 +63,7 @@ public class AppUser {
 
     public void updateProfile(String email, String displayName, String imageUrl) {
         this.email = email;
-        this.displayName = displayName == null || displayName.isBlank() ? "KO-PICK 사용자" : displayName;
+        this.displayName = displayName == null || displayName.isBlank() ? "오늘어디 사용자" : displayName;
         this.imageUrl = imageUrl;
         this.active = true;
     }

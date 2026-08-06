@@ -34,7 +34,7 @@ export default function HeroDiscoveryPanel() {
     <aside className="kp-hero-discovery" aria-label="관계별 장소 탐색">
       <div className="kp-hero-journey-heading">
         <div>
-          <small>KO-PICK JOURNEY</small>
+          <small>오늘어디 JOURNEY</small>
           <h2>누구와 가나요?</h2>
           <p>예약 중심이 아니라 함께하는 사람과 목적에 맞춰 전국의 장소를 탐색합니다.</p>
         </div>

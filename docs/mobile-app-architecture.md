@@ -1,4 +1,4 @@
-# KO-PICK Android·iOS 확장 설계
+# 오늘어디 Android·iOS 확장 설계
 
 ## 확정 구조
 
@@ -6,7 +6,7 @@
 Next.js 웹 ─────────────┐
                        ├─ Supabase Auth · PostgreSQL · RLS · RPC
 Expo Android·iOS 앱 ───┤
-                       ├─ KO-PICK Next.js API ─ TourAPI
+                       ├─ 오늘어디 Next.js API ─ TourAPI
                        └─ 네이버 지도 네이티브 SDK · 외부 길찾기
 ```
 
@@ -24,7 +24,7 @@ Expo Android·iOS 앱 ───┤
 
 ## 스토어 식별자와 버전
 
-- 앱 이름: `KO-PICK`
+- 앱 이름: `오늘어디`
 - Android Application ID: `com.koreapick.app`
 - iOS Bundle ID: `com.koreapick.app`
 - 앱 딥링크 스킴: `kopick://`

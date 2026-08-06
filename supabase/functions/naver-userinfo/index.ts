@@ -160,7 +160,7 @@ Deno.serve(async (request) => {
         console.error("Naver Supabase link creation failed", linkError);
         return json({
           error: "supabase_link_failed",
-          error_description: "KO-PICK 로그인 세션을 만들지 못했습니다.",
+          error_description: "오늘어디 로그인 세션을 만들지 못했습니다.",
         }, 500);
       }
 

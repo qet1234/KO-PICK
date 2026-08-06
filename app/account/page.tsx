@@ -89,7 +89,7 @@ export default function AccountPage() {
           <div>
             <h2>로그아웃</h2>
             <p>
-              연결된 소셜 계정 자체가 아닌 KO-PICK 사이트
+              연결된 소셜 계정 자체가 아닌 오늘어디 사이트
               로그인만 종료합니다.
             </p>
           </div>

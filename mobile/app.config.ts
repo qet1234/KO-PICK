@@ -15,13 +15,13 @@ if (isReleaseBuild) {
   ] as const;
   const missing = requiredEnvironmentVariables.filter((name) => !process.env[name]?.trim());
   if (missing.length > 0) {
-    throw new Error(`KO-PICK release build is missing: ${missing.join(', ')}`);
+    throw new Error(`오늘어디 release build is missing: ${missing.join(', ')}`);
   }
 }
 
 const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'KO-PICK',
+  name: '오늘어디',
   slug: 'ko-pick',
   version: '1.0.0',
   orientation: 'portrait',

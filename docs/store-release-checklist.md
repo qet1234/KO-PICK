@@ -1,10 +1,10 @@
-# KO-PICK 스토어 출시 체크리스트
+# 오늘어디 스토어 출시 체크리스트
 
 ## 고정 값
 
 | 항목 | 값 |
 |---|---|
-| 앱 이름 | KO-PICK |
+| 앱 이름 | 오늘어디 |
 | Android Application ID | `com.koreapick.app` |
 | iOS Bundle ID | `com.koreapick.app` |
 | 앱 딥링크 | `kopick://` |

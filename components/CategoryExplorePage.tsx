@@ -695,8 +695,8 @@ export default function CategoryExplorePage({
     <main className="kp-explore-page">
       <header className="kp-explore-header">
         <a href="/" className="kp-explore-brand">
-          <span>K</span>
-          <strong>코리아픽</strong>
+          <span>?</span>
+          <strong>오늘어디</strong>
         </a>
 
         <div>
@@ -920,7 +920,7 @@ export default function CategoryExplorePage({
                       </span>
                       <h2>{place.name}</h2>
                       <p>{place.address ?? "주소 정보가 없습니다."}</p>
-                      <strong>KO-PICK 지도에서 위치 보기</strong>
+                      <strong>오늘어디 지도에서 위치 보기</strong>
                     </div>
                   </button>
 

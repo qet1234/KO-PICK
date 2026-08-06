@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "mobile/app.config.ts"
+      - "mobile/assets/**"
       - "mobile/eas.json"
       - "mobile/package.json"
       - "mobile/package-lock.json"
@@ -91,6 +92,6 @@ jobs:
             gh release create android-latest "$RUNNER_TEMP/koreapick-latest.apk" \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
-              --title "코리아픽 Android 최신 버전" \
-              --notes "코리아픽 Android 테스트용 최신 APK입니다."
+              --title "오늘어디 Android 최신 버전" \
+              --notes "오늘어디 Android 테스트용 최신 APK입니다."
           fi

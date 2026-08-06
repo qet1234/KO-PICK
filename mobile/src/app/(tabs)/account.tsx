@@ -27,10 +27,10 @@ const supportEmail = 'jjs092200@gmail.com';
 
 function supportGmailUrl(type: 'inquiry' | 'feedback') {
   const isFeedback = type === 'feedback';
-  const subject = isFeedback ? '[코리아픽 테스트 피드백]' : '[KO-PICK 테스트 문의]';
+  const subject = isFeedback ? '[오늘어디 테스트 피드백]' : '[오늘어디 테스트 문의]';
   const body = isFeedback
-    ? '코리아픽 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:'
-    : 'KO-PICK 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:';
+    ? '오늘어디 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:'
+    : '오늘어디 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:';
   return `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${encodeURIComponent(supportEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -61,14 +61,14 @@ export default function AccountScreen() {
       if (result.appleRevocation === 'manual_required') {
         Alert.alert(
           '계정 삭제 완료',
-          '코리아픽 계정은 삭제됐습니다. Apple 계정 설정에서 코리아픽 연결도 해제해 주세요.',
+          '오늘어디 계정은 삭제됐습니다. Apple 계정 설정에서 오늘어디 연결도 해제해 주세요.',
           [
             { text: '나중에' },
             { text: 'Apple 설정 열기', onPress: () => void Linking.openURL('https://account.apple.com/account/manage') },
           ],
         );
       } else {
-        Alert.alert('회원탈퇴 완료', '코리아픽 계정과 삭제 대상 데이터가 처리되었습니다.');
+        Alert.alert('회원탈퇴 완료', '오늘어디 계정과 삭제 대상 데이터가 처리되었습니다.');
       }
     } catch (error) {
       setDeleteError(error instanceof Error ? error.message : '회원탈퇴 처리 중 오류가 발생했습니다.');
@@ -84,14 +84,14 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.eyebrow}>MY KO-PICK</Text>
+        <Text style={styles.eyebrow}>오늘어디</Text>
         <Text style={styles.title}>내 계정</Text>
 
         {session ? (
           <View style={styles.card}>
-            <View style={styles.avatar}><Text style={styles.avatarText}>K</Text></View>
+            <View style={styles.avatar}><Text style={styles.avatarText}>?</Text></View>
             <Text style={styles.name}>
-              {session.user.user_metadata.full_name || session.user.user_metadata.name || 'KO-PICK 사용자'}
+              {session.user.user_metadata.full_name || session.user.user_metadata.name || '오늘어디 사용자'}
             </Text>
             <Text style={styles.email}>{session.user.email || '이메일 비공개 계정'}</Text>
             <Text style={styles.provider}>

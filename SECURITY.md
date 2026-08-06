@@ -1,8 +1,8 @@
-# KO-PICK Security Baseline
+# 오늘어디 Security Baseline
 
 ## Scope
 
-This document defines the minimum controls for production operation of KO-PICK. No system can be guaranteed perfectly secure; these controls reduce risk and make incidents easier to detect and contain.
+This document defines the minimum controls for production operation of 오늘어디. No system can be guaranteed perfectly secure; these controls reduce risk and make incidents easier to detect and contain.
 
 ## Data classification
 

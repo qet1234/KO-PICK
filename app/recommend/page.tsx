@@ -384,7 +384,7 @@ export default function RecommendPage() {
     if (!latestShare) return;
     try {
       await shareCourseOnKakao({
-        title: `KO-PICK · ${latestShare.title}`,
+        title: `오늘어디 · ${latestShare.title}`,
         description: latestShareDescription,
         url: latestShare.url,
       });
@@ -454,11 +454,11 @@ export default function RecommendPage() {
   return (
     <main className="recommend-page">
       <header className="recommend-header">
-        <a href="/" className="recommend-brand"><span>K</span>코리아픽</a>
+        <a href="/" className="recommend-brand"><span>?</span>오늘어디</a>
       </header>
 
       <section className="recommend-hero">
-        <p className="recommend-eyebrow">KO-PICK PERSONAL CURATION</p>
+        <p className="recommend-eyebrow">오늘어디 PERSONAL CURATION</p>
         <h1>날씨까지 맞춘<br />오늘의 코스</h1>
         <p>지역·날짜·관계·취향을 고르면 TourAPI 장소와 예보를 조합해 이동하기 좋은 순서로 추천해 드려요.</p>
       </section>

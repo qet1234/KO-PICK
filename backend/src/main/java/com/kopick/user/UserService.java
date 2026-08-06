@@ -84,7 +84,7 @@ public class UserService {
             return new Profile(
                 id,
                 string(attributes.get("email")),
-                first(string(attributes.get("name")), string(attributes.get("nickname")), "KO-PICK 사용자"),
+                first(string(attributes.get("name")), string(attributes.get("nickname")), "오늘어디 사용자"),
                 first(string(attributes.get("picture")), string(attributes.get("profile_image")))
             );
         }

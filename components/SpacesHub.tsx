@@ -239,8 +239,8 @@ export default function SpacesHub() {
     <main className="spaces-page">
       <header className="spaces-topbar">
         <a className="spaces-brand" href="/">
-          <span>K</span>
-          코리아픽
+          <span>?</span>
+          오늘어디
         </a>
         <a className="spaces-home-link" href="/">홈으로</a>
       </header>

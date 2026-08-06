@@ -105,7 +105,7 @@ export default function LoginPage() {
     };
 
     if (errorMessage) queueMicrotask(() => setMessage(errorMessage));
-    if (deleted === "1") queueMicrotask(() => setMessage("KO-PICK 회원탈퇴가 완료되었습니다."));
+    if (deleted === "1") queueMicrotask(() => setMessage("오늘어디 회원탈퇴가 완료되었습니다."));
 
     window.addEventListener("pageshow", resetSocialLoginState);
     return () => window.removeEventListener("pageshow", resetSocialLoginState);
@@ -114,9 +114,9 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <section className="login-visual">
-        <div className="login-brand" aria-label="코리아픽">
-          <span>K</span>
-          <strong>코리아픽</strong>
+        <div className="login-brand" aria-label="오늘어디">
+          <span>?</span>
+          <strong>오늘어디</strong>
         </div>
 
         <div className="login-copy">

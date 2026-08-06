@@ -76,7 +76,7 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>← 돌아가기</Text></Pressable>
-        <Text style={styles.brand}>KO-PICK</Text>
+        <Text style={styles.brand}>오늘어디</Text>
         <Text style={styles.title}>다시 만나서 반가워요</Text>
         <Text style={styles.subtitle}>로그인하고 저장한 장소와 맞춤 추천을 이어서 확인하세요.</Text>
 

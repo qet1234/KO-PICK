@@ -411,7 +411,7 @@ export default function FastCategoryExplorePage({
         <section className="kp-journey-category-menu" aria-label={`${journey} 장소 유형`}>
           <div className="kp-journey-category-copy">
             <div>
-              <small>KO-PICK FOR {journeyEnglishLabels[journey] ?? "TOGETHER"}</small>
+              <small>오늘어디 FOR {journeyEnglishLabels[journey] ?? "TOGETHER"}</small>
               <strong>{journey} 맞춤 카테고리</strong>
             </div>
             <span>{selectedJourneyType}</span>

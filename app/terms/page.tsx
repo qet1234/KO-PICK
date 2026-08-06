@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "이용약관 | 코리아픽",
-  description: "코리아픽 서비스 이용 조건을 안내합니다.",
+  title: "이용약관 | 오늘어디",
+  description: "오늘어디 서비스 이용 조건을 안내합니다.",
 };
 
 export default function TermsPage() {
@@ -10,7 +10,7 @@ export default function TermsPage() {
     <main className="legal-page">
       <article className="legal-shell">
         <header className="legal-header">
-          <a href="/">← 코리아픽 홈</a>
+          <a href="/">← 오늘어디 홈</a>
           <small>TERMS OF SERVICE</small>
           <h1>이용약관</h1>
           <p>시행일 2026년 7월 31일</p>
@@ -18,7 +18,7 @@ export default function TermsPage() {
         <div className="legal-content">
           <section>
             <h2>제1조 목적</h2>
-            <p>이 약관은 KO-PICK 운영자가 제공하는 코리아픽 장소 탐색·추천·함께 공간 서비스의 이용 조건과 권리·의무를 정합니다.</p>
+            <p>이 약관은 오늘어디 운영자가 제공하는 장소 탐색·추천·함께 공간 서비스의 이용 조건과 권리·의무를 정합니다.</p>
           </section>
           <section>
             <h2>제2조 서비스 내용</h2>
@@ -28,7 +28,7 @@ export default function TermsPage() {
               <li>개인정보를 제외한 공개 코스 링크 생성·카카오톡 공유·공유 취소</li>
               <li>네이버 지도·예약, 카카오맵 등 외부 서비스로 이동하는 링크</li>
             </ul>
-            <p className="legal-note">코리아픽은 음식점·카페의 예약 계약 당사자나 예약 중개자가 아닙니다. 실제 예약·변경·취소·결제는 외부 제공사와 이용자 사이에서 이루어집니다.</p>
+            <p className="legal-note">오늘어디은 음식점·카페의 예약 계약 당사자나 예약 중개자가 아닙니다. 실제 예약·변경·취소·결제는 외부 제공사와 이용자 사이에서 이루어집니다.</p>
           </section>
           <section>
             <h2>제3조 약관 동의와 계정</h2>
@@ -66,7 +66,7 @@ export default function TermsPage() {
               <li>공유 링크에는 코스명·지역·소요시간과 공개 장소 정보만 포함되며 계정·닉네임·관계·방문일·기념일·메모·투표자·예약정보는 포함되지 않습니다.</li>
               <li>공유 링크는 생성일부터 30일 뒤 자동 만료되며 소유자는 언제든 공유를 취소할 수 있습니다.</li>
               <li>공유 링크를 받은 사람은 링크를 다시 전달할 수 있으므로, 이용자는 공개되어도 되는 코스만 공유해야 합니다.</li>
-              <li>카카오톡 공유 카드에는 TourAPI 공공누리 제3유형 사진을 사용하지 않으며, 현재는 외부 사진이 없는 KO-PICK 자체 텍스트 카드만 사용합니다.</li>
+              <li>카카오톡 공유 카드에는 TourAPI 공공누리 제3유형 사진을 사용하지 않으며, 현재는 외부 사진이 없는 오늘어디 자체 텍스트 카드만 사용합니다.</li>
             </ol>
           </section>
           <section>
@@ -89,7 +89,7 @@ export default function TermsPage() {
           <section>
             <h2>제11조 운영자 문의</h2>
             <p>
-              운영 부서: KO-PICK 고객지원 · <a href="/support">문의·피드백 접수</a> ·{" "}
+              운영 부서: 오늘어디 고객지원 · <a href="/support">문의·피드백 접수</a> ·{" "}
               <a href="mailto:jjs092200@gmail.com">jjs092200@gmail.com</a>
             </p>
           </section>

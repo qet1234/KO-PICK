@@ -2,10 +2,10 @@ const supportEmail = "jjs092200@gmail.com";
 
 function gmailComposeUrl(type: "inquiry" | "feedback") {
   const isFeedback = type === "feedback";
-  const subject = isFeedback ? "[코리아픽 테스트 피드백]" : "[KO-PICK 테스트 문의]";
+  const subject = isFeedback ? "[오늘어디 테스트 피드백]" : "[오늘어디 테스트 문의]";
   const body = isFeedback
-    ? "코리아픽 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:"
-    : "KO-PICK 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:";
+    ? "오늘어디 테스트 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:"
+    : "오늘어디 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:";
 
   const params = new URLSearchParams({
     view: "cm",
@@ -24,10 +24,10 @@ export default function SupportPage() {
     <main className="legal-page">
       <article className="legal-shell">
         <header className="legal-header">
-          <a href="/">← 코리아픽 홈</a>
+          <a href="/">← 오늘어디 홈</a>
           <small>TEST SUPPORT</small>
           <h1>고객지원</h1>
-          <p>테스트 기간의 문의와 피드백은 KO-PICK 담당자 Gmail로 접수합니다.</p>
+          <p>테스트 기간의 문의와 피드백은 오늘어디 담당자 Gmail로 접수합니다.</p>
         </header>
         <div className="legal-content">
           <section>

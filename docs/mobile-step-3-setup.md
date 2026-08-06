@@ -1,4 +1,4 @@
-# KO-PICK 모바일 3단계 설정
+# 오늘어디 모바일 3단계 설정
 
 코드는 로그인·지도·API 연결까지 구현되어 있습니다. 아래 값은 개발자 계정에서 발급되므로 저장소에 넣지 않고 EAS와 로컬 `.env`에 설정합니다.
 
@@ -14,7 +14,7 @@ Google·Kakao 공급자의 OAuth callback은 Supabase Dashboard에 표시되는 
 
 ## 2. 네이버 로그인
 
-네이버 Developers의 기존 KO-PICK 애플리케이션 callback은 다음 운영 주소를 그대로 유지합니다.
+네이버 Developers의 애플리케이션 callback은 다음 운영 주소를 그대로 유지합니다. 콘솔의 표시 이름은 `오늘어디`로 변경합니다.
 
 ```text
 https://koreapick.duckdns.org/auth/naver/callback

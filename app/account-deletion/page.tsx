@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "계정 삭제 안내 | 코리아픽",
-  description: "코리아픽 계정과 개인정보 삭제 방법을 안내합니다.",
+  title: "계정 삭제 안내 | 오늘어디",
+  description: "오늘어디 계정과 개인정보 삭제 방법을 안내합니다.",
 };
 
 export default function AccountDeletionPage() {
@@ -10,7 +10,7 @@ export default function AccountDeletionPage() {
     <main className="legal-page">
       <article className="legal-shell">
         <header className="legal-header">
-          <a href="/">← 코리아픽 홈</a>
+          <a href="/">← 오늘어디 홈</a>
           <small>ACCOUNT DELETION</small>
           <h1>계정·데이터 삭제</h1>
           <p>앱 내부 삭제와 외부 웹 삭제 요청에 공통으로 사용하는 공식 안내 페이지입니다.</p>
@@ -19,7 +19,7 @@ export default function AccountDeletionPage() {
           <section>
             <h2>직접 삭제하는 방법</h2>
             <ol>
-              <li>코리아픽 앱 또는 웹에 로그인합니다.</li>
+              <li>오늘어디 앱 또는 웹에 로그인합니다.</li>
               <li>앱은 <strong>내 계정 → 회원탈퇴</strong>, 웹은 <a href="/account">계정 설정</a>으로 이동합니다.</li>
               <li>회원탈퇴를 누르고 확인 문구 <strong>회원탈퇴</strong>를 입력합니다.</li>
               <li>영구 탈퇴를 누르면 계정과 삭제 대상 데이터가 즉시 처리됩니다.</li>
@@ -48,7 +48,7 @@ export default function AccountDeletionPage() {
           </section>
           <section>
             <h2>유의사항</h2>
-            <p className="legal-note legal-danger">삭제된 계정과 개인 데이터는 복구할 수 없습니다. Google·Apple·카카오·네이버 계정 자체는 삭제되지 않습니다. Apple 로그인 회원은 앱 탈퇴 과정에서 코리아픽 연결 해제를 함께 처리하며, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</p>
+            <p className="legal-note legal-danger">삭제된 계정과 개인 데이터는 복구할 수 없습니다. Google·Apple·카카오·네이버 계정 자체는 삭제되지 않습니다. Apple 로그인 회원은 앱 탈퇴 과정에서 오늘어디 연결 해제를 함께 처리하며, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</p>
           </section>
         </div>
       </article>

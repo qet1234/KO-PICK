@@ -84,9 +84,9 @@ async function fetchKoPick<T>(path: string) {
     });
     const payload = await response.json().catch(() => null) as (T & { error?: string }) | null;
     if (!response.ok) {
-      throw new Error(payload?.error || `KO-PICK 서버 요청에 실패했습니다. (${response.status})`);
+      throw new Error(payload?.error || `오늘어디 서버 요청에 실패했습니다. (${response.status})`);
     }
-    if (!payload) throw new Error('KO-PICK 서버 응답을 읽지 못했습니다.');
+    if (!payload) throw new Error('오늘어디 서버 응답을 읽지 못했습니다.');
     return payload;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {

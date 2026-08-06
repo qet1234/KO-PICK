@@ -30,16 +30,16 @@ function PageMetadata() {
   const location = useLocation();
   useEffect(() => {
     document.title = location.pathname === "/login"
-      ? "로그인 | 코리아픽"
+      ? "로그인 | 오늘어디"
       : location.pathname === "/couple"
-        ? "우리 둘의 공간 | 코리아픽"
+        ? "우리 둘의 공간 | 오늘어디"
         : location.pathname === "/spaces"
-          ? "함께 공간 | 코리아픽"
+          ? "함께 공간 | 오늘어디"
         : location.pathname === "/reservations"
-          ? "함께 예약 | 코리아픽"
+          ? "함께 예약 | 오늘어디"
         : location.pathname === "/account"
-          ? "계정 설정 | 코리아픽"
-          : "코리아픽 | 지역별 추천";
+          ? "계정 설정 | 오늘어디"
+          : "오늘어디 | 지역별 추천";
     window.scrollTo(0, 0);
   }, [location.pathname]);
   return null;

@@ -295,7 +295,7 @@ export default function ReservationPage() {
   return (
     <main className="reservation-page">
       <header className="reservation-topbar">
-        <a className="reservation-brand" href="/"><span>K</span>코리아픽</a>
+        <a className="reservation-brand" href="/"><span>?</span>오늘어디</a>
         <nav><a href="/recommend">코스 설정</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
       </header>
 
@@ -319,7 +319,7 @@ export default function ReservationPage() {
           <div className="reservation-section-copy">
             <p>NEW VOTE</p>
             <h2>장소 투표<br />만들기</h2>
-            <span>후보 투표와 최종 선택은 KO-PICK에서 진행하고, 예약은 외부 페이지에서 확인합니다. 실제 매장 확인 전에는 예약 완료로 표시하지 않아요.</span>
+            <span>후보 투표와 최종 선택은 오늘어디에서 진행하고, 예약은 외부 페이지에서 확인합니다. 실제 매장 확인 전에는 예약 완료로 표시하지 않아요.</span>
           </div>
 
           <form className="reservation-create-form" onSubmit={createPlan}>

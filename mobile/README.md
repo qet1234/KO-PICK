@@ -1,6 +1,6 @@
-# KO-PICK Mobile
+# 오늘어디 Mobile
 
-KO-PICK의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도로 배포되지만 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 사용합니다.
+오늘어디의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도로 배포되지만 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 사용합니다.
 
 ## 현재 구현된 항목
 
@@ -19,7 +19,7 @@ KO-PICK의 Android·iOS 공용 앱 프로젝트입니다. 기존 웹과 별도�
 - 장소별 길찾기 지도 선택, 네이버지도·카카오맵 선택값 기기 저장
 - 추천·장소 찾기·내 계정 하단 탭
 - 앱 내부 영구 회원탈퇴와 Apple 로그인 토큰 연동 해제
-- 코리아픽 전용 아이콘·Android 어댑티브/단색 아이콘·스플래시
+- 오늘어디 전용 아이콘·Android 어댑티브/단색 아이콘·스플래시
 - 정식 빌드 환경변수 누락 차단과 불필요한 Android 권한 제거
 
 ## 로컬 실행

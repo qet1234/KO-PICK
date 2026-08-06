@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "개인정보처리방침 | 코리아픽",
-  description: "코리아픽이 처리하는 개인정보와 보호 조치를 안내합니다.",
+  title: "개인정보처리방침 | 오늘어디",
+  description: "오늘어디이 처리하는 개인정보와 보호 조치를 안내합니다.",
 };
 
 const effectiveDate = "2026년 8월 2일";
@@ -12,14 +12,14 @@ export default function PrivacyPage() {
     <main className="legal-page">
       <article className="legal-shell">
         <header className="legal-header">
-          <a href="/">← 코리아픽 홈</a>
+          <a href="/">← 오늘어디 홈</a>
           <small>PRIVACY POLICY</small>
           <h1>개인정보처리방침</h1>
           <p>시행일 {effectiveDate} · 현재 운영 기능과 데이터 흐름을 기준으로 작성했습니다.</p>
         </header>
         <div className="legal-content">
           <p className="legal-note">
-            코리아픽은 회원 식별과 함께 공간 제공에 필요한 정보만 처리합니다.
+            오늘어디은 회원 식별과 함께 공간 제공에 필요한 정보만 처리합니다.
             현재 위치의 정밀 좌표는 수집하거나 서버에 저장하지 않습니다.
           </p>
 
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2>3. 제3자 제공과 외부 서비스</h2>
-            <p>코리아픽은 개인정보를 판매하지 않으며, 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
+            <p>오늘어디은 개인정보를 판매하지 않으며, 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
             <p>
               네이버 지도·예약 또는 카카오맵으로 이동하면 해당 제공사의 서비스와 개인정보처리방침이 적용됩니다.
               외부 이동 전에 장소명과 주소가 검색어로 전달될 수 있습니다.
@@ -126,13 +126,13 @@ export default function PrivacyPage() {
                   </tr>
                   <tr>
                     <td>Google LLC<br /><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Google 개인정보처리방침</a></td>
-                    <td>로그인 요청 정보와 Google이 KO-PICK에 제공하는 고유 식별자·이메일·닉네임·프로필 이미지 · Google 소셜 로그인</td>
+                    <td>로그인 요청 정보와 Google이 오늘어디에 제공하는 고유 식별자·이메일·닉네임·프로필 이미지 · Google 소셜 로그인</td>
                     <td>미국 등 Google 운영 지역 · 이용자가 Google 로그인을 선택할 때 OAuth 암호화 전송</td>
                     <td>이용자 동의 및 로그인 계약 이행 · Google 정책 및 연동 해제 시까지 · 거부 시 다른 로그인 또는 비회원 탐색 이용</td>
                   </tr>
                   <tr>
                     <td>Apple Inc.<br /><a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noreferrer">Apple 개인정보처리방침</a></td>
-                    <td>로그인 요청 정보와 Apple이 KO-PICK에 제공하는 고유 식별자·이메일·이름 · Apple 소셜 로그인과 계정 연동 해제</td>
+                    <td>로그인 요청 정보와 Apple이 오늘어디에 제공하는 고유 식별자·이메일·이름 · Apple 소셜 로그인과 계정 연동 해제</td>
                     <td>미국 등 Apple 운영 지역 · iOS에서 Apple 로그인을 선택하거나 Apple 계정의 회원탈퇴를 요청할 때 암호화 전송</td>
                     <td>이용자 동의 및 로그인 계약 이행 · Apple 정책 및 연동 해제 시까지 · 거부 시 다른 로그인 또는 비회원 탐색 이용</td>
                   </tr>
@@ -160,7 +160,7 @@ export default function PrivacyPage() {
               <li>회원탈퇴 시 다른 구성원이 있는 함께 공간은 소유권을 이전하고 탈퇴자의 구성원 정보와 개인 데이터를 삭제합니다.</li>
               <li>이 기기의 방문자 UUID·추천 성향·저장 장소·선호 지도·임시 캐시도 함께 삭제합니다.</li>
               <li>Gmail로 접수한 문의·피드백은 종결일을 기록해 매월 확인하고, 종결일부터 1년이 지난 메일과 첨부파일을 삭제합니다.</li>
-              <li>Apple 로그인 회원이 앱에서 탈퇴하면 Apple REST API로 코리아픽 연결 토큰 해제를 시도하며, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</li>
+              <li>Apple 로그인 회원이 앱에서 탈퇴하면 Apple REST API로 오늘어디 연결 토큰 해제를 시도하며, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</li>
             </ul>
           </section>
 
@@ -190,9 +190,9 @@ export default function PrivacyPage() {
           <section>
             <h2>8. 개인정보 보호 담당</h2>
             <p>
-              담당 부서: KO-PICK 개인정보 보호 담당<br />
+              담당 부서: 오늘어디 개인정보 보호 담당<br />
               담당자 이메일: <a href="mailto:jjs092200@gmail.com">jjs092200@gmail.com</a><br />
-              접수 방법: <a href="/support">KO-PICK 고객지원</a>의 문의 접수 또는 이메일(24시간 접수)
+              접수 방법: <a href="/support">오늘어디 고객지원</a>의 문의 접수 또는 이메일(24시간 접수)
             </p>
             <p>
               개인정보 침해 상담은 개인정보침해신고센터(국번 없이 118),
