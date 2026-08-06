@@ -142,6 +142,13 @@ Deno.serve(async (request) => {
   const path = routePath(url);
 
   try {
+    // Keep the gateway health check local. Proxying it back into another Edge
+    // Function in the same Supabase project can be rejected by the platform
+    // gateway before the core function runs, which produces a false 403 after
+    // an otherwise successful deployment.
+    if ((path === "/" || path === "/actuator/health") && request.method === "GET") {
+      return json({ status: "UP", runtime: "supabase-edge", gateway: "kopick-api" });
+    }
     if (path === "/api/public/tour/places" && request.method === "GET") {
       const coreResponse = await proxyCore(request, url);
       if (coreResponse.ok) return coreResponse;
