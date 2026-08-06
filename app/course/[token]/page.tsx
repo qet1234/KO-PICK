@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getSharedCourse } from "@/utils/course-share-server";
 import { naverPlaceSearchUrl } from "@/utils/course-share";
@@ -30,7 +31,10 @@ export default async function SharedCoursePage({ params }: Props) {
     <main className="shared-course-page">
       <article className="shared-course-shell">
         <header className="shared-course-header">
-          <a href="/" className="shared-course-brand"><span>?</span>오늘어디</a>
+          <a href="/" className="shared-course-brand">
+            <Image src="/brand-mark.svg" alt="" width={36} height={36} />
+            오늘어디
+          </a>
           <p>SHARED COURSE</p>
           <h1>{course.title}</h1>
           <div className="shared-course-summary">

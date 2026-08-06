@@ -27,14 +27,9 @@
   width: 66px;
   height: 66px;
   margin: 0 auto 22px;
-  display: grid;
-  place-items: center;
   border-radius: 21px;
-  color: #fff;
-  background: #ff3b36;
-  box-shadow: 0 12px 28px rgba(255, 59, 54, 0.28);
-  font-size: 30px;
-  font-weight: 950;
+  display: block;
+  box-shadow: 0 12px 28px rgba(20, 107, 69, 0.24);
 }
 
 .eyebrow {

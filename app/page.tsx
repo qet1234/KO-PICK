@@ -1,4 +1,5 @@
 import AuthHeader from "@/components/AuthHeader";
+import Image from "next/image";
 import CategoryCards from "@/components/CategoryCards";
 import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
@@ -21,7 +22,10 @@ export default function Home() {
     <main className="korea-pick-home">
       <header className="kp-header">
         <div className="kp-container kp-header-inner">
-          <a className="kp-brand" href="#top"><span className="kp-brand-mark">?</span><span>오늘어디</span></a>
+          <a className="kp-brand" href="#top" aria-label="오늘어디 홈">
+            <Image className="kp-brand-mark" src="/brand-mark.svg" alt="" width={64} height={64} priority />
+            <span>오늘어디</span>
+          </a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
             <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a>
           </nav>

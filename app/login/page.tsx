@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 
 type SocialProvider = "google" | "kakao" | "naver" | "apple";
@@ -115,7 +116,7 @@ export default function LoginPage() {
     <main className="login-page">
       <section className="login-visual">
         <div className="login-brand" aria-label="오늘어디">
-          <span>?</span>
+          <Image className="login-brand-mark" src="/brand-mark.svg" alt="" width={64} height={64} priority />
           <strong>오늘어디</strong>
         </div>
 

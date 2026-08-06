@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <circle cx="512" cy="450" r="250" fill="#146b45"/>
-  <path d="M512 775c-20 0-39-9-52-26-78-100-155-216-155-310 0-114 93-207 207-207s207 93 207 207c0 94-77 210-155 310-13 17-32 26-52 26Z" fill="#146b45"/>
-  <path d="M408 408c4-84 65-139 154-139 92 0 154 55 154 137 0 61-31 98-83 131-38 25-51 42-51 75v18h-89v-29c0-60 25-95 76-128 36-24 53-41 53-69 0-33-24-54-61-54-39 0-64 23-66 58h-87Zm83 265h92v92h-92v-92Z" fill="#fffaf0"/>
-  <path d="m729 229 17 39 39 16-39 16-17 39-16-39-39-16 39-16 16-39Z" fill="#f4c95d"/>
+  <rect x="332" y="150" width="360" height="360" rx="96" fill="#146b45"/>
+  <path d="M512 202c-101 0-182 81-182 182 0 123 140 197 172 212 6 3 14 3 20 0 32-15 172-89 172-212 0-101-81-182-182-182Z" transform="translate(0 -34) scale(.7) translate(219 93)" fill="#fffaf0"/>
+  <circle cx="512" cy="322" r="58" fill="#f4c95d"/>
+  <circle cx="512" cy="322" r="22" fill="#146b45"/>
+  <text x="512" y="690" text-anchor="middle" fill="#146b45" font-family="Noto Sans KR, sans-serif" font-size="116" font-weight="900" letter-spacing="-5">오늘어디</text>
 </svg>

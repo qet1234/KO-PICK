@@ -410,14 +410,11 @@ h1 strong {
   text-decoration: none;
 }
 
-.login-brand > span {
+.login-brand-mark {
   width: 42px;
   height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #111;
-  font-weight: 900;
+  display: block;
+  border-radius: 12px;
 }
 
 .login-copy {
@@ -794,12 +791,10 @@ h1 strong {
   align-items: center;
 }
 
-.login-brand > span:first-child,
+.login-brand-mark,
 .kp-brand-mark,
 .auth-brand-mark {
   flex: 0 0 auto;
-  font-family: Arial, sans-serif;
-  font-weight: 900;
 }
 .login-brand {
   cursor: default;

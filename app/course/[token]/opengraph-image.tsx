@@ -17,7 +17,7 @@ export default async function Image({ params }: { params: Promise<{ token: strin
       background: "linear-gradient(135deg, #123b28, #2f7b55)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "22px", fontSize: 42, fontWeight: 800 }}>
-        <div style={{ width: 74, height: 74, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 24, background: "#f4ce52", color: "#173f2c" }}>?</div>
+        <div style={{ width: 74, height: 74, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 24, background: "#f4ce52", color: "#173f2c", fontSize: 24, fontWeight: 900 }}>오늘</div>
         오늘어디
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>

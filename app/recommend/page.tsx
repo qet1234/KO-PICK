@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import { prepareKakaoShare, shareCourseOnKakao } from "@/utils/kakao-share";
 import type { CreatedCourseShare, OwnedCourseShare } from "@/utils/course-share";
@@ -454,7 +455,10 @@ export default function RecommendPage() {
   return (
     <main className="recommend-page">
       <header className="recommend-header">
-        <a href="/" className="recommend-brand"><span>?</span>오늘어디</a>
+        <a href="/" className="recommend-brand">
+          <Image src="/brand-mark.svg" alt="" width={38} height={38} />
+          오늘어디
+        </a>
       </header>
 
       <section className="recommend-hero">

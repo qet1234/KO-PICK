@@ -79,11 +79,9 @@ button {
 .kp-brand-mark {
   width: 30px;
   height: 30px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: white;
-  background: var(--kp-red);
+  display: block;
+  flex: 0 0 30px;
+  border-radius: 9px;
 }
 
 .kp-navigation {
@@ -1691,10 +1689,15 @@ button {
     width: min(100% - 24px, 1180px);
   }
 
-  .kp-brand > span:last-child,
   .header-user > span,
   .header-account-button {
     display: none;
+  }
+
+  .kp-brand {
+    gap: 7px;
+    font-size: 15px;
+    white-space: nowrap;
   }
 
   .header-space-button,

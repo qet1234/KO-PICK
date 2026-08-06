@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import DownloadLauncher from "./DownloadLauncher";
 import styles from "./download.module.css";
 
@@ -15,9 +16,7 @@ export default function DownloadPage() {
   return (
     <main className={styles.page}>
       <section className={styles.card} aria-labelledby="download-title">
-        <div className={styles.logo} aria-hidden="true">
-          ?
-        </div>
+        <Image className={styles.logo} src="/brand-mark.svg" alt="" width={64} height={64} priority />
         <p className={styles.eyebrow}>오늘어디 · ANDROID · iOS BETA</p>
         <h1 id="download-title">오늘어디 앱 다운로드</h1>
         <p className={styles.description}>
