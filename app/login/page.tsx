@@ -120,7 +120,7 @@ export default function LoginPage() {
         </div>
 
         <div className="login-copy">
-          <small>KOREA PICK MEMBERSHIP</small>
+          <small>오늘어디 MEMBERSHIP</small>
           <h1>
             취향에 맞는
             <br />

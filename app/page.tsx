@@ -94,7 +94,7 @@ export default function Home() {
             <article><span>03</span><strong>탈퇴 시 안전하게 삭제</strong><p>회원탈퇴 시 개인정보와 저장 데이터는 관련 법령상 보관 의무가 있는 경우를 제외하고 삭제합니다.</p></article>
           </div>
           <div className="kp-privacy-footer">
-            <span>© 2026 KOREA PICK</span>
+            <span>© 2026 오늘어디</span>
             <a href="/privacy">개인정보처리방침 →</a>
             <a href="/sources">데이터 출처·저작권 →</a>
             <a href="/account">개인정보·계정 관리 →</a>

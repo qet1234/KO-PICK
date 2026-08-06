@@ -8,7 +8,7 @@ export default function LegalFooter() {
         <a href="/sources">출처·저작권</a>
         <a href="/support">고객지원</a>
       </nav>
-      <p>© 2026 KOREA PICK. 외부 지도·예약 서비스의 운영 주체는 각 제공사입니다.</p>
+      <p>© 2026 오늘어디. 외부 지도·예약 서비스의 운영 주체는 각 제공사입니다.</p>
     </footer>
   );
 }

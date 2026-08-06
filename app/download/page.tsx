@@ -16,9 +16,9 @@ export default function DownloadPage() {
     <main className={styles.page}>
       <section className={styles.card} aria-labelledby="download-title">
         <div className={styles.logo} aria-hidden="true">
-          K
+          ?
         </div>
-        <p className={styles.eyebrow}>KOREA PICK · ANDROID · iOS BETA</p>
+        <p className={styles.eyebrow}>오늘어디 · ANDROID · iOS BETA</p>
         <h1 id="download-title">오늘어디 앱 다운로드</h1>
         <p className={styles.description}>
           접속한 기기를 확인해 Android는 APK 다운로드를, iPhone은 TestFlight

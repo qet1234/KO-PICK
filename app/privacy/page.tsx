@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침 | 오늘어디",
-  description: "오늘어디이 처리하는 개인정보와 보호 조치를 안내합니다.",
+  description: "오늘어디가 처리하는 개인정보와 보호 조치를 안내합니다.",
 };
 
 const effectiveDate = "2026년 8월 2일";
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         </header>
         <div className="legal-content">
           <p className="legal-note">
-            오늘어디은 회원 식별과 함께 공간 제공에 필요한 정보만 처리합니다.
+            오늘어디는 회원 식별과 함께 공간 제공에 필요한 정보만 처리합니다.
             현재 위치의 정밀 좌표는 수집하거나 서버에 저장하지 않습니다.
           </p>
 
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2>3. 제3자 제공과 외부 서비스</h2>
-            <p>오늘어디은 개인정보를 판매하지 않으며, 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
+            <p>오늘어디는 개인정보를 판매하지 않으며, 원칙적으로 이용자의 개인정보를 제3자에게 제공하지 않습니다.</p>
             <p>
               네이버 지도·예약 또는 카카오맵으로 이동하면 해당 제공사의 서비스와 개인정보처리방침이 적용됩니다.
               외부 이동 전에 장소명과 주소가 검색어로 전달될 수 있습니다.
