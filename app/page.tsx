@@ -1,7 +1,6 @@
 import AuthHeader from "@/components/AuthHeader";
 import Image from "next/image";
 import CategoryCards from "@/components/CategoryCards";
-import LiveRecommendations from "@/components/LiveRecommendations";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
 import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
 import SeasonalFoodList from "@/components/SeasonalFoodList";
@@ -27,7 +26,7 @@ export default function Home() {
             <span>오늘어디</span>
           </a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
-            <a href="#categories">카테고리</a><a href="#popular">인기 추천</a><a href="#seasonal-foods">사계절 음식</a>
+            <a href="#categories">카테고리</a><a href="#coming-soon">새 기능 준비 중</a><a href="#seasonal-foods">사계절 음식</a>
           </nav>
           <div className="kp-header-service-buttons">
             <a
@@ -71,15 +70,22 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="kp-popular-section" id="popular">
+      <section className="kp-popular-section kp-coming-soon-section" id="coming-soon">
         <div className="kp-container">
-          <div className="kp-popular-heading">
-            <div>
-              <h2 className="kp-popular-title">지금 인기 있는 추천<span className="kp-popular-star" aria-hidden="true">★</span></h2>
-              <p>조회·상세보기·지도 이동·찜 활동을 반영해 지금 관심이 높은 장소를 보여드립니다.</p>
+          <div className="kp-coming-soon-panel">
+            <div className="kp-coming-soon-icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
             </div>
+            <p className="kp-coming-soon-label">NEW FEATURE</p>
+            <h2>새로운 기능을 준비하고 있어요</h2>
+            <p className="kp-coming-soon-description">
+              더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.
+              <br />조금만 기다려 주세요.
+            </p>
+            <span className="kp-coming-soon-status">현재 개발 중</span>
           </div>
-          <LiveRecommendations />
         </div>
       </section>
 
