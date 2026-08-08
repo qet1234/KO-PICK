@@ -32,12 +32,6 @@ interface Place {
   imageModificationAllowed?: boolean;
   imageLicenseUrl?: string | null;
   imageSourceUrl?: string | null;
-  naverVerified?: boolean;
-  naverName?: string;
-  naverAddress?: string;
-  naverCategory?: string;
-  naverMapUrl?: string;
-  naverMatchConfidence?: number;
 }
 
 interface SubregionOption {
@@ -612,9 +606,9 @@ export default function CategoryExplorePage({
       const address = document.createElement("span");
       address.textContent = place.address ?? "주소 정보 없음";
       const mapLink = document.createElement("a");
-      mapLink.href = place.naverMapUrl ?? naverMapSearchUrl(
-        place.naverName ?? place.name,
-        place.naverAddress ?? place.address,
+      mapLink.href = naverMapSearchUrl(
+        place.name,
+        place.address,
         place.latitude,
         place.longitude
       );
@@ -896,7 +890,7 @@ export default function CategoryExplorePage({
                 {!journeyLabel && selectedDetailSummary
                   ? " · " + selectedDetailSummary
                   : ""}
-                {" · 네이버 지도 일치 장소 "}
+                {" 추천 장소 "}
                 {totalCount.toLocaleString("ko-KR")}곳
               </strong>
             )}
@@ -925,11 +919,6 @@ export default function CategoryExplorePage({
                           .filter(Boolean)
                           .join(" · ")}
                       </span>
-                      {place.naverVerified && (
-                        <span className="kp-explore-verification-badge">
-                          네이버 지도 일치 확인
-                        </span>
-                      )}
                       <h2>{place.name}</h2>
                       <p>{place.address ?? "주소 정보가 없습니다."}</p>
                       <strong>오늘어디 지도에서 위치 보기</strong>
@@ -939,9 +928,9 @@ export default function CategoryExplorePage({
                   <div className="kp-explore-external-actions">
                     <a
                       className="kp-explore-naver-map-link"
-                      href={place.naverMapUrl ?? naverMapSearchUrl(
-                        place.naverName ?? place.name,
-                        place.naverAddress ?? place.address,
+                      href={naverMapSearchUrl(
+                        place.name,
+                        place.address,
                         place.latitude,
                         place.longitude
                       )}
@@ -993,8 +982,8 @@ export default function CategoryExplorePage({
 
           <footer className="kp-explore-source">
             <strong>데이터 출처</strong>
-            <span>장소 원천·이미지: 한국관광공사 TourAPI</span>
-            <span>장소명·주소 교차검증 및 지도: NAVER</span>
+            <span>장소 정보·이미지: 한국관광공사 TourAPI</span>
+            <span>지도: NAVER Maps</span>
             <small>
               다른 서비스의 별점·리뷰·사진은 복사하지 않습니다.
             </small>
