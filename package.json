@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "test:naver-verification": "node --test utils/naver-place-verification.test.ts",
     "verify:legal-share": "node scripts/verify-legal-course-sharing.mjs",
     "supabase:start": "npx --yes supabase@2.75.0 start",
     "supabase:stop": "npx --yes supabase@2.75.0 stop",
