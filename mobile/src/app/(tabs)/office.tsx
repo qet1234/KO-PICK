@@ -4,6 +4,7 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +14,7 @@ import {
 import { ChoiceChips } from '@/components/choice-chips';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { fetchNaverDiningPlaces, type NaverDiningPlace } from '@/lib/api';
+import { appConfig } from '@/lib/config';
 import { openNaverSearch, openRouteMap } from '@/lib/map-links';
 
 type DiningMode = '회식' | '점심';
@@ -91,6 +93,33 @@ export default function OfficeDiningScreen() {
     }
   };
 
+  const shareDining = async () => {
+    const url = new URL('/office-dining', appConfig.webUrl);
+    url.search = new URLSearchParams({
+      shared: '1',
+      mode,
+      region,
+      district: '전체',
+      officeArea: officeArea.trim(),
+      foodType,
+      foodDetail,
+      headcount,
+      budget,
+    }).toString();
+    const purpose = mode === '회식' ? '팀 회식' : '빠른 점심';
+    const food = foodDetail === '전체' ? foodType : foodDetail;
+    const description = `${region}${officeArea.trim() ? ` ${officeArea.trim()}` : ''} · ${food} · ${budget}${mode === '회식' ? ` · ${headcount}` : ''}`;
+
+    try {
+      await Share.share({
+        title: `오늘어디 · ${purpose}`,
+        message: `오늘어디 · ${purpose}\n${description}\n${url.toString()}`,
+      });
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : '공유 화면을 열지 못했습니다.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
@@ -142,7 +171,11 @@ export default function OfficeDiningScreen() {
           <Pressable disabled={loading} onPress={() => void search()} style={[styles.searchButton, loading && styles.disabled]}>
             {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>{mode} 장소 찾아보기</Text>}
           </Pressable>
+          <Pressable onPress={() => void shareDining()} style={styles.shareButton}>
+            <Text style={styles.shareText}>{mode === '회식' ? '회식' : '점심'} 조건 카카오톡 링크 공유</Text>
+          </Pressable>
           <Text style={styles.note}>여러 세부 음식 검색 결과를 합쳐 최대 50곳의 음식점명을 보여드립니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
+          <Text style={styles.shareNote}>공유 링크에는 선택 조건과 입력한 회사·역·동네가 포함되며 계정 정보는 포함되지 않습니다.</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
@@ -214,7 +247,10 @@ const styles = StyleSheet.create({
   searchButton: { marginTop: 24, alignItems: 'center', borderRadius: 14, backgroundColor: '#146b45', paddingVertical: 15 },
   disabled: { opacity: 0.65 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
+  shareButton: { marginTop: 10, alignItems: 'center', borderWidth: 1, borderColor: '#e2ca00', borderRadius: 14, backgroundColor: '#fee500', paddingVertical: 15 },
+  shareText: { color: '#191919', fontSize: 14, fontWeight: '900' },
   note: { marginTop: 12, color: '#77827b', fontSize: 11, lineHeight: 17 },
+  shareNote: { marginTop: 5, color: '#77827b', fontSize: 11, lineHeight: 17 },
   error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#a23232', padding: 12, fontSize: 12, lineHeight: 18 },
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 },
   selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#e7f6ee', padding: 16 },

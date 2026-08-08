@@ -46,7 +46,12 @@ function loadKakaoSdk() {
   return sdkPromise;
 }
 
-export async function shareCourseOnKakao(input: { description: string; title: string; url: string }) {
+export async function shareCourseOnKakao(input: {
+  buttonTitle?: string;
+  description: string;
+  title: string;
+  url: string;
+}) {
   const key = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY?.trim();
   if (!key) throw new Error("KAKAO_SDK_NOT_CONFIGURED");
   const kakao = await loadKakaoSdk();
@@ -55,7 +60,7 @@ export async function shareCourseOnKakao(input: { description: string; title: st
     objectType: "text",
     text: `${input.title}\n${input.description}`,
     link: { mobileWebUrl: input.url, webUrl: input.url },
-    buttonTitle: "코스 자세히 보기",
+    buttonTitle: input.buttonTitle ?? "코스 자세히 보기",
   });
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
+import { shareCourseOnKakao } from "@/utils/kakao-share";
 import {
   loadNaverMaps,
   naverMapAppRouteUrl,
@@ -13,6 +14,17 @@ import {
 } from "@/utils/naver-maps";
 
 type DiningMode = "회식" | "점심";
+
+type DiningSearchInput = {
+  mode: DiningMode;
+  region: string;
+  district: string;
+  officeArea: string;
+  foodType: string;
+  foodDetail: string;
+  headcount: string;
+  budget: string;
+};
 
 type Place = {
   id: string;
@@ -52,23 +64,60 @@ const foodDetails: Record<string, readonly string[]> = {
 const dinnerBudgets = ["1인 2만원 이하", "1인 3만원 이하", "1인 5만원 이하", "1인 7만원 이하", "1인 10만원 이상"];
 const lunchBudgets = ["1인 1만원 이하", "1인 1.5만원 이하", "1인 2만원 이하", "1인 3만원 이하"];
 
-export default function OfficeDiningFinder() {
+function parseSharedDiningInput(search: string): DiningSearchInput | null {
+  const params = new URLSearchParams(search);
+  if (params.get("shared") !== "1") return null;
+
+  const mode: DiningMode = params.get("mode") === "점심" ? "점심" : "회식";
+  const regionParam = params.get("region") ?? "서울";
+  const region = regions.includes(regionParam as (typeof regions)[number]) ? regionParam : "서울";
+  const districtParam = params.get("district") ?? "전체";
+  const district = districtParam === "전체" || (koreaRegionDistricts[region] ?? []).includes(districtParam)
+    ? districtParam
+    : "전체";
+  const foodTypeParam = params.get("foodType") ?? "전체";
+  const foodType = foodTypes.includes(foodTypeParam as (typeof foodTypes)[number]) ? foodTypeParam : "전체";
+  const foodDetailParam = params.get("foodDetail") ?? "전체";
+  const foodDetail = (foodDetails[foodType] ?? foodDetails.전체).includes(foodDetailParam)
+    ? foodDetailParam
+    : "전체";
+  const validBudgets = mode === "회식" ? dinnerBudgets : lunchBudgets;
+  const budgetParam = params.get("budget") ?? validBudgets[0];
+  const headcountParam = params.get("headcount") ?? "5~8명";
+
+  return {
+    mode,
+    region,
+    district,
+    officeArea: (params.get("officeArea") ?? "").trim().slice(0, 80),
+    foodType,
+    foodDetail,
+    headcount: headcounts.includes(headcountParam) ? headcountParam : "5~8명",
+    budget: validBudgets.includes(budgetParam) ? budgetParam : validBudgets[0],
+  };
+}
+
+export default function OfficeDiningFinder({ initialSearch = "" }: { initialSearch?: string }) {
+  const [initialSharedInput] = useState(() => parseSharedDiningInput(initialSearch));
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<NaverMapInstance | null>(null);
   const markersRef = useRef<NaverMarkerInstance[]>([]);
   const infoWindowRef = useRef<NaverInfoWindowInstance | null>(null);
-  const [mode, setMode] = useState<DiningMode>("회식");
-  const [region, setRegion] = useState("서울");
-  const [district, setDistrict] = useState("전체");
-  const [officeArea, setOfficeArea] = useState("");
-  const [headcount, setHeadcount] = useState("5~8명");
-  const [foodType, setFoodType] = useState("전체");
-  const [foodDetail, setFoodDetail] = useState("전체");
-  const [budget, setBudget] = useState("1인 3만원 이하");
+  const sharedSearchStartedRef = useRef(false);
+  const [mode, setMode] = useState<DiningMode>(initialSharedInput?.mode ?? "회식");
+  const [region, setRegion] = useState(initialSharedInput?.region ?? "서울");
+  const [district, setDistrict] = useState(initialSharedInput?.district ?? "전체");
+  const [officeArea, setOfficeArea] = useState(initialSharedInput?.officeArea ?? "");
+  const [headcount, setHeadcount] = useState(initialSharedInput?.headcount ?? "5~8명");
+  const [foodType, setFoodType] = useState(initialSharedInput?.foodType ?? "전체");
+  const [foodDetail, setFoodDetail] = useState(initialSharedInput?.foodDetail ?? "전체");
+  const [budget, setBudget] = useState(initialSharedInput?.budget ?? "1인 3만원 이하");
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState("");
+  const [shareNotice, setShareNotice] = useState("");
   const [searched, setSearched] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState(
@@ -177,23 +226,25 @@ export default function OfficeDiningFinder() {
   const selectMode = (nextMode: DiningMode) => {
     setMode(nextMode);
     setBudget(nextMode === "회식" ? "1인 3만원 이하" : "1인 1만원 이하");
+    setShareNotice("");
   };
 
-  const search = async () => {
+  const executeSearch = useCallback(async (input: DiningSearchInput) => {
     setLoading(true);
     setError("");
+    setShareNotice("");
     setSearched(true);
 
     try {
       const params = new URLSearchParams({
-        mode,
-        region,
-        district,
-        officeArea: officeArea.trim(),
-        foodType,
-        foodDetail,
-        headcount,
-        budget,
+        mode: input.mode,
+        region: input.region,
+        district: input.district,
+        officeArea: input.officeArea.trim(),
+        foodType: input.foodType,
+        foodDetail: input.foodDetail,
+        headcount: input.headcount,
+        budget: input.budget,
       });
       const response = await fetch(`/api/naver/dining-search?${params.toString()}`);
       const payload = await response.json();
@@ -211,6 +262,87 @@ export default function OfficeDiningFinder() {
       setError(nextError instanceof Error ? nextError.message : "네이버 음식점을 불러오지 못했습니다.");
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const currentSearchInput = (): DiningSearchInput => ({
+    mode,
+    region,
+    district,
+    officeArea: officeArea.trim(),
+    foodType,
+    foodDetail,
+    headcount,
+    budget,
+  });
+
+  const search = () => executeSearch(currentSearchInput());
+
+  useEffect(() => {
+    if (!initialSharedInput || sharedSearchStartedRef.current) return;
+    sharedSearchStartedRef.current = true;
+    void executeSearch(initialSharedInput).then(() => {
+      setShareNotice("공유받은 식사 조건으로 음식점을 다시 찾았습니다.");
+    });
+  }, [executeSearch, initialSharedInput]);
+
+  const shareDining = async () => {
+    if (sharing) return;
+    setSharing(true);
+    setError("");
+    setShareNotice("");
+
+    const input = currentSearchInput();
+    const url = new URL("/office-dining", window.location.origin);
+    url.search = new URLSearchParams({
+      shared: "1",
+      mode: input.mode,
+      region: input.region,
+      district: input.district,
+      officeArea: input.officeArea,
+      foodType: input.foodType,
+      foodDetail: input.foodDetail,
+      headcount: input.headcount,
+      budget: input.budget,
+    }).toString();
+    const purpose = input.mode === "회식" ? "팀 회식" : "빠른 점심";
+    const area = [input.region, input.district === "전체" ? "" : input.district, input.officeArea]
+      .filter(Boolean)
+      .join(" ");
+    const food = input.foodDetail === "전체" ? input.foodType : input.foodDetail;
+    const description = `${area} · ${food} · ${input.budget}${input.mode === "회식" ? ` · ${input.headcount}` : ""}`;
+
+    try {
+      await shareCourseOnKakao({
+        title: `오늘어디 · ${purpose}`,
+        description,
+        url: url.toString(),
+        buttonTitle: `${purpose} 식당 보기`,
+      });
+      setShareNotice("카카오톡 공유 화면을 열었습니다.");
+    } catch (kakaoError) {
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: `오늘어디 · ${purpose}`,
+            text: description,
+            url: url.toString(),
+          });
+          setShareNotice("기기 공유 화면을 열었습니다. 카카오톡을 선택해 보내세요.");
+        } else {
+          await navigator.clipboard.writeText(url.toString());
+          setShareNotice("공유 링크를 복사했습니다. 카카오톡에 붙여넣어 보내세요.");
+        }
+      } catch (fallbackError) {
+        if (!(fallbackError instanceof DOMException && fallbackError.name === "AbortError")) {
+          setError("공유 화면을 열지 못했습니다.");
+        }
+      }
+      if (kakaoError instanceof Error && kakaoError.message !== "KAKAO_SDK_NOT_CONFIGURED") {
+        console.error("직장인 식사 카카오톡 공유 오류:", kakaoError);
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -309,8 +441,13 @@ export default function OfficeDiningFinder() {
           <button className="od-search-button" type="button" disabled={loading} onClick={() => void search()}>
             {loading ? "식당을 찾고 있어요…" : `${mode} 장소 찾아보기`}
           </button>
+          <button className="od-kakao-share" type="button" disabled={sharing} onClick={() => void shareDining()}>
+            {sharing ? "공유 준비 중…" : `${mode === "회식" ? "회식" : "점심"} 조건 카카오톡 공유`}
+          </button>
         </div>
+        {shareNotice && <p className="od-share-notice" role="status">{shareNotice}</p>}
         <p className="od-data-note">여러 세부 음식 검색 결과를 합쳐 최대 50곳의 음식점명을 보여드립니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</p>
+        <p className="od-share-note">공유 링크에는 현재 선택한 조건과 입력한 회사·역·동네가 포함되며, 계정 정보는 포함되지 않습니다. 링크를 열면 같은 조건으로 최신 음식점을 다시 검색합니다.</p>
       </section>
 
       <section className="od-results" aria-live="polite">
