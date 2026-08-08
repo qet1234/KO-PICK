@@ -15,7 +15,9 @@ const contentSecurityPolicy = [
   "manifest-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  // Kakao.Share.sendDefault() submits a short-lived form to Kakao's share picker.
+  // Keep form submissions locked down while allowing only that trusted provider.
+  "form-action 'self' https://*.kakao.com",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join("; ");
