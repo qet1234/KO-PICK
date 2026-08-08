@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifiedTourImageFromList } from "@/utils/tourapi-image";
+import {
+  NaverPlaceVerificationError,
+  verifyTourPlacesWithNaver,
+} from "@/utils/naver-place-verification";
 
 const TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2";
-const PAGE_SIZE_MAX = 100;
+const PAGE_SIZE_MAX = 30;
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 const regionCodes: Record<string, string> = {
   서울: "1",
@@ -436,7 +444,28 @@ export async function GET(request: NextRequest) {
           place.longitude <= 132
       );
 
-    const places = normalizedPlaces.map((place) => {
+    const naverClientId =
+      process.env.NAVER_SEARCH_CLIENT_ID?.trim() ||
+      process.env.NAVER_CLIENT_ID?.trim();
+    const naverClientSecret =
+      process.env.NAVER_SEARCH_CLIENT_SECRET?.trim() ||
+      process.env.NAVER_CLIENT_SECRET?.trim();
+    if (!naverClientId || !naverClientSecret) {
+      return NextResponse.json(
+        {
+          error:
+            "네이버 지도 장소 검증을 위한 NAVER_SEARCH_CLIENT_ID와 NAVER_SEARCH_CLIENT_SECRET 설정이 필요합니다.",
+        },
+        { status: 503, headers: { "Cache-Control": "private, no-store, max-age=0" } },
+      );
+    }
+
+    const naverVerifiedPlaces = await verifyTourPlacesWithNaver(
+      normalizedPlaces,
+      { clientId: naverClientId, clientSecret: naverClientSecret },
+    );
+
+    const places = naverVerifiedPlaces.map((place) => {
       const image = includeImages
         ? verifiedTourImageFromList({
             imageUrl: place.preferredImageUrl,
@@ -451,8 +480,14 @@ export async function GET(request: NextRequest) {
         city: place.city,
         category: place.category,
         address: place.address,
-        latitude: place.latitude,
-        longitude: place.longitude,
+        latitude: place.naverLatitude ?? place.latitude,
+        longitude: place.naverLongitude ?? place.longitude,
+        naverVerified: true,
+        naverName: place.naverName,
+        naverAddress: place.naverAddress,
+        naverCategory: place.naverCategory,
+        naverMapUrl: place.naverMapUrl,
+        naverMatchConfidence: place.naverMatchConfidence,
         imageUrl: image?.imageUrl ?? null,
         imageThumbnailUrl: image?.thumbnailUrl ?? null,
         imageCopyrightCode: image?.copyrightCode ?? null,
@@ -465,10 +500,10 @@ export async function GET(request: NextRequest) {
     });
 
     const bodies = payloads.map((payload) => payload.response?.body);
-    const totalCount = keywordSearch
-      ? places.length
+    const candidateTotalCount = keywordSearch
+      ? normalizedPlaces.length
       : bodies.reduce((sum, body) => sum + Number(body?.totalCount ?? 0), 0);
-    const totalPages = keywordSearch
+    const candidateTotalPages = keywordSearch
       ? 1
       : Math.max(
           1,
@@ -485,13 +520,35 @@ export async function GET(request: NextRequest) {
       pagination: {
         pageNo: keywordSearch ? 1 : page,
         numOfRows: pageSize,
-        totalCount,
-        totalPages,
+        totalCount: places.length,
+        totalPages: candidateTotalPages,
+      },
+      verification: {
+        provider: "NAVER_LOCAL_SEARCH",
+        criterion: "NORMALIZED_NAME_AND_ADDRESS",
+        checkedOnPage: normalizedPlaces.length,
+        verifiedOnPage: places.length,
+        excludedOnPage: normalizedPlaces.length - places.length,
+        candidateTotalCount,
       },
       detailTypes,
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);
+    if (error instanceof NaverPlaceVerificationError) {
+      const permissionError = error.status === 401 || error.status === 403;
+      return NextResponse.json(
+        {
+          error: permissionError
+            ? "네이버 개발자센터 애플리케이션에서 검색 API 권한을 활성화해 주세요."
+            : "네이버 지도 장소 검증에 실패했습니다. 정상 장소를 잘못 제외하지 않도록 결과를 표시하지 않습니다. 잠시 후 다시 시도해 주세요.",
+        },
+        {
+          status: permissionError ? 503 : 502,
+          headers: { "Cache-Control": "private, no-store, max-age=0" },
+        },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "TourAPI 요청에 실패했습니다." },
       { status: 502 }
