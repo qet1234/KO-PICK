@@ -279,6 +279,22 @@ select {
   font-weight: 900;
 }
 
+.kp-explore-card-copy .kp-explore-verification-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 0.45rem;
+  padding: 0.26rem 0.5rem;
+  border: 1px solid rgba(3, 199, 90, 0.28);
+  border-radius: 999px;
+  background: rgba(3, 199, 90, 0.09);
+  color: #04783b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 .kp-explore-card-copy h2 {
   margin: 8px 0 7px;
   overflow: hidden;
