@@ -82,6 +82,25 @@ export default function RecommendationScreen() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
 
+        <View
+          accessible
+          accessibilityLabel="새로운 기능을 준비하고 있어요. 더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다."
+          style={styles.comingSoonPanel}>
+          <View style={styles.comingSoonIcon}>
+            <View style={styles.comingSoonDot} />
+            <View style={styles.comingSoonDot} />
+            <View style={styles.comingSoonDot} />
+          </View>
+          <Text style={styles.comingSoonLabel}>NEW FEATURE</Text>
+          <Text style={styles.comingSoonTitle}>새로운 기능을{`\n`}준비하고 있어요</Text>
+          <Text style={styles.comingSoonDescription}>
+            더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.{`\n`}조금만 기다려 주세요.
+          </Text>
+          <View style={styles.comingSoonStatus}>
+            <Text style={styles.comingSoonStatusText}>현재 개발 중</Text>
+          </View>
+        </View>
+
         {items.length > 0 ? (
           <View style={styles.results}>
             <Text style={styles.sectionEyebrow}>YOUR PICKS</Text>
@@ -123,6 +142,43 @@ const styles = StyleSheet.create({
   submitDisabled: { opacity: 0.65 },
   submitText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
   error: { marginTop: 12, color: '#aa2f2f', fontSize: 13, lineHeight: 19 },
+  comingSoonPanel: {
+    minHeight: 300,
+    marginTop: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#dce8e0',
+    borderRadius: 24,
+    backgroundColor: '#17211c',
+    paddingHorizontal: 24,
+    paddingVertical: 38,
+  },
+  comingSoonIcon: {
+    width: 64,
+    height: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#8fae36',
+    borderRadius: 21,
+    backgroundColor: '#273323',
+  },
+  comingSoonDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#caff2c' },
+  comingSoonLabel: { marginTop: 20, color: '#caff2c', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
+  comingSoonTitle: { marginTop: 11, color: '#ffffff', fontSize: 27, fontWeight: '900', lineHeight: 34, textAlign: 'center' },
+  comingSoonDescription: { marginTop: 14, color: '#c8d0cb', fontSize: 13, lineHeight: 21, textAlign: 'center' },
+  comingSoonStatus: {
+    marginTop: 22,
+    borderWidth: 1,
+    borderColor: '#536059',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  comingSoonStatusText: { color: '#d7ddd9', fontSize: 11, fontWeight: '800' },
   results: { marginTop: 28 },
   sectionEyebrow: { color: '#146b45', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   sectionTitle: { marginTop: 4, color: '#17211c', fontSize: 23, fontWeight: '900' },

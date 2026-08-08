@@ -1,4 +1,4 @@
-name: Mobile APK automatic update
+name: Mobile Android and iOS automatic update
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish-preview-update:
-    name: Publish preview OTA update
+    name: Publish Android and iOS preview OTA update
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,4 +51,4 @@ jobs:
         run: npm ci
 
       - name: Publish automatic update
-        run: eas update --channel preview --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment production --non-interactive
+        run: eas update --channel preview --platform all --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment production --non-interactive
