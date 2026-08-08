@@ -930,6 +930,100 @@ button {
     var(--kp-black);
 }
 
+.kp-coming-soon-section {
+  padding: 72px 0;
+}
+
+.kp-coming-soon-panel {
+  min-height: 360px;
+  padding: 54px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.kp-coming-soon-icon {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(202, 255, 44, 0.34);
+  border-radius: 24px;
+  background: rgba(202, 255, 44, 0.08);
+}
+
+.kp-coming-soon-icon span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--kp-lime);
+  animation: kp-coming-soon-dot 1.4s ease-in-out infinite;
+}
+
+.kp-coming-soon-icon span:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.kp-coming-soon-icon span:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.kp-coming-soon-label {
+  margin: 0 0 14px;
+  color: var(--kp-lime);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.18em;
+}
+
+.kp-coming-soon-panel h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight: 950;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+
+.kp-coming-soon-description {
+  margin: 18px 0 0;
+  color: #c8c8c2;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.8;
+}
+
+.kp-coming-soon-status {
+  margin-top: 28px;
+  padding: 9px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+@keyframes kp-coming-soon-dot {
+  0%, 60%, 100% {
+    opacity: 0.36;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-5px);
+  }
+}
+
 .kp-popular-heading h2 {
   margin-top: 0;
 }
@@ -2721,7 +2815,8 @@ button {
   .kp-editor-note,
   .kp-hero-live-status i,
   .kp-live-pick-pagination button,
-  .kp-popular-star {
+  .kp-popular-star,
+  .kp-coming-soon-icon span {
     animation: none !important;
     transition: none !important;
   }
