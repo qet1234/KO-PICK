@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import BrandLocationPin from "@/components/BrandLocationPin";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
 
 type SpaceType = "personal" | "couple" | "friends" | "family";
@@ -238,8 +239,8 @@ export default function SpacesHub() {
   return (
     <main className="spaces-page">
       <header className="spaces-topbar">
-        <a className="spaces-brand" href="/">
-          <span>?</span>
+        <a className="spaces-brand" href="/" aria-label="오늘어디 홈">
+          <span aria-hidden="true"><BrandLocationPin /></span>
           오늘어디
         </a>
         <a className="spaces-home-link" href="/">홈으로</a>

@@ -40,6 +40,12 @@
   background: var(--couple-red);
 }
 
+.couple-brand > span svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
 .couple-private-badge {
   padding: 9px 13px;
   border: 1px solid rgba(17, 17, 15, 0.16);

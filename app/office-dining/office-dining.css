@@ -45,6 +45,12 @@
   background: var(--od-primary);
 }
 
+.od-brand > span svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
 .od-back {
   padding: 9px 14px;
   border: 1px solid rgba(23, 35, 28, 0.16);

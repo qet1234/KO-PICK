@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import BrandLocationPin from "@/components/BrandLocationPin";
 import { springJson } from "@/utils/spring-api";
 
 type CoupleInfo = {
@@ -442,8 +443,8 @@ export default function CoupleSpace() {
   return (
     <main className="couple-page">
       <header className="couple-topbar">
-        <a className="couple-brand" href="/">
-          <span>?</span>
+        <a className="couple-brand" href="/" aria-label="오늘어디 홈">
+          <span aria-hidden="true"><BrandLocationPin /></span>
           오늘어디
         </a>
         <div className="couple-private-badge">🔒 두 사람만 볼 수 있어요</div>

@@ -66,6 +66,12 @@ select {
   font-weight: 900;
 }
 
+.kp-explore-brand > span svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
 .kp-explore-header > div {
   display: flex;
   flex-direction: column;

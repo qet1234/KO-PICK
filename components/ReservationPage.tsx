@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import BrandLocationPin from "@/components/BrandLocationPin";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
 import NaverBookingMatch from "@/components/NaverBookingMatch";
 
@@ -295,7 +296,10 @@ export default function ReservationPage() {
   return (
     <main className="reservation-page">
       <header className="reservation-topbar">
-        <a className="reservation-brand" href="/"><span>?</span>오늘어디</a>
+        <a className="reservation-brand" href="/" aria-label="오늘어디 홈">
+          <span aria-hidden="true"><BrandLocationPin /></span>
+          오늘어디
+        </a>
         <nav><a href="/recommend">코스 설정</a><a href="/spaces">함께 공간</a><a href="/">홈으로</a></nav>
       </header>
 

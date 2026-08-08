@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import BrandLocationPin from "@/components/BrandLocationPin";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import { shareCourseOnKakao } from "@/utils/kakao-share";
 import {
@@ -379,7 +380,10 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
   return (
     <main className="od-page">
       <header className="od-header">
-        <a className="od-brand" href="/"><span>?</span>오늘어디</a>
+        <a className="od-brand" href="/" aria-label="오늘어디 홈">
+          <span aria-hidden="true"><BrandLocationPin /></span>
+          오늘어디
+        </a>
         <a className="od-back" href="/">홈으로</a>
       </header>
 

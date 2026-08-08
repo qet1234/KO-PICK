@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import BrandLocationPin from "@/components/BrandLocationPin";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { tourPlacesApiUrl } from "@/utils/spring-api";
 import NaverBookingButton from "@/components/NaverBookingButton";
@@ -694,8 +695,8 @@ export default function CategoryExplorePage({
   return (
     <main className="kp-explore-page">
       <header className="kp-explore-header">
-        <a href="/" className="kp-explore-brand">
-          <span>?</span>
+        <a href="/" className="kp-explore-brand" aria-label="오늘어디 홈">
+          <span aria-hidden="true"><BrandLocationPin /></span>
           <strong>오늘어디</strong>
         </a>
 

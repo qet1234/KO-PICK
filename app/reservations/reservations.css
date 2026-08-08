@@ -13,6 +13,7 @@
 .reservation-topbar { min-height: 76px; display: flex; align-items: center; justify-content: space-between; }
 .reservation-brand { display: inline-flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 950; }
 .reservation-brand span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--reserve-red); }
+.reservation-brand svg { width: 19px; height: 19px; display: block; }
 .reservation-topbar nav { display: flex; gap: 8px; }
 .reservation-topbar nav a { padding: 9px 13px; border: 1px solid rgba(21,21,18,.14); border-radius: 999px; background: rgba(255,255,255,.7); font-size: 10px; font-weight: 900; }
 .reservation-shell { padding: 25px 0 100px; }

@@ -53,6 +53,12 @@
   background: var(--spaces-red);
 }
 
+.spaces-brand > span svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+
 .spaces-home-link {
   padding: 9px 14px;
   border: 1px solid rgba(18, 18, 16, 0.16);
