@@ -36,8 +36,11 @@ export default function ExploreScreen() {
     const nextRegion = regions.includes(params.region as typeof regions[number]) ? params.region as string : '서울';
     const rawCategory = params.category === '음식' ? '맛집' : params.category;
     const nextCategory = categories.includes(rawCategory as typeof categories[number]) ? rawCategory as PlaceQuery['category'] : '전체';
-    setRegion(nextRegion); setCategory(nextCategory);
-    queueMicrotask(() => void load(nextRegion, nextCategory));
+    queueMicrotask(() => {
+      setRegion(nextRegion);
+      setCategory(nextCategory);
+      void load(nextRegion, nextCategory);
+    });
     // Load URL parameters once when this tab opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.category, params.region]);
