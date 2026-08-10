@@ -25,17 +25,24 @@ begin
       set invite_code_hash = null,
           invite_expires_at = null,
           invite_used_at = coalesce(invite_used_at, now()),
-          invite_revoked_at = coalesce(invite_revoked_at, now()),
           updated_at = now()';
-    -- The legacy hash-lifecycle trigger resets timestamps when the hash changes.
-    -- Normalize them again after the hash has been removed.
-    execute '
-      update public.couples
-      set invite_expires_at = null,
-          invite_used_at = coalesce(invite_used_at, now()),
-          invite_revoked_at = coalesce(invite_revoked_at, now()),
-          updated_at = now()
-      where invite_code_hash is null';
+    if exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'couples'
+        and column_name = 'invite_revoked_at'
+    ) then
+      -- The optional high-security lifecycle trigger resets timestamps when the
+      -- hash changes. Normalize them again after the hash has been removed.
+      execute '
+        update public.couples
+        set invite_expires_at = null,
+            invite_used_at = coalesce(invite_used_at, now()),
+            invite_revoked_at = coalesce(invite_revoked_at, now()),
+            updated_at = now()
+        where invite_code_hash is null';
+    end if;
   end if;
 end;
 $$;
