@@ -43,6 +43,7 @@ jobs:
       - name: Apply database migration
         env:
           ADMIN_MIGRATION: supabase/migrations/20260810130000_admin_dashboard.sql
+          OPERATOR_MIGRATION: supabase/migrations/20260810150000_register_primary_operator.sql
           LEGAL_SHARE_MIGRATION: supabase/migrations/20260731223000_legal_course_sharing.sql
         shell: bash
         run: |
@@ -59,7 +60,7 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION"; do
+            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION"; do
               echo "Applying reviewed migration $(basename "$migration") through the Supabase Management API."
               jq -Rs '{query: .}' "$migration" > reviewed-migration.json
               curl --fail-with-body --silent --show-error \
@@ -76,7 +77,7 @@ jobs:
         run: |
           set -euo pipefail
           jq -n '{
-            query: "select to_regclass('\''public.support_requests'\'') is not null and to_regprocedure('\''public.prepare_account_deletion(uuid,text)'\'') is not null and to_regclass('\''public.user_legal_consents'\'') is not null and to_regclass('\''public.shared_courses'\'') is not null and to_regprocedure('\''public.get_shared_course(text)'\'') is not null and to_regprocedure('\''public.revoke_course_share(uuid)'\'') is not null and to_regclass('\''public.admin_users'\'') is not null and to_regclass('\''public.admin_traffic_events'\'') is not null and to_regprocedure('\''public.get_admin_traffic_dashboard(integer)'\'') is not null as ready"
+            query: "select to_regclass('\''public.support_requests'\'') is not null and to_regprocedure('\''public.prepare_account_deletion(uuid,text)'\'') is not null and to_regclass('\''public.user_legal_consents'\'') is not null and to_regclass('\''public.shared_courses'\'') is not null and to_regprocedure('\''public.get_shared_course(text)'\'') is not null and to_regprocedure('\''public.revoke_course_share(uuid)'\'') is not null and to_regclass('\''public.admin_users'\'') is not null and to_regclass('\''public.admin_traffic_events'\'') is not null and to_regprocedure('\''public.get_admin_traffic_dashboard(integer)'\'') is not null and exists (select 1 from public.admin_users au join auth.users u on u.id = au.user_id where encode(extensions.digest(convert_to(lower(coalesce(u.email, '\'''\'')), '\''UTF8'\''), '\''sha256'\''), '\''hex'\'') = '\''c6f4117eca2c8ebcfcfe58937453619a530ae85c818549e65ed13a718d7463b2'\'') as ready"
           }' > verify-migration.json
           curl --fail-with-body --silent --show-error \
             --request POST \
