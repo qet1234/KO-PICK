@@ -68,9 +68,12 @@ export type RecommendationQuery = {
   mood?: string;
 };
 
-async function fetchKoPick<T>(path: string) {
+async function fetchKoPick<T>(path: string, requestSignal?: AbortSignal) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
+  const abortRequest = () => controller.abort();
+  if (requestSignal?.aborted) controller.abort();
+  else requestSignal?.addEventListener('abort', abortRequest, { once: true });
   const { data } = await supabase.auth.getSession();
   const headers = new Headers({ Accept: 'application/json' });
   if (data.session?.access_token) {
@@ -90,11 +93,13 @@ async function fetchKoPick<T>(path: string) {
     return payload;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      if (requestSignal?.aborted) throw error;
       throw new Error('장소 조회 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.');
     }
     throw error;
   } finally {
     clearTimeout(timeout);
+    requestSignal?.removeEventListener('abort', abortRequest);
   }
 }
 
@@ -141,7 +146,7 @@ export async function deleteAccount(appleAuthorizationCode?: string) {
   }
 }
 
-export async function fetchTourPlaces(query: PlaceQuery) {
+export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
   const params = new URLSearchParams({
     category: query.category,
     includeImages: 'true',
@@ -162,7 +167,7 @@ export async function fetchTourPlaces(query: PlaceQuery) {
       totalCount: number;
       totalPages: number;
     };
-  }>(`/api/tour/places?${params.toString()}`);
+  }>(`/api/tour/places?${params.toString()}`, signal);
 }
 
 export async function fetchNaverDiningPlaces(query: {

@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,11 +12,41 @@ import { fetchTourPlaces, type PlaceQuery, type TourPlace } from '@/lib/api';
 
 const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
 const categories = ['전체', '맛집', '카페', '관광지', '축제'] as const;
+const fastPageSize = 24;
+type TourPlacesResult = Awaited<ReturnType<typeof fetchTourPlaces>>;
+
+const ExplorePlaceCard = memo(function ExplorePlaceCard({
+  place,
+  selected,
+  onSelect,
+}: {
+  place: TourPlace;
+  selected: boolean;
+  onSelect: (place: TourPlace) => void;
+}) {
+  return (
+    <MotionPressable onPress={() => onSelect(place)} style={[styles.card, selected && styles.cardSelected]}>
+      <PlaceImage
+        name={place.name}
+        imageUrl={place.imageThumbnailUrl || place.imageUrl}
+        attribution={place.imageAttribution}
+        copyrightCode={place.imageCopyrightCode}
+        modificationAllowed={place.imageModificationAllowed}
+      />
+      <Text style={styles.cardTitle}>{place.name}</Text>
+      <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
+      <RouteMapChooser place={place} />
+    </MotionPressable>
+  );
+});
 
 export default function ExploreScreen() {
   const params = useLocalSearchParams<{ region?: string; category?: string }>();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  const requestControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+  const resultCacheRef = useRef(new Map<string, TourPlacesResult>());
   const [region, setRegion] = useState<PlaceQuery['region']>('서울');
   const [category, setCategory] = useState<PlaceQuery['category']>('전체');
   const [places, setPlaces] = useState<TourPlace[]>([]);
@@ -27,25 +57,53 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const load = async (nextRegion = region, nextCategory = category, nextPage = 1) => {
+  const applyResult = (result: TourPlacesResult, nextPage: number) => {
+    setPlaces(result.places);
+    setSelected(result.places[0] ?? null);
+    setPage(result.pagination.pageNo);
+    setTotalCount(result.pagination.totalCount);
+    setTotalPages(result.pagination.totalPages);
+    if (nextPage > 1) scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const load = async (nextRegion = region, nextCategory = category, nextPage = 1, force = false) => {
+    requestControllerRef.current?.abort();
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    const cacheKey = `${nextRegion}:${nextCategory}:${nextPage}`;
+    const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
+
+    if (cached) {
+      setError('');
+      setLoading(false);
+      applyResult(cached, nextPage);
+      return;
+    }
+
+    const controller = new AbortController();
+    requestControllerRef.current = controller;
     setLoading(true);
     setError('');
     try {
-      const result = await fetchTourPlaces({ region: nextRegion, category: nextCategory, page: nextPage, pageSize: 100 });
-      setPlaces(result.places);
-      setSelected(result.places[0] ?? null);
-      setPage(result.pagination.pageNo);
-      setTotalCount(result.pagination.totalCount);
-      setTotalPages(result.pagination.totalPages);
-      if (nextPage > 1) scrollRef.current?.scrollTo({ y: 0, animated: true });
+      const result = await fetchTourPlaces(
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: fastPageSize },
+        controller.signal,
+      );
+      if (requestIdRef.current !== requestId) return;
+      resultCacheRef.current.set(cacheKey, result);
+      applyResult(result, nextPage);
     } catch (nextError) {
+      if (nextError instanceof Error && nextError.name === 'AbortError') return;
+      if (requestIdRef.current !== requestId) return;
       setPlaces([]);
       setSelected(null);
       setPage(1);
       setTotalCount(0);
       setTotalPages(1);
       setError(nextError instanceof Error ? nextError.message : '장소를 불러오지 못했습니다.');
-    } finally { setLoading(false); }
+    } finally {
+      if (requestIdRef.current === requestId) setLoading(false);
+    }
   };
 
   const movePage = (nextPage: number) => {
@@ -66,15 +124,25 @@ export default function ExploreScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.category, params.region]);
 
+  useEffect(() => () => requestControllerRef.current?.abort(), []);
+
   return <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
     <ScrollView ref={scrollRef} contentContainerStyle={[styles.container, width < 370 && styles.containerCompact]}>
       <Text style={styles.eyebrow}>PLACE EXPLORER</Text><Text style={styles.title}>전국 장소 찾기</Text>
       <Text style={styles.subtitle}>웹과 같은 TourAPI 장소를 앱의 네이버 지도와 목록에서 확인합니다.</Text>
       <View style={styles.filters}>
-        <ChoiceChips label="지역" values={regions} selected={region} onSelect={setRegion} />
-        <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => setCategory(value as PlaceQuery['category'])} />
-        <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load(region, category, 1)} style={[styles.searchButton, loading && styles.disabled]}>
-          {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>선택 조건으로 찾기</Text>}
+        <ChoiceChips label="지역" values={regions} selected={region} onSelect={(value) => {
+          setRegion(value);
+          void load(value, category, 1);
+        }} />
+        <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
+          const nextCategory = value as PlaceQuery['category'];
+          setCategory(nextCategory);
+          void load(region, nextCategory, 1);
+        }} />
+        <Text style={styles.instantNote}>지역이나 카테고리를 누르면 바로 결과가 바뀝니다.</Text>
+        <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load(region, category, 1, true)} style={[styles.searchButton, loading && styles.disabled]}>
+          {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>현재 조건 새로고침</Text>}
         </MotionPressable>{error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
       <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={setSelected} /></View>
@@ -88,10 +156,9 @@ export default function ExploreScreen() {
           <View style={styles.pageStatus}><Text style={styles.pageCurrent}>{page.toLocaleString('ko-KR')}</Text><Text style={styles.pageDivider}> / </Text><Text style={styles.pageTotal}>{totalPages.toLocaleString('ko-KR')}</Text></View>
           <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
         </View> : null}
-        {places.map((place) => <MotionPressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
-          <PlaceImage name={place.name} imageUrl={place.imageUrl} attribution={place.imageAttribution} copyrightCode={place.imageCopyrightCode} modificationAllowed={place.imageModificationAllowed} />
-          <Text style={styles.cardTitle}>{place.name}</Text><Text style={styles.cardMeta}>{place.category} · {place.address}</Text><RouteMapChooser place={place} />
-        </MotionPressable>)}
+        {places.map((place) => (
+          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} onSelect={setSelected} />
+        ))}
         {totalPages > 1 ? <View style={styles.paginationBottom}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
           <View style={styles.pageStatus}><Text style={styles.pageCurrent}>{page.toLocaleString('ko-KR')}</Text><Text style={styles.pageDivider}> / </Text><Text style={styles.pageTotal}>{totalPages.toLocaleString('ko-KR')}</Text></View>
@@ -106,6 +173,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' }, container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 34 }, containerCompact: { paddingHorizontal: 14 },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' }, subtitle: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20 },
   filters: { marginTop: 20, borderRadius: 22, backgroundColor: '#ffffff', padding: 17 }, searchButton: { minHeight: 50, marginTop: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
+  instantNote: { marginTop: 12, color: '#71716d', fontSize: 11, lineHeight: 17 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
