@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,6 +32,13 @@ const journeyCards = [
   { number: '04', title: '가족', description: '온 가족이 함께' },
 ] as const;
 
+const webServices = [
+  { title: '함께 공간', description: '개인·커플·친구·가족 공간', path: '/spaces' },
+  { title: '커플 공간', description: '초대와 함께 일정 관리', path: '/couple' },
+  { title: '예약 관리', description: '예약 계획과 일정 확인', path: '/reservations' },
+  { title: '고객지원', description: '문의·피드백 보내기', path: '/support' },
+] as const;
+
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const compact = width < 370;
@@ -54,6 +62,13 @@ export default function HomeScreen() {
 
   const explore = (nextCategory: RecommendationQuery['category']) => {
     router.push({ pathname: '/(tabs)/explore', params: { category: nextCategory, region } });
+  };
+
+  const openWebService = async (path: string) => {
+    await WebBrowser.openBrowserAsync(`${appConfig.webUrl.replace(/\/$/, '')}${path}`, {
+      controlsColor: '#146b45',
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+    });
   };
 
   return (
@@ -111,6 +126,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.eyebrow}>ALL SERVICES</Text>
+          <Text style={styles.sectionTitle}>웹 서비스 전체 메뉴</Text>
+          <Text style={styles.sectionDescription}>웹에 있는 공간·예약·고객지원 화면도 앱 안에서 모바일 크기로 열립니다.</Text>
+          <View style={styles.serviceList}>
+            {webServices.map((service) => (
+              <Pressable key={service.path} onPress={() => void openWebService(service.path)} style={styles.serviceButton}>
+                <View style={styles.serviceCopy}><Text style={styles.serviceTitle}>{service.title}</Text><Text style={styles.serviceDescription}>{service.description}</Text></View>
+                <Text style={styles.serviceArrow}>↗</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         {items.length > 0 ? <View style={styles.results}>
           <Text style={styles.eyebrow}>YOUR PICKS</Text><Text style={styles.sectionTitle}>{region}에서 찾은 추천 장소</Text>
           <Text style={styles.source}>장소·사진 원천: 한국관광공사 TourAPI</Text>
@@ -162,6 +191,8 @@ const styles = StyleSheet.create({
   score: { marginTop: 13, color: '#146b45', fontSize: 11, fontWeight: '900' }, resultTitle: { marginTop: 5, color: '#1d2922', fontSize: 18, fontWeight: '900' }, resultMeta: { marginTop: 5, color: '#6a756e', fontSize: 11, lineHeight: 17 }, reason: { marginTop: 8, marginBottom: 13, color: '#435048', fontSize: 12, lineHeight: 19 },
   comingSoon: { minHeight: 290, marginTop: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: '#17211c', padding: 24 }, dots: { width: 62, height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#8fae36', borderRadius: 20, backgroundColor: '#273323' },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#caff2c' }, comingLabel: { marginTop: 18, color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.7 }, comingTitle: { marginTop: 10, color: '#ffffff', fontSize: 25, fontWeight: '900', lineHeight: 32, textAlign: 'center' },
+  serviceList: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 16 }, serviceButton: { minHeight: 68, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e2e8e4' },
+  serviceCopy: { flex: 1, paddingVertical: 12 }, serviceTitle: { color: '#1d2922', fontSize: 14, fontWeight: '900' }, serviceDescription: { marginTop: 3, color: '#6c7770', fontSize: 11 }, serviceArrow: { color: '#146b45', fontSize: 20, fontWeight: '900' },
   comingDescription: { marginTop: 12, color: '#c8d0cb', fontSize: 12, lineHeight: 20, textAlign: 'center' }, comingStatus: { marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#536059', borderRadius: 999, color: '#d7ddd9', fontSize: 10, fontWeight: '800', paddingHorizontal: 14, paddingVertical: 8 },
   privacy: { marginTop: 30, borderRadius: 24, backgroundColor: '#17211c', padding: 20 }, privacyEyebrow: { color: '#b7e936', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, privacyTitle: { marginTop: 7, color: '#ffffff', fontSize: 20, fontWeight: '900', lineHeight: 27 }, privacyText: { marginTop: 8, marginBottom: 10, color: '#c8d0cb', fontSize: 12, lineHeight: 19 },
   footerLink: { minHeight: 46, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3d4942' }, footerLinkText: { color: '#e6ece8', fontSize: 13, fontWeight: '800' }, copyright: { marginTop: 14, color: '#8e9992', fontSize: 10 },
