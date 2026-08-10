@@ -78,7 +78,7 @@ export default function AccountScreen() {
   };
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator color="#146b45" /></View>;
+    return <View style={styles.center}><ActivityIndicator color="#ff3b36" /></View>;
   }
 
   return (
@@ -164,27 +164,27 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f5f8f6' },
+  safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
   container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f8f6' },
-  eyebrow: { color: '#146b45', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  title: { marginTop: 5, color: '#17211c', fontSize: 28, fontWeight: '900' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7f7f4' },
+  eyebrow: { color: '#ff3b36', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' },
   card: { marginTop: 22, alignItems: 'center', borderRadius: 24, backgroundColor: '#ffffff', padding: 24 },
-  avatar: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#146b45' },
+  avatar: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#ff3b36' },
   avatarText: { color: '#ffffff', fontSize: 24, fontWeight: '900' },
-  name: { marginTop: 14, color: '#1b2821', fontSize: 20, fontWeight: '900' },
-  email: { marginTop: 5, color: '#69756e', fontSize: 13 },
-  provider: { marginTop: 8, color: '#146b45', fontSize: 12, fontWeight: '800' },
-  cardTitle: { color: '#1b2821', fontSize: 20, fontWeight: '900', textAlign: 'center' },
-  cardDescription: { marginTop: 8, color: '#69756e', fontSize: 13, lineHeight: 20, textAlign: 'center' },
-  loginButton: { width: '100%', marginTop: 20, alignItems: 'center', borderRadius: 14, backgroundColor: '#146b45', paddingVertical: 15 },
+  name: { marginTop: 14, color: '#101010', fontSize: 20, fontWeight: '900' },
+  email: { marginTop: 5, color: '#71716d', fontSize: 13 },
+  provider: { marginTop: 8, color: '#ff3b36', fontSize: 12, fontWeight: '800' },
+  cardTitle: { color: '#101010', fontSize: 20, fontWeight: '900', textAlign: 'center' },
+  cardDescription: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  loginButton: { width: '100%', marginTop: 20, alignItems: 'center', borderRadius: 14, backgroundColor: '#ff3b36', paddingVertical: 15 },
   loginText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  outlineButton: { width: '100%', marginTop: 22, alignItems: 'center', borderWidth: 1, borderColor: '#ccd8d1', borderRadius: 14, paddingVertical: 14 },
-  outlineText: { color: '#3f4e45', fontSize: 14, fontWeight: '800' },
+  outlineButton: { width: '100%', marginTop: 22, alignItems: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, paddingVertical: 14 },
+  outlineText: { color: '#454541', fontSize: 14, fontWeight: '800' },
   deleteButton: { width: '100%', marginTop: 10, alignItems: 'center', borderRadius: 14, paddingVertical: 13 },
   deleteButtonText: { color: '#a43232', fontSize: 13, fontWeight: '800' },
   links: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 18 },
-  link: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e2e8e4', color: '#405047', fontSize: 14, fontWeight: '700', paddingVertical: 16 },
+  link: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dadad4', color: '#454541', fontSize: 14, fontWeight: '700', paddingVertical: 16 },
   deleteCard: { marginTop: 18, borderWidth: 1, borderColor: '#f0caca', borderRadius: 20, backgroundColor: '#fffafa', padding: 18 },
   deleteTitle: { color: '#7d2424', fontSize: 18, fontWeight: '900' },
   deleteDescription: { marginTop: 8, color: '#694545', fontSize: 13, lineHeight: 20 },
