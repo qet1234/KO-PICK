@@ -104,7 +104,7 @@ export function LiveWeatherCard() {
       <ChoiceChips dark label="시·도" values={koreaRegions} selected={region} onSelect={(value) => { setRegion(value); setDistrict('전체'); }} />
       <ChoiceChips dark label="시·군·구" values={districts} selected={district} onSelect={setDistrict} />
 
-      {loading ? <View style={styles.state}><ActivityIndicator color="#146b45" /><Text style={styles.stateText}>날씨를 불러오고 있어요.</Text></View> : null}
+      {loading ? <View style={styles.state}><ActivityIndicator color="#ff3b36" /><Text style={styles.stateText}>날씨를 불러오고 있어요.</Text></View> : null}
       {!loading && error ? <Text style={styles.error}>{error}</Text> : null}
       {!loading && weather && active ? (
         <>
