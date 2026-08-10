@@ -109,7 +109,7 @@ npx eas-cli build --platform ios --profile testflight --auto-submit-with-profile
 ## 다음 구현 순서
 
 1. 실기기 OAuth·네이버 지도 운영키 검증
-2. 개인·커플·친구·가족 공간 및 공동 일정
+2. 개인·친구·가족 공간 및 공동 일정
 3. 즐겨찾기·코스 저장·공유
 4. 알림, App Links·Universal Links, 스토어 테스트 빌드
 

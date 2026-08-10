@@ -44,6 +44,7 @@ jobs:
         env:
           ADMIN_MIGRATION: supabase/migrations/20260810130000_admin_dashboard.sql
           APP_STATUS_MIGRATION: supabase/migrations/20260810170000_app_service_status.sql
+          COUPLE_DISABLE_MIGRATION: supabase/migrations/20260810194000_disable_couple_space_feature.sql
           OPERATOR_MIGRATION: supabase/migrations/20260810150000_register_primary_operator.sql
           LEGAL_SHARE_MIGRATION: supabase/migrations/20260731223000_legal_course_sharing.sql
         shell: bash
@@ -61,7 +62,7 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION"; do
+            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$COUPLE_DISABLE_MIGRATION"; do
               echo "Applying reviewed migration $(basename "$migration") through the Supabase Management API."
               jq -Rs '{query: .}' "$migration" > reviewed-migration.json
               curl --fail-with-body --silent --show-error \
@@ -88,6 +89,22 @@ jobs:
             "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
             | tee verify-migration-response.json
           jq -e '.[0].ready == true' verify-migration-response.json >/dev/null
+
+      - name: Verify couple-space feature is disabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -n '{
+            query: "select to_regprocedure('\''public.list_my_spaces_with_legacy_couple(text)'\'') is not null and to_regprocedure('\''public.create_couple_space(text)'\'') is null and to_regprocedure('\''public.join_couple_space_secure(text)'\'') is null and not has_function_privilege('\''authenticated'\'', '\''public.list_my_spaces_with_legacy_couple(text)'\'', '\''execute'\'') as ready"
+          }' > verify-couple-disabled.json
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary @verify-couple-disabled.json \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
+            | tee verify-couple-disabled-response.json
+          jq -e '.[0].ready == true' verify-couple-disabled-response.json >/dev/null
 
       - name: Deploy regular Edge Functions
         shell: bash

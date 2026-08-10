@@ -4,7 +4,7 @@ import "./spaces.css";
 
 export const metadata: Metadata = {
   title: "함께 공간 | 오늘어디",
-  description: "개인, 커플, 친구, 가족과 장소와 일정을 함께 계획하는 공간",
+  description: "개인, 친구, 가족과 장소와 일정을 함께 계획하는 공간",
 };
 
 export default function SpacesPage() {

@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import BrandLocationPin from "@/components/BrandLocationPin";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
 
-type SpaceType = "personal" | "couple" | "friends" | "family";
+type SpaceType = "personal" | "friends" | "family";
 
 type SpaceSummary = {
   id: string;
@@ -14,13 +14,9 @@ type SpaceSummary = {
   member_count: number;
   invite_expires_at: string | null;
   created_at: string;
-  legacy_couple: boolean;
 };
 
-type SpacesPayload = {
-  user_id: string;
-  spaces: SpaceSummary[];
-};
+type RawSpaceSummary = Omit<SpaceSummary, "space_type"> & { space_type: string };
 
 type InviteResult = {
   space_id?: string;
@@ -39,14 +35,6 @@ const spaceTypes: Record<
     description: "혼밥·혼카페·혼행 장소와 나만의 일정을 모아요.",
     example: "취향 기록 · 개인 일정",
     limit: 1,
-  },
-  couple: {
-    label: "커플",
-    icon: "♥",
-    eyebrow: "TOGETHER",
-    description: "데이트 장소를 함께 고르고 기념일과 예약을 공유해요.",
-    example: "데이트 · 기념일",
-    limit: 2,
   },
   friends: {
     label: "친구",
@@ -76,8 +64,8 @@ export default function SpacesHub() {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [selectedType, setSelectedType] = useState<SpaceType>("couple");
-  const [spaceName, setSpaceName] = useState("우리의 공간");
+  const [selectedType, setSelectedType] = useState<SpaceType>("friends");
+  const [spaceName, setSpaceName] = useState("친구 모임");
   const [displayName, setDisplayName] = useState("");
   const [joinName, setJoinName] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -85,8 +73,10 @@ export default function SpacesHub() {
 
   const loadSpaces = useCallback(async () => {
     try {
-      const result = await springJson<SpacesPayload>("/api/web/spaces");
-      setSpaces(result.spaces);
+      const result = await springJson<{ user_id: string; spaces: RawSpaceSummary[] }>("/api/web/spaces");
+      setSpaces(result.spaces.filter((space): space is SpaceSummary =>
+        space.space_type === "personal" || space.space_type === "friends" || space.space_type === "family"
+      ));
     } catch (loadError) {
       if (loadError instanceof Error && loadError.message.includes("로그인")) {
         window.location.replace("/login");
@@ -122,7 +112,7 @@ export default function SpacesHub() {
 
   const groupedSpaces = useMemo(
     () =>
-      (["personal", "couple", "friends", "family"] as SpaceType[]).flatMap((type) =>
+      (["personal", "friends", "family"] as SpaceType[]).flatMap((type) =>
         spaces.filter((space) => space.space_type === type)
       ),
     [spaces]
@@ -137,7 +127,6 @@ export default function SpacesHub() {
     }
     setSelectedType(type);
     const defaults: Record<Exclude<SpaceType, "personal">, string> = {
-      couple: "우리의 공간",
       friends: "친구 모임",
       family: "우리 가족",
     };
@@ -302,9 +291,7 @@ export default function SpacesHub() {
                   </div>
                   <div className="spaces-list-actions">
                     <a href={`/reservations?spaceId=${encodeURIComponent(space.id)}`}>장소 투표·예약</a>
-                    {space.legacy_couple ? (
-                      <a href="/couple">기존 커플 공간 열기</a>
-                    ) : space.space_type === "personal" ? (
+                    {space.space_type === "personal" ? (
                       <button type="button" disabled>기본 공간</button>
                     ) : (
                       <>
@@ -340,7 +327,7 @@ export default function SpacesHub() {
               <p>공간을 만든 뒤 24시간 동안 유효한 초대 코드를 받을 수 있어요.</p>
             </header>
             <div className="spaces-segmented" aria-label="만들 공간 유형">
-              {(["couple", "friends", "family"] as SpaceType[]).map((type) => (
+              {(["friends", "family"] as SpaceType[]).map((type) => (
                 <button
                   className={selectedType === type ? "is-active" : ""}
                   type="button"
@@ -368,7 +355,7 @@ export default function SpacesHub() {
             <header>
               <span>02 · JOIN</span>
               <h2>초대받은 공간 참여</h2>
-              <p>커플·친구·가족에게 받은 초대 코드로 안전하게 연결하세요.</p>
+              <p>친구·가족에게 받은 초대 코드로 안전하게 연결하세요.</p>
             </header>
             <label>
               이 공간에서 사용할 내 닉네임

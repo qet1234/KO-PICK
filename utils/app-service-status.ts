@@ -9,7 +9,6 @@ export const appServiceFeatureOptions = [
   "실시간 날씨",
   "네이버 지도",
   "로그인·계정",
-  "커플 공간",
   "공유 기능",
 ] as const;
 
