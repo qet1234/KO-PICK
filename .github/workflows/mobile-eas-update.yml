@@ -94,12 +94,13 @@ jobs:
           set_eas_public() {
             local name="$1"
             local value="$2"
-            eas env:set production \
+            eas env:set \
+              --environment production \
               --name "$name" \
               --value "$value" \
               --visibility plaintext \
               --scope project \
-              --non-interactive >/dev/null
+              --non-interactive
             printf '%s registered in EAS production.\n' "$name"
           }
 
