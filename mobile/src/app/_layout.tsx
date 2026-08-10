@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { ServiceStatusGate } from '@/components/service-status-gate';
 import { SessionProvider } from '@/context/session-context';
 import { useSupabaseSessionRefresh } from '@/hooks/use-supabase-session-refresh';
 
@@ -19,7 +20,9 @@ export default function RootLayout() {
 
   return (
     <SessionProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <ServiceStatusGate>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ServiceStatusGate>
       <StatusBar style="dark" />
     </SessionProvider>
   );

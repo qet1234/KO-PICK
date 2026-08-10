@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
@@ -52,18 +53,18 @@ export default function ExploreScreen() {
       <View style={styles.filters}>
         <ChoiceChips label="지역" values={regions} selected={region} onSelect={setRegion} />
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => setCategory(value as PlaceQuery['category'])} />
-        <Pressable accessibilityRole="button" disabled={loading} onPress={() => void load()} style={[styles.searchButton, loading && styles.disabled]}>
+        <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load()} style={[styles.searchButton, loading && styles.disabled]}>
           {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>선택 조건으로 찾기</Text>}
-        </Pressable>{error ? <Text style={styles.error}>{error}</Text> : null}
+        </MotionPressable>{error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
       <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={setSelected} /></View>
       {selected ? <View style={styles.selectedCard}><Text style={styles.selectedLabel}>지도에서 선택한 장소</Text><Text style={styles.selectedTitle}>{selected.name}</Text>
         <Text style={styles.selectedMeta}>{selected.category} · {selected.address}</Text><RouteMapChooser place={selected} /></View> : null}
       {places.length > 0 ? <View style={styles.list}><Text style={styles.listTitle}>장소 {places.length}곳</Text><Text style={styles.source}>출처: 한국관광공사 TourAPI · 지도: 네이버 지도</Text>
-        {places.map((place) => <Pressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
+        {places.map((place) => <MotionPressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
           <PlaceImage name={place.name} imageUrl={place.imageUrl} attribution={place.imageAttribution} copyrightCode={place.imageCopyrightCode} modificationAllowed={place.imageModificationAllowed} />
           <Text style={styles.cardTitle}>{place.name}</Text><Text style={styles.cardMeta}>{place.category} · {place.address}</Text><RouteMapChooser place={place} />
-        </Pressable>)}
+        </MotionPressable>)}
       </View> : null}
     </ScrollView>
   </SafeAreaView>;

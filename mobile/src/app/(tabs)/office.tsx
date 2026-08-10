@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { fetchNaverDiningPlaces, type NaverDiningPlace } from '@/lib/api';
 import { appConfig } from '@/lib/config';
@@ -129,7 +129,7 @@ export default function OfficeDiningScreen() {
 
         <View style={styles.modeRow}>
           {(['회식', '점심'] as DiningMode[]).map((item) => (
-            <Pressable
+            <MotionPressable
               accessibilityRole="tab"
               accessibilityState={{ selected: mode === item }}
               key={item}
@@ -137,7 +137,7 @@ export default function OfficeDiningScreen() {
               style={[styles.modeButton, mode === item && styles.modeButtonActive]}>
               <Text style={[styles.modeTitle, mode === item && styles.modeTitleActive]}>{item === '회식' ? '팀 회식' : '빠른 점심'}</Text>
               <Text style={styles.modeDescription}>{item === '회식' ? '인원·음식·금액대' : '근처에서 한 끼'}</Text>
-            </Pressable>
+            </MotionPressable>
           ))}
         </View>
 
@@ -168,12 +168,12 @@ export default function OfficeDiningScreen() {
           <ChoiceChips label="세부 분류" values={availableFoodDetails} selected={foodDetail} onSelect={setFoodDetail} wrap />
           <ChoiceChips label="금액대" values={budgets} selected={budget} onSelect={setBudget} wrap />
 
-          <Pressable disabled={loading} onPress={() => void search()} style={[styles.searchButton, loading && styles.disabled]}>
+          <MotionPressable disabled={loading} onPress={() => void search()} style={[styles.searchButton, loading && styles.disabled]}>
             {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>{mode} 장소 찾아보기</Text>}
-          </Pressable>
-          <Pressable onPress={() => void shareDining()} style={styles.shareButton}>
+          </MotionPressable>
+          <MotionPressable onPress={() => void shareDining()} style={styles.shareButton}>
             <Text style={styles.shareText}>{mode === '회식' ? '회식' : '점심'} 조건 카카오톡 링크 공유</Text>
-          </Pressable>
+          </MotionPressable>
           <Text style={styles.note}>여러 세부 음식 검색 결과를 합쳐 최대 50곳의 음식점명을 보여드립니다. 실제 메뉴 가격과 단체 수용 여부는 매장 상세에서 최종 확인해 주세요.</Text>
           <Text style={styles.shareNote}>공유 링크에는 선택 조건과 입력한 회사·역·동네가 포함되며 계정 정보는 포함되지 않습니다.</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -199,9 +199,9 @@ export default function OfficeDiningScreen() {
                 <Text style={styles.selectedLabel}>지도에서 선택한 식당</Text>
                 <Text style={styles.selectedTitle}>{selected.name}</Text>
                 <Text style={styles.selectedMeta}>{selected.address}</Text>
-                <Pressable onPress={() => void openRouteMap('naver', selected)} style={styles.routeButton}>
+                <MotionPressable onPress={() => void openRouteMap('naver', selected)} style={styles.routeButton}>
                   <Text style={styles.routeText}>N  네이버 지도로 길찾기</Text>
-                </Pressable>
+                </MotionPressable>
               </View>
             ) : null}
 
@@ -209,16 +209,16 @@ export default function OfficeDiningScreen() {
               <Text style={styles.resultTitle}>{region} · {foodDetail === '전체' ? foodType : foodDetail} · {budget} 음식점 {places.length}곳</Text>
               <Text style={styles.source}>장소: 네이버 지역검색 · 지도: 네이버 지도</Text>
               {places.map((place) => (
-                <Pressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
+                <MotionPressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
                   <Text style={styles.cardTitle}>{place.name}</Text>
                   <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
-                  <Pressable onPress={() => void openNaverSearch(place.name)} style={styles.nameSearchButton}>
+                  <MotionPressable onPress={() => void openNaverSearch(place.name)} style={styles.nameSearchButton}>
                     <Text style={styles.nameSearchText}>음식점명으로 네이버 지도 보기</Text>
-                  </Pressable>
-                  <Pressable onPress={() => void openRouteMap('naver', place)} style={styles.cardRouteButton}>
+                  </MotionPressable>
+                  <MotionPressable onPress={() => void openRouteMap('naver', place)} style={styles.cardRouteButton}>
                     <Text style={styles.cardRouteText}>네이버 길찾기</Text>
-                  </Pressable>
-                </Pressable>
+                  </MotionPressable>
+                </MotionPressable>
               ))}
             </View>
           </>

@@ -1,13 +1,15 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import { MotionPressable } from '@/components/motion-pressable';
 
 export function ChoiceChips({ label, values, selected, onSelect, wrap = false, dark = false }: {
   label: string; values: readonly string[]; selected: string; onSelect: (value: string) => void; wrap?: boolean; dark?: boolean;
 }) {
   const chips = values.map((value) => (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: selected === value }} key={value} onPress={() => onSelect(value)}
+    <MotionPressable accessibilityRole="button" accessibilityState={{ selected: selected === value }} key={value} onPress={() => onSelect(value)}
       style={[styles.chip, dark && styles.chipDark, selected === value && styles.chipSelected]}>
       <Text maxFontSizeMultiplier={1.25} style={[styles.chipText, dark && styles.chipTextDark, selected === value && styles.chipTextSelected]}>{value}</Text>
-    </Pressable>
+    </MotionPressable>
   ));
   return <View style={styles.group}><Text maxFontSizeMultiplier={1.25} style={[styles.label, dark && styles.labelDark]}>{label}</Text>
     {wrap ? <View style={styles.wrap}>{chips}</View> : <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>{chips}</ScrollView>}

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MotionPressable } from '@/components/motion-pressable';
 import { useSession } from '@/context/session-context';
 import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/apple-auth';
 import { deleteAccount } from '@/lib/api';
@@ -97,30 +97,30 @@ export default function AccountScreen() {
             <Text style={styles.provider}>
               {providerLabel(session.user.app_metadata.provider)} 로그인 · 모바일 보안 세션
             </Text>
-            <Pressable accessibilityRole="button" onPress={() => void logout()} style={styles.outlineButton}>
+            <MotionPressable accessibilityRole="button" onPress={() => void logout()} style={styles.outlineButton}>
               <Text style={styles.outlineText}>로그아웃</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => setDeleteOpen(true)} style={styles.deleteButton}>
+            </MotionPressable>
+            <MotionPressable accessibilityRole="button" onPress={() => setDeleteOpen(true)} style={styles.deleteButton}>
               <Text style={styles.deleteButtonText}>회원탈퇴</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
         ) : (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>로그인하고 장소를 저장하세요</Text>
             <Text style={styles.cardDescription}>카카오·네이버·Google·Apple 계정을 연결할 수 있습니다.</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push('/login')} style={styles.loginButton}>
+            <MotionPressable accessibilityRole="button" onPress={() => router.push('/login')} style={styles.loginButton}>
               <Text style={styles.loginText}>로그인 / 회원가입</Text>
-            </Pressable>
+            </MotionPressable>
           </View>
         )}
 
         <View style={styles.links}>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}><Text style={styles.link}>이용약관</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}><Text style={styles.link}>개인정보처리방침</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/account-deletion`)}><Text style={styles.link}>회원탈퇴 안내</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(supportGmailUrl('inquiry'))}><Text style={styles.link}>문의 접수</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(supportGmailUrl('feedback'))}><Text style={styles.link}>피드백 보내기</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/support`)}><Text style={styles.link}>고객지원 안내</Text></Pressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}><Text style={styles.link}>이용약관</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}><Text style={styles.link}>개인정보처리방침</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/account-deletion`)}><Text style={styles.link}>회원탈퇴 안내</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(supportGmailUrl('inquiry'))}><Text style={styles.link}>문의 접수</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(supportGmailUrl('feedback'))}><Text style={styles.link}>피드백 보내기</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/support`)}><Text style={styles.link}>고객지원 안내</Text></MotionPressable>
         </View>
 
         {deleteOpen ? (
@@ -141,20 +141,20 @@ export default function AccountScreen() {
             />
             {deleteError ? <Text style={styles.deleteError}>{deleteError}</Text> : null}
             <View style={styles.deleteActions}>
-              <Pressable
+              <MotionPressable
                 disabled={deleting}
                 onPress={() => { setDeleteOpen(false); setConfirmText(''); setDeleteError(''); }}
                 style={styles.cancelDelete}
               >
                 <Text style={styles.cancelDeleteText}>취소</Text>
-              </Pressable>
-              <Pressable
+              </MotionPressable>
+              <MotionPressable
                 disabled={confirmText !== '회원탈퇴' || deleting}
                 onPress={() => void removeAccount()}
                 style={[styles.confirmDelete, (confirmText !== '회원탈퇴' || deleting) && styles.disabledDelete]}
               >
                 <Text style={styles.confirmDeleteText}>{deleting ? '삭제 중...' : '영구 탈퇴'}</Text>
-              </Pressable>
+              </MotionPressable>
             </View>
           </View>
         ) : null}

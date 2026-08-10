@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { MotionPressable } from '@/components/motion-pressable';
 import { signInWithAppleNative } from '@/lib/apple-auth';
 import { signInWithNaver, signInWithSupabaseOAuth, type MobileAuthProvider } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
@@ -28,13 +28,13 @@ function ConsentRow({
 }) {
   return (
     <View style={styles.consentRow}>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked }} onPress={onChange} style={[styles.checkbox, checked && styles.checkboxChecked]}>
+      <MotionPressable accessibilityRole="checkbox" accessibilityState={{ checked }} onPress={onChange} style={[styles.checkbox, checked && styles.checkboxChecked]}>
         <Text style={styles.checkmark}>{checked ? '✓' : ''}</Text>
-      </Pressable>
-      <Pressable onPress={onChange} style={styles.consentCopy}>
+      </MotionPressable>
+      <MotionPressable onPress={onChange} style={styles.consentCopy}>
         <Text style={styles.consentText}>[필수] {label}에 동의합니다.</Text>
-      </Pressable>
-      <Pressable onPress={onOpen}><Text style={styles.openText}>보기</Text></Pressable>
+      </MotionPressable>
+      <MotionPressable onPress={onOpen}><Text style={styles.openText}>보기</Text></MotionPressable>
     </View>
   );
 }
@@ -75,7 +75,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.back()}><Text style={styles.back}>← 돌아가기</Text></Pressable>
+        <MotionPressable onPress={() => router.back()}><Text style={styles.back}>← 돌아가기</Text></MotionPressable>
         <Text style={styles.brand}>오늘어디</Text>
         <Text style={styles.title}>다시 만나서 반가워요</Text>
         <Text style={styles.subtitle}>로그인하고 저장한 장소와 맞춤 추천을 이어서 확인하세요.</Text>
@@ -95,19 +95,19 @@ export default function LoginScreen() {
           />
 
           <Text style={styles.quick}>5초 만에 빠른 회원가입</Text>
-          <Pressable disabled={!ready} onPress={() => void login('kakao')} style={[styles.provider, styles.kakao, !ready && styles.disabled]}>
+          <MotionPressable disabled={!ready} onPress={() => void login('kakao')} style={[styles.provider, styles.kakao, !ready && styles.disabled]}>
             <Text style={styles.kakaoText}>{active === 'kakao' ? '카카오 연결 중...' : '●  카카오로 시작'}</Text>
-          </Pressable>
-          <Pressable disabled={!ready} onPress={() => void login('naver')} style={[styles.provider, styles.naver, !ready && styles.disabled]}>
+          </MotionPressable>
+          <MotionPressable disabled={!ready} onPress={() => void login('naver')} style={[styles.provider, styles.naver, !ready && styles.disabled]}>
             <Text style={styles.providerText}>{active === 'naver' ? '네이버 연결 중...' : 'N  네이버로 로그인'}</Text>
-          </Pressable>
-          <Pressable disabled={!ready} onPress={() => void login('google')} style={[styles.provider, styles.google, !ready && styles.disabled]}>
+          </MotionPressable>
+          <MotionPressable disabled={!ready} onPress={() => void login('google')} style={[styles.provider, styles.google, !ready && styles.disabled]}>
             <Text style={styles.googleText}>{active === 'google' ? 'Google 연결 중...' : 'G  Google로 로그인'}</Text>
-          </Pressable>
+          </MotionPressable>
           {Platform.OS === 'ios' ? (
-            <Pressable disabled={!ready} onPress={() => void login('apple')} style={[styles.provider, styles.apple, !ready && styles.disabled]}>
+            <MotionPressable disabled={!ready} onPress={() => void login('apple')} style={[styles.provider, styles.apple, !ready && styles.disabled]}>
               <Text style={styles.providerText}>{active === 'apple' ? 'Apple 연결 중...' : '  Apple로 로그인'}</Text>
-            </Pressable>
+            </MotionPressable>
           ) : null}
 
           {message ? <Text style={[styles.message, active && styles.status]}>{message}</Text> : null}
