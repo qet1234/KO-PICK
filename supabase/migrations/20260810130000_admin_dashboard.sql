@@ -1,3 +1,7 @@
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to service_role;
+
 create table if not exists public.admin_users (
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_by uuid references auth.users(id) on delete set null,
