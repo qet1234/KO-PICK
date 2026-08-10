@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Share,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { NaverPlacesMap } from '@/components/naver-places-map';
@@ -121,7 +121,7 @@ export default function OfficeDiningScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
         <Text style={styles.eyebrow}>OFFICE DINING</Text>
         <Text style={styles.title}>점심부터 팀 회식까지</Text>
@@ -230,9 +230,9 @@ export default function OfficeDiningScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f2f6f3' },
-  container: { paddingHorizontal: 18, paddingTop: 24, paddingBottom: 36 },
+  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 36 },
   eyebrow: { color: '#146b45', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  title: { marginTop: 6, color: '#17231c', fontSize: 30, fontWeight: '900' },
+  title: { marginTop: 6, color: '#17231c', fontSize: 28, fontWeight: '900' },
   subtitle: { marginTop: 8, color: '#657269', fontSize: 14, lineHeight: 21 },
   modeRow: { marginTop: 22, flexDirection: 'row', gap: 10 },
   modeButton: { flex: 1, borderWidth: 1, borderColor: '#d9e2dc', borderRadius: 18, backgroundColor: '#ffffff', padding: 15 },
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
   inputGroup: { marginTop: 20 },
   label: { marginBottom: 10, color: '#34423a', fontSize: 14, fontWeight: '900' },
   input: { minHeight: 48, borderWidth: 1, borderColor: '#dce5e0', borderRadius: 13, color: '#17231c', paddingHorizontal: 14, fontSize: 14 },
-  searchButton: { marginTop: 24, alignItems: 'center', borderRadius: 14, backgroundColor: '#146b45', paddingVertical: 15 },
+  searchButton: { minHeight: 50, marginTop: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#146b45', paddingVertical: 12 },
   disabled: { opacity: 0.65 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  shareButton: { marginTop: 10, alignItems: 'center', borderWidth: 1, borderColor: '#e2ca00', borderRadius: 14, backgroundColor: '#fee500', paddingVertical: 15 },
+  shareButton: { minHeight: 50, marginTop: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e2ca00', borderRadius: 14, backgroundColor: '#fee500', paddingVertical: 15 },
   shareText: { color: '#191919', fontSize: 14, fontWeight: '900' },
   note: { marginTop: 12, color: '#77827b', fontSize: 11, lineHeight: 17 },
   shareNote: { marginTop: 5, color: '#77827b', fontSize: 11, lineHeight: 17 },
