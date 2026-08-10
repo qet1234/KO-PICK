@@ -95,7 +95,7 @@ jobs:
         run: |
           set -euo pipefail
           jq -n '{
-            query: "select to_regprocedure('\''public.list_my_spaces_with_legacy_couple(text)'\'') is not null and to_regprocedure('\''public.create_couple_space(text)'\'') is null and to_regprocedure('\''public.join_couple_space_secure(text)'\'') is null and not has_function_privilege('\''authenticated'\'', '\''public.list_my_spaces_with_legacy_couple(text)'\'', '\''execute'\'') as ready"
+            query: "select to_regprocedure('\''public.create_couple_space(text)'\'') is null and to_regprocedure('\''public.join_couple_space_secure(text)'\'') is null and case when to_regclass('\''public.spaces'\'') is null then true else to_regprocedure('\''public.list_my_spaces_with_legacy_couple(text)'\'') is not null and not has_function_privilege('\''authenticated'\'', '\''public.list_my_spaces_with_legacy_couple(text)'\'', '\''execute'\'') end as ready"
           }' > verify-couple-disabled.json
           curl --fail-with-body --silent --show-error \
             --request POST \
