@@ -4,12 +4,12 @@ import { useState } from 'react';
 import {
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { signInWithAppleNative } from '@/lib/apple-auth';
 import { signInWithNaver, signInWithSupabaseOAuth, type MobileAuthProvider } from '@/lib/auth';
@@ -73,7 +73,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}><Text style={styles.back}>← 돌아가기</Text></Pressable>
         <Text style={styles.brand}>오늘어디</Text>
@@ -122,7 +122,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f5f8f6' },
-  container: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 36 },
+  container: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 36 },
   back: { color: '#526159', fontSize: 14, fontWeight: '700' },
   brand: { marginTop: 34, color: '#146b45', fontSize: 16, fontWeight: '900', letterSpacing: 1.2 },
   title: { marginTop: 8, color: '#17211c', fontSize: 29, fontWeight: '900' },
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   consentText: { color: '#39473f', fontSize: 13, lineHeight: 18 },
   openText: { color: '#146b45', fontSize: 12, fontWeight: '800' },
   quick: { marginTop: 24, marginBottom: 9, color: '#3c4942', fontSize: 12, fontWeight: '800', textAlign: 'center' },
-  provider: { marginTop: 10, alignItems: 'center', borderRadius: 14, paddingVertical: 15 },
+  provider: { minHeight: 50, marginTop: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 12 },
   kakao: { backgroundColor: '#fee500' },
   naver: { backgroundColor: '#03c75a' },
   google: { borderWidth: 1, borderColor: '#d8dfdb', backgroundColor: '#ffffff' },
