@@ -54,6 +54,18 @@ jobs:
           set -euo pipefail
           test ! -e render.yaml
           test ! -e .github/workflows/keep-render-awake.yml
+          test ! -e .github/workflows/diagnose-render-tour-snapshot.yml
+          ! grep -qE 'onrender\.com|NEXT_PUBLIC_SPRING_API_URL|"/backend"' vercel.json
+          ! grep -R --line-number --include='*.yml' --include='*.yaml' \
+            'kopick-api\.onrender\.com' .github/workflows
+
+      - name: Verify supported Node runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q '"node": "24.x"' package.json
+          ! grep -R --line-number --include='*.yml' --include='*.yaml' \
+            'node-version: 20' .github/workflows
 
       - name: Set up Deno
         uses: denoland/setup-deno@v2
