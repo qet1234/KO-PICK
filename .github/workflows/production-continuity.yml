@@ -1,0 +1,81 @@
+name: Production Continuity
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 2 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-continuity
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_URL: https://koreapick.duckdns.org
+      SUPABASE_URL: https://vbwaruzncfaxnjyybudm.supabase.co
+      SUPABASE_PROJECT_ID: vbwaruzncfaxnjyybudm
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Verify production web
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --location \
+            --retry 2 --retry-all-errors --max-time 30 \
+            --output /dev/null "$APP_URL"
+
+      - name: Verify Supabase Edge Function
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-all-errors --max-time 30 \
+            --output "$response_file" \
+            "$SUPABASE_URL/functions/v1/kopick-api/actuator/health"
+          jq -e '.status == "UP" and .runtime == "supabase-edge"' "$response_file" >/dev/null
+
+      - name: Verify Supabase database and snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || {
+            echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"
+            exit 1
+          }
+          request_file="$(mktemp)"
+          response_file="$(mktemp)"
+          trap 'rm -f "$request_file" "$response_file"' EXIT
+          jq -n '{query: "select count(*)::bigint as place_count from public.tour_places where active = true"}' > "$request_file"
+          curl --fail-with-body --silent --show-error \
+            --retry 2 --retry-all-errors --max-time 60 \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary @"$request_file" \
+            --output "$response_file" \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query"
+          jq -e '.[0].place_count | tonumber > 0' "$response_file" >/dev/null
+
+      - name: Verify production place lookup
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+          curl --fail-with-body --silent --show-error --get \
+            --retry 2 --retry-all-errors --max-time 60 \
+            --data-urlencode 'page=1' \
+            --data-urlencode 'pageSize=1' \
+            --data-urlencode 'region=전국' \
+            --data-urlencode 'category=전체' \
+            --output "$response_file" \
+            "$APP_URL/api/tour/places"
+          jq -e '.places | type == "array"' "$response_file" >/dev/null
