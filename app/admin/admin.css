@@ -157,6 +157,46 @@
   background: #fff;
 }
 
+.service-control { margin-top: 0; }
+.service-mode-badge { padding: 9px 12px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+.service-mode-badge.is-operational { color: #08723a; background: #e4f8ec; }
+.service-mode-badge.is-partial { color: #805d08; background: #fff3ce; }
+.service-mode-badge.is-maintenance { color: #fff; background: var(--admin-red); }
+.service-control-form { margin-top: 24px; }
+.service-mode-options { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border: 0; }
+.service-mode-options legend { margin-bottom: 9px; color: #6f6f69; font-size: 10px; font-weight: 900; }
+.service-mode-option { min-height: 82px; padding: 15px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid #deded8; border-radius: 13px; background: #fafaf7; cursor: pointer; }
+.service-mode-option:has(input:checked) { border-color: var(--admin-black); box-shadow: 0 0 0 2px rgba(16,16,16,.06); }
+.service-mode-option.is-partial:has(input:checked) { border-color: #d7aa20; background: #fffaf0; }
+.service-mode-option.is-maintenance:has(input:checked) { border-color: var(--admin-red); background: #fff3f1; }
+.service-mode-option input { margin-top: 3px; accent-color: var(--admin-red); }
+.service-mode-option span { display: grid; gap: 5px; }
+.service-mode-option strong { font-size: 13px; }
+.service-mode-option small { color: #777770; font-size: 10px; line-height: 1.5; }
+.service-form-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.service-field { display: grid; gap: 7px; color: #5f5f59; font-size: 10px; font-weight: 900; }
+.service-field > span small { color: #999992; font-weight: 700; }
+.service-field-wide { grid-column: 1 / -1; }
+.service-field input, .service-field textarea { width: 100%; min-height: 44px; padding: 11px 13px; border: 1px solid #d8d8d2; border-radius: 10px; outline: none; color: #111; background: #fafaf7; font: inherit; font-size: 12px; font-weight: 600; resize: vertical; }
+.service-field input:focus, .service-field textarea:focus { border-color: var(--admin-red); box-shadow: 0 0 0 3px rgba(255,59,54,.1); }
+.update-control-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.update-control-grid article { padding: 17px; display: grid; grid-template-columns: 1fr 1fr; gap: 13px; border: 1px solid #deded8; border-radius: 14px; background: #f7f7f4; }
+.update-control-grid article > div { min-width: 0; display: grid; gap: 5px; }
+.update-control-grid article > div strong { font-size: 13px; }
+.update-control-grid article > div small { color: #777770; font-size: 10px; line-height: 1.5; }
+.service-switch { align-self: start; justify-self: end; display: flex; align-items: center; gap: 7px; color: #5f5f59; font-size: 10px; font-weight: 900; cursor: pointer; }
+.service-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.service-switch span { width: 36px; height: 21px; padding: 3px; display: block; border-radius: 999px; background: #c7c7c1; transition: background .2s ease; }
+.service-switch span::after { width: 15px; height: 15px; display: block; border-radius: 50%; background: #fff; content: ""; transition: transform .2s ease; }
+.service-switch input:checked + span { background: var(--admin-red); }
+.service-switch input:checked + span::after { transform: translateX(15px); }
+.update-control-grid .service-field { grid-column: 1 / -1; }
+.service-save-row { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.service-save-row p { margin: 0; color: #6f6f69; font-size: 11px; line-height: 1.6; }
+.service-save-row p.is-error { color: #a02824; }
+.service-save-row button { min-height: 46px; padding: 0 18px; border: 0; border-radius: 11px; color: #fff; background: var(--admin-red); font-weight: 900; cursor: pointer; }
+.service-save-row button:disabled { opacity: .55; cursor: wait; }
+
 .traffic-grid .admin-panel { margin-top: 0; }
 .panel-title, .admin-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .panel-title h2, .admin-section-heading h2 { margin: 5px 0 5px; font-size: 22px; letter-spacing: -.04em; }
@@ -245,4 +285,7 @@
   .top-pages-list small { display: none; }
   .account-tools { grid-template-columns: 1fr; }
   .admin-panel { padding: 18px; }
+  .service-mode-options, .service-form-grid, .update-control-grid { grid-template-columns: 1fr; }
+  .service-field-wide { grid-column: auto; }
+  .service-save-row { align-items: stretch; flex-direction: column; }
 }

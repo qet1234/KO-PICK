@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ChoiceChips } from '@/components/choice-chips';
+import { MotionPressable } from '@/components/motion-pressable';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts, koreaRegions } from '@/lib/korea-regions';
 
@@ -125,10 +126,10 @@ export function LiveWeatherCard() {
           <Text style={styles.sectionLabel}>시간대별 예보</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.forecastRow}>
             {weather.hourly.slice(0, 12).map((item, index) => (
-              <Pressable key={item.time} onPress={() => setSelectedHour(index)} style={[styles.hourCard, selectedHour === index && styles.hourCardSelected]}>
+              <MotionPressable key={item.time} onPress={() => setSelectedHour(index)} style={[styles.hourCard, selectedHour === index && styles.hourCardSelected]}>
                 <Text style={styles.hour}>{hourLabel(item.time, index)}</Text><Text style={styles.hourIcon}>{item.icon}</Text>
                 <Text style={styles.hourTemp}>{item.temperature}°</Text><Text style={styles.rain}>{item.precipitationProbability}%</Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </ScrollView>
           <Text style={styles.sectionLabel}>주간 예보</Text>

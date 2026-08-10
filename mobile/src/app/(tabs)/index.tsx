@@ -2,11 +2,12 @@ import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
 import { LiveWeatherCard } from '@/components/live-weather-card';
+import { MotionPressable } from '@/components/motion-pressable';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
 import { SeasonalFoods } from '@/components/seasonal-foods';
@@ -86,10 +87,10 @@ export default function HomeScreen() {
           <Text style={styles.sectionDescription}>함께하는 사람을 고르면 아래 코스 설정에 바로 반영됩니다.</Text>
           <View style={styles.grid}>
             {journeyCards.map((journey) => (
-              <Pressable key={journey.title} onPress={() => setRelationship(journey.title as RecommendationQuery['relationship'])} style={[styles.journeyCard, relationship === journey.title && styles.journeyCardSelected]}>
+              <MotionPressable key={journey.title} onPress={() => setRelationship(journey.title as RecommendationQuery['relationship'])} style={[styles.journeyCard, relationship === journey.title && styles.journeyCardSelected]}>
                 <Text style={styles.cardNumber}>{journey.number}</Text><Text style={styles.journeyTitle}>{journey.title}</Text>
                 <Text style={styles.journeyDescription}>{journey.description}</Text><Text style={styles.cardAction}>{relationship === journey.title ? '선택됨 ✓' : '선택하기 →'}</Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </View>
         </View>
@@ -100,10 +101,10 @@ export default function HomeScreen() {
           <Text style={styles.sectionDescription}>웹과 같은 네 가지 카테고리를 앱의 지도에서 바로 확인하세요.</Text>
           <View style={styles.grid}>
             {categoryCards.map((item) => (
-              <Pressable key={item.number} onPress={() => explore(item.category)} style={styles.categoryCard}>
+              <MotionPressable key={item.number} onPress={() => explore(item.category)} style={styles.categoryCard}>
                 <Text style={styles.cardNumber}>{item.number}</Text><Text style={styles.cardEnglish}>{item.english}</Text>
                 <Text style={styles.categoryTitle}>{item.title}</Text><Text style={styles.categoryDescription}>{item.description}</Text><Text style={styles.categoryArrow}>↗</Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </View>
         </View>
@@ -117,9 +118,9 @@ export default function HomeScreen() {
             <ChoiceChips label="누구와 가나요?" values={relationships} selected={relationship} onSelect={(value) => setRelationship(value as RecommendationQuery['relationship'])} />
             <ChoiceChips label="무엇을 찾나요?" values={categories} selected={category} onSelect={(value) => setCategory(value as RecommendationQuery['category'])} />
             <ChoiceChips label="예산" values={budgets} selected={budget} onSelect={setBudget} wrap />
-            <Pressable disabled={loading} onPress={() => void recommend()} style={[styles.submit, loading && styles.disabled]}>
+            <MotionPressable disabled={loading} onPress={() => void recommend()} style={[styles.submit, loading && styles.disabled]}>
               {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.submitText}>맞춤 장소 추천받기</Text>}
-            </Pressable>
+            </MotionPressable>
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
         </View>
@@ -130,10 +131,10 @@ export default function HomeScreen() {
           <Text style={styles.sectionDescription}>웹에 있는 공간·예약·고객지원 화면도 앱 안에서 모바일 크기로 열립니다.</Text>
           <View style={styles.serviceList}>
             {webServices.map((service) => (
-              <Pressable key={service.path} onPress={() => void openWebService(service.path)} style={styles.serviceButton}>
+              <MotionPressable key={service.path} onPress={() => void openWebService(service.path)} style={styles.serviceButton}>
                 <View style={styles.serviceCopy}><Text style={styles.serviceTitle}>{service.title}</Text><Text style={styles.serviceDescription}>{service.description}</Text></View>
                 <Text style={styles.serviceArrow}>↗</Text>
-              </Pressable>
+              </MotionPressable>
             ))}
           </View>
         </View>
@@ -161,9 +162,9 @@ export default function HomeScreen() {
         <View style={styles.privacy}>
           <Text style={styles.privacyEyebrow}>PRIVACY & SAFETY</Text><Text style={styles.privacyTitle}>개인정보를 소중하게 보호합니다.</Text>
           <Text style={styles.privacyText}>서비스 제공에 필요한 최소한의 정보만 처리하고, 이용 목적이 끝난 정보는 안전하게 삭제합니다.</Text>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보처리방침 →</Text></Pressable>
-          <Pressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/sources`)} style={styles.footerLink}><Text style={styles.footerLinkText}>데이터 출처·저작권 →</Text></Pressable>
-          <Pressable onPress={() => router.push('/(tabs)/account')} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보·계정 관리 →</Text></Pressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보처리방침 →</Text></MotionPressable>
+          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/sources`)} style={styles.footerLink}><Text style={styles.footerLinkText}>데이터 출처·저작권 →</Text></MotionPressable>
+          <MotionPressable onPress={() => router.push('/(tabs)/account')} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보·계정 관리 →</Text></MotionPressable>
           <Text style={styles.copyright}>© 2026 오늘어디</Text>
         </View>
       </ScrollView>

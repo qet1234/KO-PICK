@@ -3,7 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminAccounts, { type AdminAccount } from "./AdminAccounts";
+import AdminServiceControl from "./AdminServiceControl";
 import { createAdminClient, getAdminAccess } from "@/utils/admin";
+import { defaultAppServiceStatus, normalizeAppServiceStatus } from "@/utils/app-service-status";
 import "./admin.css";
 
 export const dynamic = "force-dynamic";
@@ -95,13 +97,15 @@ export default async function AdminPage() {
   }
 
   const adminClient = createAdminClient();
-  const [usersResult, trafficResult] = await Promise.all([
+  const [usersResult, trafficResult, serviceStatusResult] = await Promise.all([
     adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     adminClient.rpc("get_admin_traffic_dashboard", { p_days: 30 }),
+    adminClient.from("app_service_status").select("*").eq("id", 1).maybeSingle(),
   ]);
 
   if (usersResult.error) console.error("관리자 계정 목록 오류:", usersResult.error.message);
   if (trafficResult.error) console.error("관리자 트래픽 요약 오류:", trafficResult.error.message);
+  if (serviceStatusResult.error) console.error("앱 서비스 상태 오류:", serviceStatusResult.error.message);
 
   const accounts: AdminAccount[] = (usersResult.data?.users ?? []).map((user) => ({
     createdAt: user.created_at,
@@ -113,6 +117,9 @@ export default async function AdminPage() {
     status: accountStatus(user),
   }));
   const traffic = trafficSummary(trafficResult.data);
+  const serviceStatus = serviceStatusResult.data
+    ? normalizeAppServiceStatus(serviceStatusResult.data)
+    : defaultAppServiceStatus;
   const maxDailyViews = Math.max(1, ...traffic.daily.map((day) => number(day.views)));
   const totalDeviceViews = Math.max(1, traffic.devices.reduce((sum, item) => sum + number(item.views), 0));
   const loginRatio = traffic.views30d
@@ -127,8 +134,9 @@ export default async function AdminPage() {
           <span><strong>오늘어디</strong><small>OPERATOR</small></span>
         </Link>
         <nav aria-label="관리자 메뉴">
-          <a href="#traffic"><span>01</span>트래픽 현황</a>
-          <a href="#accounts"><span>02</span>로그인 계정</a>
+          <a href="#service-control"><span>01</span>앱 운영 제어</a>
+          <a href="#traffic"><span>02</span>트래픽 현황</a>
+          <a href="#accounts"><span>03</span>로그인 계정</a>
         </nav>
         <div className="admin-sidebar-bottom">
           <small>접속 계정</small>
@@ -142,10 +150,12 @@ export default async function AdminPage() {
           <div>
             <span className="admin-kicker">SERVICE CONTROL</span>
             <h1>운영 현황</h1>
-            <p>트래픽과 로그인 계정을 한곳에서 확인하세요.</p>
+            <p>앱 점검 상태, 트래픽과 로그인 계정을 한곳에서 관리하세요.</p>
           </div>
           <div className="admin-live"><i />실시간 수집 중</div>
         </header>
+
+        <AdminServiceControl initialStatus={serviceStatus} />
 
         <section id="traffic">
           <div className="metric-grid">

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { MotionPressable } from '@/components/motion-pressable';
 
 const seasons = [
   { key: '봄', months: '3–5월', title: '향긋하게 입맛을 깨우는 계절', color: '#e8f6df', accent: '#4f7d34', foods: [
@@ -34,9 +36,9 @@ export function SeasonalFoods() {
       <Text style={styles.subtitle}>계절마다 가장 맛있는 대표 메뉴를 한눈에 골라보세요.</Text>
       <View style={styles.tabs}>
         {seasons.map((item) => (
-          <Pressable key={item.key} onPress={() => setSelected(item.key)} style={[styles.tab, selected === item.key && { backgroundColor: item.accent, borderColor: item.accent }]}>
+          <MotionPressable key={item.key} onPress={() => setSelected(item.key)} style={[styles.tab, selected === item.key && { backgroundColor: item.accent, borderColor: item.accent }]}>
             <Text style={[styles.tabText, selected === item.key && styles.tabTextSelected]}>{item.key}</Text>
-          </Pressable>
+          </MotionPressable>
         ))}
       </View>
       <View style={[styles.card, { backgroundColor: season.color }]}>

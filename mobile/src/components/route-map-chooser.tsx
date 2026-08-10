@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 
+import { MotionPressable } from '@/components/motion-pressable';
 import {
   getPreferredMap,
   type MapProvider,
@@ -50,15 +51,15 @@ export function RouteMapChooser({ place }: { place: RoutablePlace }) {
 
   return (
     <>
-      <Pressable accessibilityRole="button" onPress={() => void start()} style={styles.routeButton}>
+      <MotionPressable accessibilityRole="button" onPress={() => void start()} style={styles.routeButton}>
         <Text style={styles.routeButtonText}>길찾기</Text>
-      </Pressable>
+      </MotionPressable>
       {preferredMap ? (
-        <Pressable accessibilityRole="button" onPress={() => void reset()}>
+        <MotionPressable accessibilityRole="button" onPress={() => void reset()}>
           <Text style={styles.resetText}>
             {preferredMap === 'naver' ? '네이버지도' : '카카오맵'} 자동 열기 변경
           </Text>
-        </Pressable>
+        </MotionPressable>
       ) : null}
 
       <Modal animationType="slide" transparent visible={visible} onRequestClose={() => setVisible(false)}>
@@ -66,12 +67,12 @@ export function RouteMapChooser({ place }: { place: RoutablePlace }) {
           <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
             <Text style={styles.sheetTitle}>어떤 지도로 길찾을까요?</Text>
             <Text style={styles.sheetSubtitle}>{place.name}</Text>
-            <Pressable style={[styles.providerButton, styles.naver]} onPress={() => void choose('naver')}>
+            <MotionPressable style={[styles.providerButton, styles.naver]} onPress={() => void choose('naver')}>
               <Text style={styles.providerText}>N  네이버지도</Text>
-            </Pressable>
-            <Pressable style={[styles.providerButton, styles.kakao]} onPress={() => void choose('kakao')}>
+            </MotionPressable>
+            <MotionPressable style={[styles.providerButton, styles.kakao]} onPress={() => void choose('kakao')}>
               <Text style={[styles.providerText, styles.kakaoText]}>●  카카오맵</Text>
-            </Pressable>
+            </MotionPressable>
             <View style={styles.rememberRow}>
               <View style={styles.rememberCopy}>
                 <Text style={styles.rememberTitle}>다음부터 선택한 지도로 바로 열기</Text>
