@@ -5,13 +5,13 @@ import {
   Alert,
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSession } from '@/context/session-context';
 import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/apple-auth';
@@ -82,7 +82,7 @@ export default function AccountScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.eyebrow}>오늘어디</Text>
         <Text style={styles.title}>내 계정</Text>
@@ -165,10 +165,10 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f5f8f6' },
-  container: { paddingHorizontal: 18, paddingTop: 24, paddingBottom: 34 },
+  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f8f6' },
   eyebrow: { color: '#146b45', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  title: { marginTop: 5, color: '#17211c', fontSize: 30, fontWeight: '900' },
+  title: { marginTop: 5, color: '#17211c', fontSize: 28, fontWeight: '900' },
   card: { marginTop: 22, alignItems: 'center', borderRadius: 24, backgroundColor: '#ffffff', padding: 24 },
   avatar: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#146b45' },
   avatarText: { color: '#ffffff', fontSize: 24, fontWeight: '900' },
