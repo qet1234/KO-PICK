@@ -1,22 +1,12 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ChoiceChips } from '@/components/choice-chips';
+import { LiveWeatherCard } from '@/components/live-weather-card';
 import { MotionPressable } from '@/components/motion-pressable';
-import { PlaceImage } from '@/components/place-image';
-import { RouteMapChooser } from '@/components/route-map-chooser';
 import { SeasonalFoods } from '@/components/seasonal-foods';
-import { fetchRecommendations, type Recommendation, type RecommendationQuery } from '@/lib/api';
 import { appConfig } from '@/lib/config';
-
-const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
-const relationships = ['개인', '커플', '친구', '가족'] as const;
-const categories = ['맛집', '카페', '관광지', '축제'] as const;
-const budgets = Array.from({ length: 10 }, (_, index) => `${index + 1}만원`);
 
 const categoryCards = [
   { number: '01', english: 'DINING', title: '음식', category: '맛집', description: '한식부터 세계음식까지' },
@@ -26,138 +16,113 @@ const categoryCards = [
 ] as const;
 
 const journeyCards = [
-  { number: '01', title: '혼자', description: '내 취향대로 가볍게' },
-  { number: '02', title: '커플', description: '데이트 장소 찾기' },
-  { number: '03', title: '친구', description: '모임에 맞는 장소' },
-  { number: '04', title: '가족', description: '온 가족이 함께' },
+  { number: '01', label: '혼자', title: '내 취향대로 가볍게', description: '혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소만 모아보세요.' },
+  { number: '02', label: '커플', title: '데이트 장소 찾기', description: '네이버 검색 반응이 많은 카페·맛집·데이트 명소를 우선 확인하세요.' },
+  { number: '03', label: '친구', title: '모임에 맞는 장소', description: '여럿이 방문하기 좋은 맛집, 축제와 즐길 거리를 확인하세요.' },
+  { number: '04', label: '가족', title: '온 가족이 함께', description: '아이와 부모님까지 편하게 즐길 수 있는 장소를 찾아보세요.' },
 ] as const;
 
-const webServices = [
-  { title: '함께 공간', description: '개인·친구·가족 공간', path: '/spaces' },
-  { title: '예약 관리', description: '예약 계획과 일정 확인', path: '/reservations' },
-  { title: '고객지원', description: '문의·피드백 보내기', path: '/support' },
+const privacyCards = [
+  { number: '01', title: '필요한 정보만 처리', description: '소셜 로그인 정보는 회원 식별과 서비스 제공 목적으로만 사용합니다.' },
+  { number: '02', title: '공간 정보 비공개', description: '개인·친구·가족 공간의 일정과 기록은 구성원만 확인할 수 있습니다.' },
+  { number: '03', title: '탈퇴 시 안전하게 삭제', description: '법령상 보관 의무가 있는 경우를 제외하고 개인정보와 저장 데이터를 삭제합니다.' },
 ] as const;
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const compact = width < 370;
-  const [region, setRegion] = useState<RecommendationQuery['region']>('경기');
-  const [relationship, setRelationship] = useState<RecommendationQuery['relationship']>('커플');
-  const [category, setCategory] = useState<RecommendationQuery['category']>('카페');
-  const [budget, setBudget] = useState('5만원');
-  const [items, setItems] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const tablet = width >= 640;
 
-  const recommend = async () => {
-    setLoading(true); setError('');
-    try {
-      const result = await fetchRecommendations({ region, relationship, category, budget });
-      setItems(result.items);
-    } catch (nextError) {
-      setItems([]); setError(nextError instanceof Error ? nextError.message : '추천 장소를 불러오지 못했습니다.');
-    } finally { setLoading(false); }
-  };
-
-  const explore = (nextCategory: RecommendationQuery['category']) => {
-    router.push({ pathname: '/(tabs)/explore', params: { category: nextCategory, region } });
-  };
-
-  const openWebService = async (path: string) => {
-    await WebBrowser.openBrowserAsync(`${appConfig.webUrl.replace(/\/$/, '')}${path}`, {
-      controlsColor: '#ff3b36',
-      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-    });
+  const explore = (category: string) => {
+    router.push({ pathname: '/(tabs)/explore', params: { category } });
   };
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={[styles.container, compact && styles.containerCompact]}>
-        <View style={[styles.section, styles.firstSection]}>
-          <Text style={styles.eyebrow}>오늘어디 JOURNEY</Text>
-          <Text style={styles.sectionTitle}>누구와 가나요?</Text>
-          <Text style={styles.sectionDescription}>함께하는 사람을 고르면 아래 코스 설정에 바로 반영됩니다.</Text>
-          <View style={styles.grid}>
-            {journeyCards.map((journey) => (
-              <MotionPressable key={journey.title} onPress={() => setRelationship(journey.title as RecommendationQuery['relationship'])} style={[styles.journeyCard, relationship === journey.title && styles.journeyCardSelected]}>
-                <Text style={styles.cardNumber}>{journey.number}</Text><Text style={styles.journeyTitle}>{journey.title}</Text>
-                <Text style={styles.journeyDescription}>{journey.description}</Text><Text style={styles.cardAction}>{relationship === journey.title ? '선택됨 ✓' : '선택하기 →'}</Text>
-              </MotionPressable>
-            ))}
+        <View style={styles.heroFrame}>
+          <LiveWeatherCard />
+
+          <View style={styles.journeyPanel}>
+            <Text style={styles.eyebrow}>오늘어디 JOURNEY</Text>
+            <Text style={styles.journeyHeading}>누구와 가나요?</Text>
+            <Text style={styles.journeyIntro}>예약 중심이 아니라 함께하는 사람과 목적에 맞춰 전국의 장소를 탐색합니다.</Text>
+
+            <View style={styles.journeyGrid}>
+              {journeyCards.map((journey) => (
+                <MotionPressable
+                  accessibilityRole="button"
+                  key={journey.label}
+                  onPress={() => explore('전체')}
+                  style={[styles.journeyCard, tablet && styles.journeyCardTablet]}
+                >
+                  <Text style={styles.journeyNumber}>{journey.number}</Text>
+                  <Text style={styles.journeyPill}>{journey.label}</Text>
+                  <Text style={styles.journeyTitle}>{journey.title}</Text>
+                  <Text style={styles.journeyDescription}>{journey.description}</Text>
+                  <Text style={styles.journeyAction}>지도에서 찾기 →</Text>
+                </MotionPressable>
+              ))}
+            </View>
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.categorySection}>
           <Text style={styles.eyebrow}>WHAT TO FIND</Text>
           <Text style={styles.sectionTitle}>무엇을 찾고 있나요?</Text>
-          <Text style={styles.sectionDescription}>웹과 같은 네 가지 카테고리를 앱의 지도에서 바로 확인하세요.</Text>
-          <View style={styles.grid}>
+          <Text style={styles.sectionDescription}>맛집과 카페를 찾고, 예약 지원 매장은 카드에서 네이버 예약으로 바로 이동하세요.</Text>
+          <View style={styles.categoryGrid}>
             {categoryCards.map((item) => (
-              <MotionPressable key={item.number} onPress={() => explore(item.category)} style={styles.categoryCard}>
-                <Text style={styles.cardNumber}>{item.number}</Text><Text style={styles.cardEnglish}>{item.english}</Text>
-                <Text style={styles.categoryTitle}>{item.title}</Text><Text style={styles.categoryDescription}>{item.description}</Text><Text style={styles.categoryArrow}>↗</Text>
+              <MotionPressable
+                accessibilityRole="button"
+                key={item.number}
+                onPress={() => explore(item.category)}
+                style={[styles.categoryCard, tablet && styles.categoryCardTablet]}
+              >
+                <View style={styles.categoryAccent} />
+                <Text style={styles.categoryNumber}>{item.number}</Text>
+                <View style={styles.categoryCopy}>
+                  <Text style={styles.categoryEnglish}>{item.english}</Text>
+                  <Text style={styles.categoryTitle}>{item.title}</Text>
+                  <Text style={styles.categoryDescription}>{item.description}</Text>
+                </View>
+                <View style={styles.categoryArrow}><Text style={styles.categoryArrowText}>↗</Text></View>
               </MotionPressable>
             ))}
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.eyebrow}>COURSE BUILDER</Text>
-          <Text style={styles.sectionTitle}>코스 설정</Text>
-          <Text style={styles.sectionDescription}>지역·관계·카테고리·예산을 골라 웹과 같은 추천 결과를 받으세요.</Text>
-          <View style={styles.builder}>
-            <ChoiceChips label="지역" values={regions} selected={region} onSelect={setRegion} />
-            <ChoiceChips label="누구와 가나요?" values={relationships} selected={relationship} onSelect={(value) => setRelationship(value as RecommendationQuery['relationship'])} />
-            <ChoiceChips label="무엇을 찾나요?" values={categories} selected={category} onSelect={(value) => setCategory(value as RecommendationQuery['category'])} />
-            <ChoiceChips label="예산" values={budgets} selected={budget} onSelect={setBudget} wrap />
-            <MotionPressable disabled={loading} onPress={() => void recommend()} style={[styles.submit, loading && styles.disabled]}>
-              {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.submitText}>맞춤 장소 추천받기</Text>}
-            </MotionPressable>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View accessible accessibilityLabel="새로운 기능을 준비하고 있어요. 현재 개발 중입니다." style={styles.comingSection}>
+          <View style={styles.comingSoon}>
+            <View style={styles.dots}><View style={styles.dot} /><View style={styles.dot} /><View style={styles.dot} /></View>
+            <Text style={styles.comingLabel}>NEW FEATURE</Text>
+            <Text style={styles.comingTitle}>새로운 기능을{`\n`}준비하고 있어요</Text>
+            <Text style={styles.comingDescription}>더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.{`\n`}조금만 기다려 주세요.</Text>
+            <Text style={styles.comingStatus}>현재 개발 중</Text>
           </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.eyebrow}>ALL SERVICES</Text>
-          <Text style={styles.sectionTitle}>웹 서비스 전체 메뉴</Text>
-          <Text style={styles.sectionDescription}>웹에 있는 공간·예약·고객지원 화면도 앱 안에서 모바일 크기로 열립니다.</Text>
-          <View style={styles.serviceList}>
-            {webServices.map((service) => (
-              <MotionPressable key={service.path} onPress={() => void openWebService(service.path)} style={styles.serviceButton}>
-                <View style={styles.serviceCopy}><Text style={styles.serviceTitle}>{service.title}</Text><Text style={styles.serviceDescription}>{service.description}</Text></View>
-                <Text style={styles.serviceArrow}>↗</Text>
-              </MotionPressable>
-            ))}
-          </View>
-        </View>
-
-        {items.length > 0 ? <View style={styles.results}>
-          <Text style={styles.eyebrow}>YOUR PICKS</Text><Text style={styles.sectionTitle}>{region}에서 찾은 추천 장소</Text>
-          <Text style={styles.source}>장소·사진 원천: 한국관광공사 TourAPI</Text>
-          {items.map((place) => <View key={place.id} style={styles.resultCard}>
-            <PlaceImage name={place.name} imageUrl={place.imageUrl} attribution={place.imageAttribution} copyrightCode={place.imageCopyrightCode} modificationAllowed={place.imageModificationAllowed} />
-            <Text style={styles.score}>취향 적합도 {place.score}%</Text><Text style={styles.resultTitle}>{place.name}</Text>
-            <Text style={styles.resultMeta}>{place.category} · {place.address}</Text><Text style={styles.reason}>{place.reason}</Text>
-            <RouteMapChooser place={{ name: place.name, address: place.address }} />
-          </View>)}
-        </View> : null}
-
-        <View accessible accessibilityLabel="새로운 기능을 준비하고 있어요. 현재 개발 중입니다." style={styles.comingSoon}>
-          <View style={styles.dots}><View style={styles.dot} /><View style={styles.dot} /><View style={styles.dot} /></View>
-          <Text style={styles.comingLabel}>NEW FEATURE</Text><Text style={styles.comingTitle}>새로운 기능을{`\n`}준비하고 있어요</Text>
-          <Text style={styles.comingDescription}>더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.{`\n`}조금만 기다려 주세요.</Text>
-          <Text style={styles.comingStatus}>현재 개발 중</Text>
         </View>
 
         <SeasonalFoods />
 
         <View style={styles.privacy}>
-          <Text style={styles.privacyEyebrow}>PRIVACY & SAFETY</Text><Text style={styles.privacyTitle}>개인정보를 소중하게 보호합니다.</Text>
+          <Text style={styles.privacyEyebrow}>PRIVACY &amp; SAFETY</Text>
+          <Text style={styles.privacyTitle}>개인정보를 소중하게 보호합니다.</Text>
           <Text style={styles.privacyText}>서비스 제공에 필요한 최소한의 정보만 처리하고, 이용 목적이 끝난 정보는 안전하게 삭제합니다.</Text>
-          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보처리방침 →</Text></MotionPressable>
-          <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/sources`)} style={styles.footerLink}><Text style={styles.footerLinkText}>데이터 출처·저작권 →</Text></MotionPressable>
-          <MotionPressable onPress={() => router.push('/(tabs)/account')} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보·계정 관리 →</Text></MotionPressable>
-          <Text style={styles.copyright}>© 2026 오늘어디</Text>
+          <View style={styles.privacyGrid}>
+            {privacyCards.map((item) => (
+              <View key={item.number} style={styles.privacyCard}>
+                <Text style={styles.privacyNumber}>{item.number}</Text>
+                <Text style={styles.privacyCardTitle}>{item.title}</Text>
+                <Text style={styles.privacyCardText}>{item.description}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.privacyFooter}>
+            <Text style={styles.copyright}>© 2026 오늘어디</Text>
+            <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보처리방침 →</Text></MotionPressable>
+            <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/sources`)} style={styles.footerLink}><Text style={styles.footerLinkText}>데이터 출처·저작권 →</Text></MotionPressable>
+            <MotionPressable onPress={() => router.push('/(tabs)/account')} style={styles.footerLink}><Text style={styles.footerLinkText}>개인정보·계정 관리 →</Text></MotionPressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -166,23 +131,54 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
-  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
-  containerCompact: { paddingHorizontal: 14 }, section: { marginTop: 30 }, firstSection: { marginTop: 0 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
-  sectionTitle: { marginTop: 5, color: '#101010', fontSize: 23, fontWeight: '900' }, sectionDescription: { marginTop: 7, marginBottom: 5, color: '#71716d', fontSize: 13, lineHeight: 19 },
-  grid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, journeyCard: { width: '48%', minHeight: 150, borderWidth: 1, borderColor: '#dadad4', borderRadius: 20, backgroundColor: '#ffffff', padding: 15 },
-  journeyCardSelected: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' }, cardNumber: { color: '#ff3b36', fontSize: 10, fontWeight: '900' }, journeyTitle: { marginTop: 16, color: '#101010', fontSize: 18, fontWeight: '900' },
-  journeyDescription: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 16 }, cardAction: { marginTop: 'auto', color: '#ff3b36', fontSize: 11, fontWeight: '900' },
-  categoryCard: { width: '48%', minHeight: 166, borderRadius: 20, backgroundColor: '#ffffff', padding: 15 }, cardEnglish: { marginTop: 16, color: '#7b867f', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
-  categoryTitle: { marginTop: 3, color: '#101010', fontSize: 20, fontWeight: '900' }, categoryDescription: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 16 }, categoryArrow: { marginTop: 'auto', color: '#ff3b36', fontSize: 21, fontWeight: '900' },
-  builder: { marginTop: 12, borderRadius: 23, backgroundColor: '#ffffff', padding: 18 }, submit: { minHeight: 50, marginTop: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: '#ff3b36' },
-  disabled: { opacity: 0.65 }, submitText: { color: '#ffffff', fontSize: 15, fontWeight: '900' }, error: { marginTop: 12, color: '#aa2f2f', fontSize: 12, lineHeight: 18 },
-  results: { marginTop: 28 }, source: { marginTop: 6, marginBottom: 8, color: '#71716d', fontSize: 11 }, resultCard: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', padding: 12 },
-  score: { marginTop: 13, color: '#ff3b36', fontSize: 11, fontWeight: '900' }, resultTitle: { marginTop: 5, color: '#101010', fontSize: 18, fontWeight: '900' }, resultMeta: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 17 }, reason: { marginTop: 8, marginBottom: 13, color: '#454541', fontSize: 12, lineHeight: 19 },
-  comingSoon: { minHeight: 290, marginTop: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: '#101010', padding: 24 }, dots: { width: 62, height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#caff2c', borderRadius: 20, backgroundColor: '#202020' },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#caff2c' }, comingLabel: { marginTop: 18, color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.7 }, comingTitle: { marginTop: 10, color: '#ffffff', fontSize: 25, fontWeight: '900', lineHeight: 32, textAlign: 'center' },
-  serviceList: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 16 }, serviceButton: { minHeight: 68, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dadad4' },
-  serviceCopy: { flex: 1, paddingVertical: 12 }, serviceTitle: { color: '#101010', fontSize: 14, fontWeight: '900' }, serviceDescription: { marginTop: 3, color: '#71716d', fontSize: 11 }, serviceArrow: { color: '#ff3b36', fontSize: 20, fontWeight: '900' },
-  comingDescription: { marginTop: 12, color: '#c8c8c2', fontSize: 12, lineHeight: 20, textAlign: 'center' }, comingStatus: { marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#3a3a3a', borderRadius: 999, color: '#deded8', fontSize: 10, fontWeight: '800', paddingHorizontal: 14, paddingVertical: 8 },
-  privacy: { marginTop: 30, borderRadius: 24, backgroundColor: '#101010', padding: 20 }, privacyEyebrow: { color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, privacyTitle: { marginTop: 7, color: '#ffffff', fontSize: 20, fontWeight: '900', lineHeight: 27 }, privacyText: { marginTop: 8, marginBottom: 10, color: '#c8c8c2', fontSize: 12, lineHeight: 19 },
-  footerLink: { minHeight: 46, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3a3a3a' }, footerLinkText: { color: '#f0f0eb', fontSize: 13, fontWeight: '800' }, copyright: { marginTop: 14, color: '#8b8b85', fontSize: 10 },
+  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 38 },
+  containerCompact: { paddingHorizontal: 12 },
+  heroFrame: { padding: 10, borderWidth: 1, borderColor: '#deded8', borderRadius: 28, backgroundColor: '#ffffff', shadowColor: '#1f1914', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.13, shadowRadius: 22, elevation: 7 },
+  journeyPanel: { marginTop: 12, padding: 20, borderWidth: 1, borderColor: '#deded8', borderRadius: 19, backgroundColor: '#f8f8f5' },
+  eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  journeyHeading: { marginTop: 7, color: '#111111', fontSize: 30, lineHeight: 36, fontWeight: '900', letterSpacing: -1.4 },
+  journeyIntro: { marginTop: 8, color: '#42423f', fontSize: 12, fontWeight: '600', lineHeight: 20 },
+  journeyGrid: { marginTop: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  journeyCard: { width: '100%', minHeight: 170, padding: 18, position: 'relative', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 18, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 2 },
+  journeyCardTablet: { width: '48%' },
+  journeyNumber: { position: 'absolute', top: 12, right: 14, color: '#c9c9c3', fontSize: 30, fontWeight: '900' },
+  journeyPill: { alignSelf: 'flex-start', overflow: 'hidden', borderRadius: 999, color: '#ffffff', backgroundColor: '#ff3b36', paddingHorizontal: 9, paddingVertical: 5, fontSize: 10, fontWeight: '900' },
+  journeyTitle: { marginTop: 13, color: '#111111', fontSize: 18, fontWeight: '900', letterSpacing: -0.5 },
+  journeyDescription: { marginTop: 7, maxWidth: '88%', color: '#444440', fontSize: 11, fontWeight: '600', lineHeight: 18 },
+  journeyAction: { marginTop: 'auto', paddingTop: 14, color: '#111111', fontSize: 11, fontWeight: '900' },
+  categorySection: { marginTop: 44 },
+  sectionTitle: { marginTop: 9, color: '#111111', fontSize: 32, lineHeight: 38, fontWeight: '900', letterSpacing: -1.5 },
+  sectionDescription: { marginTop: 10, color: '#454541', fontSize: 13, fontWeight: '600', lineHeight: 21 },
+  categoryGrid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  categoryCard: { width: '100%', minHeight: 190, padding: 24, position: 'relative', justifyContent: 'space-between', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 18, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.06, shadowRadius: 15, elevation: 3 },
+  categoryCardTablet: { width: '48%' },
+  categoryAccent: { width: 4, height: 68, position: 'absolute', top: 61, left: 0, borderTopRightRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#ff3b36' },
+  categoryNumber: { alignSelf: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', color: '#111111', paddingHorizontal: 9, paddingVertical: 5, fontSize: 10, fontWeight: '900' },
+  categoryCopy: { marginTop: 20 },
+  categoryEnglish: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 0.9 },
+  categoryTitle: { marginTop: 10, color: '#111111', fontSize: 23, fontWeight: '900', letterSpacing: -1 },
+  categoryDescription: { marginTop: 6, maxWidth: '78%', color: '#494945', fontSize: 12, fontWeight: '600', lineHeight: 18 },
+  categoryArrow: { width: 44, height: 44, position: 'absolute', right: 14, bottom: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d2d2cc', borderRadius: 22, backgroundColor: '#ffffff' },
+  categoryArrowText: { color: '#101010', fontSize: 19, fontWeight: '800' },
+  comingSection: { marginTop: 52, marginHorizontal: -16, padding: 16, backgroundColor: '#101010' },
+  comingSoon: { minHeight: 360, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#30302e', borderRadius: 28, backgroundColor: '#191918', padding: 28 },
+  dots: { width: 72, height: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: '#617524', borderRadius: 24, backgroundColor: '#202414' },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#caff2c' },
+  comingLabel: { marginTop: 24, color: '#caff2c', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
+  comingTitle: { marginTop: 14, color: '#ffffff', fontSize: 31, fontWeight: '900', lineHeight: 36, letterSpacing: -1.4, textAlign: 'center' },
+  comingDescription: { marginTop: 18, color: '#c8c8c2', fontSize: 13, fontWeight: '600', lineHeight: 23, textAlign: 'center' },
+  comingStatus: { marginTop: 28, overflow: 'hidden', borderWidth: 1, borderColor: '#40403d', borderRadius: 999, color: '#b8b8b3', paddingHorizontal: 15, paddingVertical: 9, fontSize: 10, fontWeight: '800' },
+  privacy: { marginTop: 42, borderRadius: 28, backgroundColor: '#101010', padding: 22 },
+  privacyEyebrow: { color: '#caff2c', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  privacyTitle: { marginTop: 10, color: '#ffffff', fontSize: 28, fontWeight: '900', lineHeight: 34, letterSpacing: -1.1 },
+  privacyText: { marginTop: 10, color: '#d2d2cd', fontSize: 12, fontWeight: '600', lineHeight: 20 },
+  privacyGrid: { marginTop: 22, gap: 10 },
+  privacyCard: { padding: 17, borderWidth: 1, borderColor: '#333330', borderRadius: 17, backgroundColor: '#1b1b1a' },
+  privacyNumber: { color: '#caff2c', fontSize: 10, fontWeight: '900' },
+  privacyCardTitle: { marginTop: 10, color: '#ffffff', fontSize: 17, fontWeight: '900' },
+  privacyCardText: { marginTop: 7, color: '#c8c8c2', fontSize: 11, fontWeight: '600', lineHeight: 18 },
+  privacyFooter: { marginTop: 22, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3a3a38', paddingTop: 12 },
+  copyright: { marginBottom: 8, color: '#8b8b85', fontSize: 10 },
+  footerLink: { minHeight: 44, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#30302e' },
+  footerLinkText: { color: '#f0f0eb', fontSize: 12, fontWeight: '800' },
 });
