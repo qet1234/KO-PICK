@@ -168,6 +168,7 @@ export async function fetchTourPlaces(query: PlaceQuery) {
 export async function fetchNaverDiningPlaces(query: {
   mode: '회식' | '점심';
   region: string;
+  district: string;
   officeArea: string;
   foodType: string;
   foodDetail: string;
