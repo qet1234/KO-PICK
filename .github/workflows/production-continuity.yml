@@ -1,6 +1,10 @@
 name: Production Continuity
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/production-continuity.yml"
   workflow_dispatch:
   schedule:
     - cron: "23 2 * * *"
