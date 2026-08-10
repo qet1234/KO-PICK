@@ -5,7 +5,7 @@ import BrandLocationPin from "@/components/BrandLocationPin";
 import { getCurrentUser, springJson } from "@/utils/spring-api";
 import NaverBookingMatch from "@/components/NaverBookingMatch";
 
-type SpaceType = "personal" | "couple" | "friends" | "family";
+type SpaceType = "personal" | "friends" | "family";
 type PlanStatus = "voting" | "ready" | "requested" | "confirmed" | "cancelled";
 
 type SpaceSummary = {
@@ -14,6 +14,8 @@ type SpaceSummary = {
   name: string;
   member_count: number;
 };
+
+type RawSpaceSummary = Omit<SpaceSummary, "space_type"> & { space_type: string };
 
 type Candidate = {
   id: string;
@@ -46,6 +48,8 @@ type ReservationPlan = {
   candidates: Candidate[];
 };
 
+type RawReservationPlan = Omit<ReservationPlan, "space_type"> & { space_type: string };
+
 const statusInfo: Record<PlanStatus, { label: string; detail: string }> = {
   voting: { label: "함께 고르는 중", detail: "구성원이 장소 후보에 투표하고 있어요." },
   ready: { label: "장소·일정 확정", detail: "공동 달력에 저장됐어요. 실제 예약을 진행해 주세요." },
@@ -56,7 +60,6 @@ const statusInfo: Record<PlanStatus, { label: string; detail: string }> = {
 
 const spaceLabels: Record<SpaceType, string> = {
   personal: "개인",
-  couple: "커플",
   friends: "친구",
   family: "가족",
 };
@@ -130,17 +133,23 @@ export default function ReservationPage() {
 
   const load = useCallback(async () => {
     const [spacesPayload, reservationsPayload] = await Promise.all([
-      springJson<{ spaces: SpaceSummary[] }>("/api/web/spaces"),
-      springJson<{ plans: ReservationPlan[] }>("/api/web/reservations"),
+      springJson<{ spaces: RawSpaceSummary[] }>("/api/web/spaces"),
+      springJson<{ plans: RawReservationPlan[] }>("/api/web/reservations"),
     ]);
-    setSpaces(spacesPayload.spaces);
-    setPlans(reservationsPayload.plans);
+    const availableSpaces = spacesPayload.spaces.filter((space): space is SpaceSummary =>
+      space.space_type === "personal" || space.space_type === "friends" || space.space_type === "family"
+    );
+    const availablePlans = reservationsPayload.plans.filter((plan): plan is ReservationPlan =>
+      plan.space_type === "personal" || plan.space_type === "friends" || plan.space_type === "family"
+    );
+    setSpaces(availableSpaces);
+    setPlans(availablePlans);
     setSpaceId((current) => {
       if (current) return current;
-      if (initialSpaceId && spacesPayload.spaces.some((space) => space.id === initialSpaceId)) {
+      if (initialSpaceId && availableSpaces.some((space) => space.id === initialSpaceId)) {
         return initialSpaceId;
       }
-      return spacesPayload.spaces[0]?.id || "";
+      return availableSpaces[0]?.id || "";
     });
   }, [initialSpaceId]);
 

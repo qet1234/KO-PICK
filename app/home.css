@@ -264,7 +264,6 @@ button {
 .header-signup-button,
 .header-reservation-button,
 .header-space-button,
-.header-couple-button,
 .header-account-button {
   min-height: 36px;
   padding: 0 14px;
@@ -294,8 +293,7 @@ button {
   transform: scale(0.96);
 }
 
-.header-space-button,
-.header-couple-button {
+.header-space-button {
   border: 1px solid #ff3b35;
   color: #a71d19;
   background: #fff0f1;

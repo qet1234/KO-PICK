@@ -3,7 +3,6 @@ import { Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import Home from "@/app/page";
 import LoginPage from "@/app/login/page";
 import AccountPage from "@/app/account/page";
-import CoupleSpace from "@/components/CoupleSpace";
 import SpacesHub from "@/components/SpacesHub";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
 import ReservationPage from "@/components/ReservationPage";
@@ -31,9 +30,7 @@ function PageMetadata() {
   useEffect(() => {
     document.title = location.pathname === "/login"
       ? "로그인 | 오늘어디"
-      : location.pathname === "/couple"
-        ? "우리 둘의 공간 | 오늘어디"
-        : location.pathname === "/spaces"
+      : location.pathname === "/spaces"
           ? "함께 공간 | 오늘어디"
         : location.pathname === "/reservations"
           ? "함께 예약 | 오늘어디"
@@ -53,7 +50,6 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/account" element={<AccountPage />} />
-        <Route path="/couple" element={<CoupleSpace />} />
         <Route path="/spaces" element={<SpacesHub />} />
         <Route path="/reservations" element={<ReservationPage />} />
         <Route path="/explore" element={<ExplorePage />} />

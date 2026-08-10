@@ -127,7 +127,7 @@
 .spaces-type-grid {
   margin-top: 20px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -154,7 +154,6 @@
 
 .spaces-type-card:active { transform: translateY(1px) scale(0.97); }
 .spaces-type-card.is-personal { background: linear-gradient(145deg, #fff, #eef0ff); }
-.spaces-type-card.is-couple { background: linear-gradient(145deg, #fff, #ffe6ee); }
 .spaces-type-card.is-friends { background: linear-gradient(145deg, #fff, #efffc9); }
 .spaces-type-card.is-family { background: linear-gradient(145deg, #fff, #fff0d2); }
 
@@ -316,7 +315,7 @@
 .spaces-segmented {
   padding: 4px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   border-radius: 12px;
   background: #eeece6;

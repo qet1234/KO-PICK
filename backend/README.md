@@ -22,14 +22,13 @@
 | `POST /api/auth/token` | JWT 발급 | 세션 |
 | `POST /api/auth/refresh` | JWT 재발급 | Refresh Token |
 | `POST /api/auth/logout` | 세션·Refresh Token 폐기 | 선택 |
-| `/api/web/couple/**` | 커플 공간 | 세션 |
 | `DELETE /api/web/account` | 회원탈퇴 | 세션 |
 | `/api/public/tour/places` | TourAPI 장소 | 공개 |
 | `/api/public/trending-*` | 실시간 인기 데이터 | 공개 |
 
 ## 데이터베이스
 
-Flyway가 회원, Refresh Token, 커플 공간, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다.
+Flyway가 회원, Refresh Token, 함께 공간, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다. 과거 커플 공간 테이블은 기존 데이터 보존과 마이그레이션 호환성을 위해 유지됩니다.
 
 ## Render 배포
 

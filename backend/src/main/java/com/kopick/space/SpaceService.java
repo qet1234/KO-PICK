@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SpaceService {
-    private static final Set<String> GROUP_TYPES = Set.of("couple", "friends", "family");
+    private static final Set<String> GROUP_TYPES = Set.of("friends", "family");
     private final JdbcTemplate jdbc;
     private final SpaceInviteAttemptService inviteAttempts;
     private final SecureRandom random = new SecureRandom();
@@ -35,16 +35,15 @@ public class SpaceService {
         List<Map<String, Object>> spaces = jdbc.queryForList("""
             select s.id, s.space_type, s.name, me.role as member_role,
                    (select count(*) from public.space_members sm where sm.space_id = s.id) as member_count,
-                   s.invite_expires_at, s.created_at,
-                   (s.id in (select c.id from public.couples c)) as legacy_couple
+                   s.invite_expires_at, s.created_at
               from public.space_members me
               join public.spaces s on s.id = me.space_id
              where me.user_id = ?
+               and s.space_type <> 'couple'
              order by case s.space_type
                         when 'personal' then 0
-                        when 'couple' then 1
-                        when 'friends' then 2
-                        else 3
+                        when 'friends' then 1
+                        else 2
                       end,
                       s.created_at desc
             """, userId);
@@ -62,10 +61,6 @@ public class SpaceService {
         String normalizedType = normalizeType(type);
         validateName(name, "공간 이름", 80);
         validateName(displayName, "닉네임", 24);
-
-        if ("couple".equals(normalizedType) && hasSpaceType(userId, "couple")) {
-            throw new IllegalStateException("이미 참여 중인 커플 공간이 있습니다.");
-        }
 
         UUID spaceId = UUID.randomUUID();
         String inviteCode = inviteCode();
@@ -101,9 +96,12 @@ public class SpaceService {
         if ("personal".equals(rows.get(0).get("space_type"))) {
             throw new IllegalArgumentException("개인 공간에는 다른 사람을 초대할 수 없습니다.");
         }
+        if ("couple".equals(rows.get(0).get("space_type"))) {
+            throw new IllegalArgumentException("커플 공간 기능은 종료되었습니다.");
+        }
 
         int memberCount = memberCount(spaceId);
-        int memberLimit = memberLimit(String.valueOf(rows.get(0).get("space_type")));
+        int memberLimit = memberLimit();
         if (memberCount >= memberLimit) throw new IllegalStateException("이 공간의 참여 인원이 모두 찼습니다.");
 
         String code = inviteCode();
@@ -142,11 +140,9 @@ public class SpaceService {
 
             UUID spaceId = (UUID) rows.get(0).get("id");
             String type = String.valueOf(rows.get(0).get("space_type"));
-            if ("couple".equals(type) && hasSpaceType(userId, "couple")) {
-                throw new IllegalStateException("이미 참여 중인 커플 공간이 있습니다.");
-            }
+            if ("couple".equals(type)) throw new IllegalArgumentException("커플 공간 기능은 종료되었습니다.");
             if (isMember(spaceId, userId)) throw new IllegalStateException("이미 참여 중인 공간입니다.");
-            if (memberCount(spaceId) >= memberLimit(type)) {
+            if (memberCount(spaceId) >= memberLimit()) {
                 throw new IllegalStateException("이 공간의 참여 인원이 모두 찼습니다.");
             }
 
@@ -220,19 +216,9 @@ public class SpaceService {
     private String normalizeType(String type) {
         String normalized = type == null ? "" : type.trim().toLowerCase();
         if (!GROUP_TYPES.contains(normalized)) {
-            throw new IllegalArgumentException("커플, 친구 또는 가족 공간을 선택해 주세요.");
+            throw new IllegalArgumentException("친구 또는 가족 공간을 선택해 주세요.");
         }
         return normalized;
-    }
-
-    private boolean hasSpaceType(UUID userId, String type) {
-        Integer count = jdbc.queryForObject("""
-            select count(*)
-              from public.space_members me
-              join public.spaces s on s.id = me.space_id
-             where me.user_id = ? and s.space_type = ?
-            """, Integer.class, userId, type);
-        return count != null && count > 0;
     }
 
     private boolean isMember(UUID spaceId, UUID userId) {
@@ -250,8 +236,8 @@ public class SpaceService {
         return count == null ? 0 : count;
     }
 
-    private int memberLimit(String type) {
-        return "couple".equals(type) ? 2 : 20;
+    private int memberLimit() {
+        return 20;
     }
 
     private void validateName(String value, String label, int maxLength) {

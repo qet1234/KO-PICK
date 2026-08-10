@@ -34,8 +34,7 @@ const journeyCards = [
 ] as const;
 
 const webServices = [
-  { title: '함께 공간', description: '개인·커플·친구·가족 공간', path: '/spaces' },
-  { title: '커플 공간', description: '초대와 함께 일정 관리', path: '/couple' },
+  { title: '함께 공간', description: '개인·친구·가족 공간', path: '/spaces' },
   { title: '예약 관리', description: '예약 계획과 일정 확인', path: '/reservations' },
   { title: '고객지원', description: '문의·피드백 보내기', path: '/support' },
 ] as const;
