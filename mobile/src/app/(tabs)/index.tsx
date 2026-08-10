@@ -6,7 +6,6 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
-import { LiveWeatherCard } from '@/components/live-weather-card';
 import { MotionPressable } from '@/components/motion-pressable';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
@@ -74,13 +73,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={[styles.container, compact && styles.containerCompact]}>
-        <View style={styles.intro}>
-          <Text style={styles.brand}>오늘어디</Text>
-        </View>
-
-        <LiveWeatherCard />
-
-        <View style={styles.section}>
+        <View style={[styles.section, styles.firstSection]}>
           <Text style={styles.eyebrow}>오늘어디 JOURNEY</Text>
           <Text style={styles.sectionTitle}>누구와 가나요?</Text>
           <Text style={styles.sectionDescription}>함께하는 사람을 고르면 아래 코스 설정에 바로 반영됩니다.</Text>
@@ -174,9 +167,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
   container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
-  containerCompact: { paddingHorizontal: 14 }, intro: { marginBottom: 12 }, brand: { color: '#ff3b36', fontSize: 15, fontWeight: '900', letterSpacing: 1.4 },
-  title: { marginTop: 9, color: '#101010', fontSize: 30, fontWeight: '900', lineHeight: 38 }, titleCompact: { fontSize: 27, lineHeight: 34 },
-  subtitle: { marginTop: 9, color: '#71716d', fontSize: 13, lineHeight: 20 }, section: { marginTop: 30 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  containerCompact: { paddingHorizontal: 14 }, section: { marginTop: 30 }, firstSection: { marginTop: 0 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   sectionTitle: { marginTop: 5, color: '#101010', fontSize: 23, fontWeight: '900' }, sectionDescription: { marginTop: 7, marginBottom: 5, color: '#71716d', fontSize: 13, lineHeight: 19 },
   grid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, journeyCard: { width: '48%', minHeight: 150, borderWidth: 1, borderColor: '#dadad4', borderRadius: 20, backgroundColor: '#ffffff', padding: 15 },
   journeyCardSelected: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' }, cardNumber: { color: '#ff3b36', fontSize: 10, fontWeight: '900' }, journeyTitle: { marginTop: 16, color: '#101010', fontSize: 18, fontWeight: '900' },
