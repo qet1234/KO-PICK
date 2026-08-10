@@ -38,7 +38,7 @@ export function NaverPlacesMap<T extends MapPlace>({ places, selectedId, onSelec
           longitude={place.longitude}
           caption={{
             text: place.name,
-            color: selectedId === place.id ? '#146b45' : '#27352e',
+            color: selectedId === place.id ? '#ff3b36' : '#27352e',
             haloColor: '#ffffff',
             textSize: selectedId === place.id ? 14 : 12,
           }}

@@ -30,13 +30,13 @@ export default function AuthCallbackScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ActivityIndicator color="#146b45" size="large" />
+      <ActivityIndicator color="#ff3b36" size="large" />
       <Text style={styles.message}>{message}</Text>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f8f6', padding: 24 },
-  message: { marginTop: 16, color: '#34423a', fontSize: 15, lineHeight: 22, textAlign: 'center' },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7f7f4', padding: 24 },
+  message: { marginTop: 16, color: '#454541', fontSize: 15, lineHeight: 22, textAlign: 'center' },
 });

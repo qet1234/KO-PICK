@@ -104,7 +104,7 @@ export function LiveWeatherCard() {
       <ChoiceChips dark label="시·도" values={koreaRegions} selected={region} onSelect={(value) => { setRegion(value); setDistrict('전체'); }} />
       <ChoiceChips dark label="시·군·구" values={districts} selected={district} onSelect={setDistrict} />
 
-      {loading ? <View style={styles.state}><ActivityIndicator color="#146b45" /><Text style={styles.stateText}>날씨를 불러오고 있어요.</Text></View> : null}
+      {loading ? <View style={styles.state}><ActivityIndicator color="#ff3b36" /><Text style={styles.stateText}>날씨를 불러오고 있어요.</Text></View> : null}
       {!loading && error ? <Text style={styles.error}>{error}</Text> : null}
       {!loading && weather && active ? (
         <>
@@ -147,23 +147,23 @@ export function LiveWeatherCard() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 24, backgroundColor: '#17211c', padding: 18 },
+  card: { borderWidth: 1, borderColor: '#dcdcd6', borderRadius: 24, backgroundColor: '#f8fbff', padding: 18 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
-  headerCopy: { flex: 1 }, eyebrow: { color: '#b7e936', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
-  title: { marginTop: 5, color: '#ffffff', fontSize: 23, fontWeight: '900' },
-  live: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, backgroundColor: '#26332c', paddingHorizontal: 9, paddingVertical: 7 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#caff2c' }, liveText: { color: '#dce4df', fontSize: 10, fontWeight: '800' },
-  state: { minHeight: 170, alignItems: 'center', justifyContent: 'center', gap: 10 }, stateText: { color: '#d5ddd8', fontSize: 13 },
-  error: { marginTop: 18, borderRadius: 14, backgroundColor: '#402424', color: '#ffd7d7', padding: 14, fontSize: 12, lineHeight: 18 },
-  now: { marginTop: 20, flexDirection: 'row', alignItems: 'center', borderRadius: 20, backgroundColor: '#253129', padding: 16 },
-  weatherIcon: { width: 70, fontSize: 48, textAlign: 'center' }, nowCopy: { flex: 1, paddingLeft: 12 }, location: { color: '#cbd5ce', fontSize: 11, fontWeight: '700' },
-  temperature: { marginTop: 2, color: '#ffffff', fontSize: 40, fontWeight: '900' }, condition: { color: '#d6dfd9', fontSize: 12 },
-  metrics: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metric: { width: '48%', borderRadius: 12, backgroundColor: '#253129', padding: 11 },
-  metricLabel: { color: '#9eaaa2', fontSize: 10 }, metricValue: { marginTop: 3, color: '#ffffff', fontSize: 14, fontWeight: '900' },
-  sectionLabel: { marginTop: 18, marginBottom: 9, color: '#ffffff', fontSize: 13, fontWeight: '900' }, forecastRow: { gap: 8, paddingRight: 8 },
-  hourCard: { minWidth: 76, alignItems: 'center', borderWidth: 1, borderColor: '#34453a', borderRadius: 15, backgroundColor: '#253129', paddingHorizontal: 10, paddingVertical: 12 },
-  hourCardSelected: { borderColor: '#caff2c', backgroundColor: '#31402f' }, hour: { color: '#cbd5ce', fontSize: 10, fontWeight: '700' }, hourIcon: { marginTop: 7, fontSize: 22 },
-  hourTemp: { marginTop: 5, color: '#ffffff', fontSize: 14, fontWeight: '900' }, rain: { marginTop: 3, color: '#a6d8ff', fontSize: 10, fontWeight: '800' },
-  dayCard: { minWidth: 110, alignItems: 'center', borderRadius: 15, backgroundColor: '#253129', padding: 12 }, day: { color: '#cbd5ce', fontSize: 10, fontWeight: '700' }, minTemp: { color: '#9eaaa2' },
-  pick: { marginTop: 18, borderRadius: 15, backgroundColor: '#dfffa0', padding: 14 }, pickLabel: { color: '#31530c', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, pickText: { marginTop: 4, color: '#1d2c16', fontSize: 13, fontWeight: '800', lineHeight: 19 },
+  headerCopy: { flex: 1 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  title: { marginTop: 5, color: '#101010', fontSize: 23, fontWeight: '900' },
+  live: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderColor: '#e0e0da', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 9, paddingVertical: 7 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#16a05d' }, liveText: { color: '#454541', fontSize: 10, fontWeight: '800' },
+  state: { minHeight: 170, alignItems: 'center', justifyContent: 'center', gap: 10 }, stateText: { color: '#71716d', fontSize: 13 },
+  error: { marginTop: 18, borderRadius: 14, backgroundColor: '#fff0ee', color: '#a71d19', padding: 14, fontSize: 12, lineHeight: 18 },
+  now: { marginTop: 20, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e7ed', borderRadius: 20, backgroundColor: '#ffffff', padding: 16 },
+  weatherIcon: { width: 70, fontSize: 48, textAlign: 'center' }, nowCopy: { flex: 1, paddingLeft: 12 }, location: { color: '#5c6470', fontSize: 11, fontWeight: '700' },
+  temperature: { marginTop: 2, color: '#101010', fontSize: 40, fontWeight: '900' }, condition: { color: '#454541', fontSize: 12 },
+  metrics: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, metric: { width: '48%', borderWidth: 1, borderColor: '#e2e7ed', borderRadius: 12, backgroundColor: '#ffffff', padding: 11 },
+  metricLabel: { color: '#71716d', fontSize: 10 }, metricValue: { marginTop: 3, color: '#101010', fontSize: 14, fontWeight: '900' },
+  sectionLabel: { marginTop: 18, marginBottom: 9, color: '#101010', fontSize: 13, fontWeight: '900' }, forecastRow: { gap: 8, paddingRight: 8 },
+  hourCard: { minWidth: 76, alignItems: 'center', borderWidth: 1, borderColor: '#e0e5eb', borderRadius: 15, backgroundColor: '#ffffff', paddingHorizontal: 10, paddingVertical: 12 },
+  hourCardSelected: { borderColor: '#3478bd', backgroundColor: '#eef6ff' }, hour: { color: '#5c6470', fontSize: 10, fontWeight: '700' }, hourIcon: { marginTop: 7, fontSize: 22 },
+  hourTemp: { marginTop: 5, color: '#101010', fontSize: 14, fontWeight: '900' }, rain: { marginTop: 3, color: '#2f6fae', fontSize: 10, fontWeight: '800' },
+  dayCard: { minWidth: 110, alignItems: 'center', borderWidth: 1, borderColor: '#e0e0da', borderRadius: 15, backgroundColor: '#ffffff', padding: 12 }, day: { color: '#5c6470', fontSize: 10, fontWeight: '700' }, minTemp: { color: '#71716d' },
+  pick: { marginTop: 18, borderRadius: 15, backgroundColor: '#101010', padding: 14 }, pickLabel: { color: '#ff736d', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, pickText: { marginTop: 4, color: '#ffffff', fontSize: 13, fontWeight: '800', lineHeight: 19 },
 });

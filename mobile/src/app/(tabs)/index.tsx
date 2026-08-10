@@ -66,7 +66,7 @@ export default function HomeScreen() {
 
   const openWebService = async (path: string) => {
     await WebBrowser.openBrowserAsync(`${appConfig.webUrl.replace(/\/$/, '')}${path}`, {
-      controlsColor: '#146b45',
+      controlsColor: '#ff3b36',
       presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
     });
   };
@@ -76,8 +76,6 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={[styles.container, compact && styles.containerCompact]}>
         <View style={styles.intro}>
           <Text style={styles.brand}>오늘어디</Text>
-          <Text style={[styles.title, compact && styles.titleCompact]}>웹의 모든 기능을{`\n`}모바일에서도 편하게</Text>
-          <Text style={styles.subtitle}>Android·iOS 화면 크기에 맞춰 한 손으로 보기 좋게 정리했습니다.</Text>
         </View>
 
         <LiveWeatherCard />
@@ -174,26 +172,26 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f5f8f6' },
+  safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
   container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
-  containerCompact: { paddingHorizontal: 14 }, intro: { marginBottom: 22 }, brand: { color: '#146b45', fontSize: 15, fontWeight: '900', letterSpacing: 1.4 },
-  title: { marginTop: 9, color: '#17211c', fontSize: 30, fontWeight: '900', lineHeight: 38 }, titleCompact: { fontSize: 27, lineHeight: 34 },
-  subtitle: { marginTop: 9, color: '#657069', fontSize: 13, lineHeight: 20 }, section: { marginTop: 30 }, eyebrow: { color: '#146b45', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
-  sectionTitle: { marginTop: 5, color: '#17211c', fontSize: 23, fontWeight: '900' }, sectionDescription: { marginTop: 7, marginBottom: 5, color: '#68736d', fontSize: 13, lineHeight: 19 },
-  grid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, journeyCard: { width: '48%', minHeight: 150, borderWidth: 1, borderColor: '#dce5e0', borderRadius: 20, backgroundColor: '#ffffff', padding: 15 },
-  journeyCardSelected: { borderColor: '#146b45', backgroundColor: '#e8f7ef' }, cardNumber: { color: '#146b45', fontSize: 10, fontWeight: '900' }, journeyTitle: { marginTop: 16, color: '#1d2922', fontSize: 18, fontWeight: '900' },
-  journeyDescription: { marginTop: 5, color: '#69756e', fontSize: 11, lineHeight: 16 }, cardAction: { marginTop: 'auto', color: '#146b45', fontSize: 11, fontWeight: '900' },
+  containerCompact: { paddingHorizontal: 14 }, intro: { marginBottom: 12 }, brand: { color: '#ff3b36', fontSize: 15, fontWeight: '900', letterSpacing: 1.4 },
+  title: { marginTop: 9, color: '#101010', fontSize: 30, fontWeight: '900', lineHeight: 38 }, titleCompact: { fontSize: 27, lineHeight: 34 },
+  subtitle: { marginTop: 9, color: '#71716d', fontSize: 13, lineHeight: 20 }, section: { marginTop: 30 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  sectionTitle: { marginTop: 5, color: '#101010', fontSize: 23, fontWeight: '900' }, sectionDescription: { marginTop: 7, marginBottom: 5, color: '#71716d', fontSize: 13, lineHeight: 19 },
+  grid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, journeyCard: { width: '48%', minHeight: 150, borderWidth: 1, borderColor: '#dadad4', borderRadius: 20, backgroundColor: '#ffffff', padding: 15 },
+  journeyCardSelected: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' }, cardNumber: { color: '#ff3b36', fontSize: 10, fontWeight: '900' }, journeyTitle: { marginTop: 16, color: '#101010', fontSize: 18, fontWeight: '900' },
+  journeyDescription: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 16 }, cardAction: { marginTop: 'auto', color: '#ff3b36', fontSize: 11, fontWeight: '900' },
   categoryCard: { width: '48%', minHeight: 166, borderRadius: 20, backgroundColor: '#ffffff', padding: 15 }, cardEnglish: { marginTop: 16, color: '#7b867f', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
-  categoryTitle: { marginTop: 3, color: '#1d2922', fontSize: 20, fontWeight: '900' }, categoryDescription: { marginTop: 5, color: '#69756e', fontSize: 11, lineHeight: 16 }, categoryArrow: { marginTop: 'auto', color: '#146b45', fontSize: 21, fontWeight: '900' },
-  builder: { marginTop: 12, borderRadius: 23, backgroundColor: '#ffffff', padding: 18 }, submit: { minHeight: 50, marginTop: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: '#146b45' },
+  categoryTitle: { marginTop: 3, color: '#101010', fontSize: 20, fontWeight: '900' }, categoryDescription: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 16 }, categoryArrow: { marginTop: 'auto', color: '#ff3b36', fontSize: 21, fontWeight: '900' },
+  builder: { marginTop: 12, borderRadius: 23, backgroundColor: '#ffffff', padding: 18 }, submit: { minHeight: 50, marginTop: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 15, backgroundColor: '#ff3b36' },
   disabled: { opacity: 0.65 }, submitText: { color: '#ffffff', fontSize: 15, fontWeight: '900' }, error: { marginTop: 12, color: '#aa2f2f', fontSize: 12, lineHeight: 18 },
-  results: { marginTop: 28 }, source: { marginTop: 6, marginBottom: 8, color: '#758079', fontSize: 11 }, resultCard: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', padding: 12 },
-  score: { marginTop: 13, color: '#146b45', fontSize: 11, fontWeight: '900' }, resultTitle: { marginTop: 5, color: '#1d2922', fontSize: 18, fontWeight: '900' }, resultMeta: { marginTop: 5, color: '#6a756e', fontSize: 11, lineHeight: 17 }, reason: { marginTop: 8, marginBottom: 13, color: '#435048', fontSize: 12, lineHeight: 19 },
-  comingSoon: { minHeight: 290, marginTop: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: '#17211c', padding: 24 }, dots: { width: 62, height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#8fae36', borderRadius: 20, backgroundColor: '#273323' },
+  results: { marginTop: 28 }, source: { marginTop: 6, marginBottom: 8, color: '#71716d', fontSize: 11 }, resultCard: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', padding: 12 },
+  score: { marginTop: 13, color: '#ff3b36', fontSize: 11, fontWeight: '900' }, resultTitle: { marginTop: 5, color: '#101010', fontSize: 18, fontWeight: '900' }, resultMeta: { marginTop: 5, color: '#71716d', fontSize: 11, lineHeight: 17 }, reason: { marginTop: 8, marginBottom: 13, color: '#454541', fontSize: 12, lineHeight: 19 },
+  comingSoon: { minHeight: 290, marginTop: 30, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: '#101010', padding: 24 }, dots: { width: 62, height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderColor: '#caff2c', borderRadius: 20, backgroundColor: '#202020' },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#caff2c' }, comingLabel: { marginTop: 18, color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.7 }, comingTitle: { marginTop: 10, color: '#ffffff', fontSize: 25, fontWeight: '900', lineHeight: 32, textAlign: 'center' },
-  serviceList: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 16 }, serviceButton: { minHeight: 68, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e2e8e4' },
-  serviceCopy: { flex: 1, paddingVertical: 12 }, serviceTitle: { color: '#1d2922', fontSize: 14, fontWeight: '900' }, serviceDescription: { marginTop: 3, color: '#6c7770', fontSize: 11 }, serviceArrow: { color: '#146b45', fontSize: 20, fontWeight: '900' },
-  comingDescription: { marginTop: 12, color: '#c8d0cb', fontSize: 12, lineHeight: 20, textAlign: 'center' }, comingStatus: { marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#536059', borderRadius: 999, color: '#d7ddd9', fontSize: 10, fontWeight: '800', paddingHorizontal: 14, paddingVertical: 8 },
-  privacy: { marginTop: 30, borderRadius: 24, backgroundColor: '#17211c', padding: 20 }, privacyEyebrow: { color: '#b7e936', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, privacyTitle: { marginTop: 7, color: '#ffffff', fontSize: 20, fontWeight: '900', lineHeight: 27 }, privacyText: { marginTop: 8, marginBottom: 10, color: '#c8d0cb', fontSize: 12, lineHeight: 19 },
-  footerLink: { minHeight: 46, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3d4942' }, footerLinkText: { color: '#e6ece8', fontSize: 13, fontWeight: '800' }, copyright: { marginTop: 14, color: '#8e9992', fontSize: 10 },
+  serviceList: { marginTop: 12, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 16 }, serviceButton: { minHeight: 68, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dadad4' },
+  serviceCopy: { flex: 1, paddingVertical: 12 }, serviceTitle: { color: '#101010', fontSize: 14, fontWeight: '900' }, serviceDescription: { marginTop: 3, color: '#71716d', fontSize: 11 }, serviceArrow: { color: '#ff3b36', fontSize: 20, fontWeight: '900' },
+  comingDescription: { marginTop: 12, color: '#c8c8c2', fontSize: 12, lineHeight: 20, textAlign: 'center' }, comingStatus: { marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#3a3a3a', borderRadius: 999, color: '#deded8', fontSize: 10, fontWeight: '800', paddingHorizontal: 14, paddingVertical: 8 },
+  privacy: { marginTop: 30, borderRadius: 24, backgroundColor: '#101010', padding: 20 }, privacyEyebrow: { color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, privacyTitle: { marginTop: 7, color: '#ffffff', fontSize: 20, fontWeight: '900', lineHeight: 27 }, privacyText: { marginTop: 8, marginBottom: 10, color: '#c8c8c2', fontSize: 12, lineHeight: 19 },
+  footerLink: { minHeight: 46, justifyContent: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#3a3a3a' }, footerLinkText: { color: '#f0f0eb', fontSize: 13, fontWeight: '800' }, copyright: { marginTop: 14, color: '#8b8b85', fontSize: 10 },
 });

@@ -15,9 +15,9 @@ export function ChoiceChips({ label, values, selected, onSelect, wrap = false, d
 }
 
 const styles = StyleSheet.create({
-  group: { marginTop: 18 }, label: { marginBottom: 9, color: '#34423a', fontSize: 13, fontWeight: '900' }, labelDark: { color: '#dce5df' },
+  group: { marginTop: 18 }, label: { marginBottom: 9, color: '#454541', fontSize: 13, fontWeight: '900' }, labelDark: { color: '#dce5df' },
   row: { gap: 8, paddingRight: 18 }, wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minWidth: 56, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dce5e0', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 13, paddingVertical: 9 },
-  chipDark: { borderColor: '#45554b', backgroundColor: '#253129' }, chipSelected: { borderColor: '#146b45', backgroundColor: '#e7f6ee' },
-  chipText: { color: '#68736d', fontSize: 12, fontWeight: '700' }, chipTextDark: { color: '#d3dcd6' }, chipTextSelected: { color: '#146b45', fontWeight: '900' },
+  chip: { minWidth: 56, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 13, paddingVertical: 9 },
+  chipDark: { borderColor: '#45554b', backgroundColor: '#253129' }, chipSelected: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' },
+  chipText: { color: '#71716d', fontSize: 12, fontWeight: '700' }, chipTextDark: { color: '#d3dcd6' }, chipTextSelected: { color: '#ff3b36', fontWeight: '900' },
 });

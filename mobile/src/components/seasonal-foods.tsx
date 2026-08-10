@@ -54,11 +54,11 @@ export function SeasonalFoods() {
 }
 
 const styles = StyleSheet.create({
-  section: { marginTop: 30 }, eyebrow: { color: '#146b45', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
-  title: { marginTop: 5, color: '#17211c', fontSize: 23, fontWeight: '900' }, subtitle: { marginTop: 7, color: '#68736d', fontSize: 13, lineHeight: 19 },
-  tabs: { marginTop: 16, flexDirection: 'row', gap: 8 }, tab: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d9e2dc', borderRadius: 13, backgroundColor: '#ffffff' },
-  tabText: { color: '#526159', fontSize: 13, fontWeight: '900' }, tabTextSelected: { color: '#ffffff' },
-  card: { marginTop: 12, borderRadius: 22, padding: 18 }, months: { fontSize: 11, fontWeight: '900', letterSpacing: 0.6 }, cardTitle: { marginTop: 5, marginBottom: 8, color: '#1d2822', fontSize: 19, fontWeight: '900' },
+  section: { marginTop: 30 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  title: { marginTop: 5, color: '#101010', fontSize: 23, fontWeight: '900' }, subtitle: { marginTop: 7, color: '#71716d', fontSize: 13, lineHeight: 19 },
+  tabs: { marginTop: 16, flexDirection: 'row', gap: 8 }, tab: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 13, backgroundColor: '#ffffff' },
+  tabText: { color: '#71716d', fontSize: 13, fontWeight: '900' }, tabTextSelected: { color: '#ffffff' },
+  card: { marginTop: 12, borderRadius: 22, padding: 18 }, months: { fontSize: 11, fontWeight: '900', letterSpacing: 0.6 }, cardTitle: { marginTop: 5, marginBottom: 8, color: '#101010', fontSize: 19, fontWeight: '900' },
   food: { minHeight: 58, flexDirection: 'row', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(40,55,46,0.15)' }, number: { width: 34, fontSize: 11, fontWeight: '900' },
-  foodCopy: { flex: 1, paddingVertical: 10 }, foodName: { color: '#253129', fontSize: 14, fontWeight: '900' }, foodNote: { marginTop: 3, color: '#5d6961', fontSize: 11, lineHeight: 16 },
+  foodCopy: { flex: 1, paddingVertical: 10 }, foodName: { color: '#253129', fontSize: 14, fontWeight: '900' }, foodNote: { marginTop: 3, color: '#71716d', fontSize: 11, lineHeight: 16 },
 });

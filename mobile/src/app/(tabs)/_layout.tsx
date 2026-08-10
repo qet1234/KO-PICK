@@ -27,7 +27,7 @@ function AnimatedTabButton({ onPressIn, onPressOut, style, ...props }: BottomTab
 }
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  return <Text maxFontSizeMultiplier={1.1} style={{ color: focused ? '#146b45' : '#879089', fontSize: 17, fontWeight: '900' }}>{label}</Text>;
+  return <Text maxFontSizeMultiplier={1.1} style={{ color: focused ? '#ff3b36' : '#71716d', fontSize: 17, fontWeight: '900' }}>{label}</Text>;
 }
 
 export default function TabLayout() {
@@ -35,10 +35,10 @@ export default function TabLayout() {
   const { width } = useWindowDimensions();
   const compact = width < 360;
   return <Tabs screenOptions={{
-    headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: '#146b45', tabBarInactiveTintColor: '#879089',
+    headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: '#ff3b36', tabBarInactiveTintColor: '#71716d',
     tabBarLabelStyle: { fontSize: compact ? 9 : 10, fontWeight: '800', marginBottom: 1 },
-    tabBarActiveBackgroundColor: '#e9f7ef', tabBarItemStyle: { marginHorizontal: compact ? 1 : 3, marginVertical: 4, borderRadius: 14 },
-    tabBarStyle: { height: 60 + insets.bottom, paddingHorizontal: compact ? 2 : 5, paddingTop: 3, paddingBottom: Math.max(insets.bottom, 6), borderTopColor: '#e2e8e4' },
+    tabBarActiveBackgroundColor: '#fff0ee', tabBarItemStyle: { marginHorizontal: compact ? 1 : 3, marginVertical: 4, borderRadius: 14 },
+    tabBarStyle: { height: 60 + insets.bottom, paddingHorizontal: compact ? 2 : 5, paddingTop: 3, paddingBottom: Math.max(insets.bottom, 6), borderTopColor: '#dadad4' },
     tabBarButton: (props) => <AnimatedTabButton {...props} />,
   }}>
     <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: ({ focused }) => <TabIcon label="K" focused={focused} /> }} />
