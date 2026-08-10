@@ -33,7 +33,7 @@ export function PlaceImage({
 }
 
 const styles = StyleSheet.create({
-  wrapper: { overflow: 'hidden', borderRadius: 14, backgroundColor: '#eef2ef' },
+  wrapper: { overflow: 'hidden', borderRadius: 14, backgroundColor: '#eee9dd' },
   image: { width: '100%', height: 160 },
   attribution: {
     position: 'absolute',
