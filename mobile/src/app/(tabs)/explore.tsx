@@ -20,17 +20,46 @@ export default function ExploreScreen() {
   const [category, setCategory] = useState<PlaceQuery['category']>('전체');
   const [places, setPlaces] = useState<TourPlace[]>([]);
   const [selected, setSelected] = useState<TourPlace | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
-  const load = async (nextRegion = region, nextCategory = category) => {
-    setLoading(true); setError('');
+  const load = async (nextRegion = region, nextCategory = category, nextPage = 1, append = false) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
+    setError('');
     try {
-      const result = await fetchTourPlaces({ region: nextRegion, category: nextCategory, pageSize: 30 });
-      setPlaces(result.places); setSelected(result.places[0] ?? null);
+      const result = await fetchTourPlaces({ region: nextRegion, category: nextCategory, page: nextPage, pageSize: 30 });
+      setPlaces((current) => {
+        if (!append) return result.places;
+        const knownIds = new Set(current.map((place) => place.id));
+        return [...current, ...result.places.filter((place) => !knownIds.has(place.id))];
+      });
+      if (!append) setSelected(result.places[0] ?? null);
+      setPage(result.pagination.pageNo);
+      setTotalCount(result.pagination.totalCount);
+      setTotalPages(result.pagination.totalPages);
     } catch (nextError) {
-      setPlaces([]); setSelected(null); setError(nextError instanceof Error ? nextError.message : '장소를 불러오지 못했습니다.');
-    } finally { setLoading(false); }
+      if (!append) {
+        setPlaces([]);
+        setSelected(null);
+        setPage(1);
+        setTotalCount(0);
+        setTotalPages(1);
+      }
+      setError(nextError instanceof Error ? nextError.message : '장소를 불러오지 못했습니다.');
+    } finally {
+      if (append) setLoadingMore(false);
+      else setLoading(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (loading || loadingMore || page >= totalPages || places.length >= totalCount) return;
+    void load(region, category, page + 1, true);
   };
 
   useEffect(() => {
@@ -53,18 +82,23 @@ export default function ExploreScreen() {
       <View style={styles.filters}>
         <ChoiceChips label="지역" values={regions} selected={region} onSelect={setRegion} />
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => setCategory(value as PlaceQuery['category'])} />
-        <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load()} style={[styles.searchButton, loading && styles.disabled]}>
+        <MotionPressable accessibilityRole="button" disabled={loading || loadingMore} onPress={() => void load(region, category, 1)} style={[styles.searchButton, (loading || loadingMore) && styles.disabled]}>
           {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>선택 조건으로 찾기</Text>}
         </MotionPressable>{error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
       <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={setSelected} /></View>
       {selected ? <View style={styles.selectedCard}><Text style={styles.selectedLabel}>지도에서 선택한 장소</Text><Text style={styles.selectedTitle}>{selected.name}</Text>
         <Text style={styles.selectedMeta}>{selected.category} · {selected.address}</Text><RouteMapChooser place={selected} /></View> : null}
-      {places.length > 0 ? <View style={styles.list}><Text style={styles.listTitle}>장소 {places.length}곳</Text><Text style={styles.source}>출처: 한국관광공사 TourAPI · 지도: 네이버 지도</Text>
+      {places.length > 0 ? <View style={styles.list}>
+        <View style={styles.listHeading}><Text style={styles.listTitle}>장소 {places.length.toLocaleString('ko-KR')}곳</Text><Text style={styles.totalCount}>전체 {totalCount.toLocaleString('ko-KR')}곳</Text></View>
+        <Text style={styles.source}>출처: 한국관광공사 TourAPI · 지도: 네이버 지도</Text>
         {places.map((place) => <MotionPressable key={place.id} onPress={() => setSelected(place)} style={[styles.card, selected?.id === place.id && styles.cardSelected]}>
           <PlaceImage name={place.name} imageUrl={place.imageUrl} attribution={place.imageAttribution} copyrightCode={place.imageCopyrightCode} modificationAllowed={place.imageModificationAllowed} />
           <Text style={styles.cardTitle}>{place.name}</Text><Text style={styles.cardMeta}>{place.category} · {place.address}</Text><RouteMapChooser place={place} />
         </MotionPressable>)}
+        {page < totalPages && places.length < totalCount ? <MotionPressable accessibilityRole="button" disabled={loadingMore} onPress={loadMore} style={[styles.loadMoreButton, loadingMore && styles.disabled]}>
+          {loadingMore ? <><ActivityIndicator color="#ff3b36" /><Text style={styles.loadMoreText}>다음 장소를 불러오고 있어요</Text></> : <><Text style={styles.loadMoreText}>더 많은 장소 보기</Text><Text style={styles.loadMoreCount}>{places.length.toLocaleString('ko-KR')} / {totalCount.toLocaleString('ko-KR')}</Text></>}
+        </MotionPressable> : <View style={styles.listEnd}><Text style={styles.listEndText}>조건에 맞는 장소를 모두 확인했습니다.</Text></View>}
       </View> : null}
     </ScrollView>
   </SafeAreaView>;
@@ -77,6 +111,8 @@ const styles = StyleSheet.create({
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
-  list: { marginTop: 26 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
+  list: { marginTop: 26 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
   card: { marginTop: 12, borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 13, color: '#71716d', fontSize: 11, lineHeight: 17 },
+  loadMoreButton: { minHeight: 62, marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, borderWidth: 1, borderColor: '#ff3b36', borderRadius: 17, backgroundColor: '#fff0ee', paddingHorizontal: 18 }, loadMoreText: { color: '#ff3b36', fontSize: 14, fontWeight: '900' }, loadMoreCount: { color: '#a71d19', fontSize: 11, fontWeight: '800' },
+  listEnd: { minHeight: 58, marginTop: 18, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#efefeb', paddingHorizontal: 18 }, listEndText: { color: '#71716d', fontSize: 12, fontWeight: '800' },
 });
