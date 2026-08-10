@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LegalFooter from "@/components/LegalFooter";
+import TrafficTracker from "@/components/TrafficTracker";
 import "./globals.css";
 import "./legal.css";
 
@@ -20,6 +21,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <TrafficTracker />
         {children}
         <LegalFooter />
       </body>
