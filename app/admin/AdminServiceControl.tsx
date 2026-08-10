@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import type { AppServiceMode, AppServiceStatusRecord } from "@/utils/app-service-status";
+import { useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  appServiceFeatureOptions,
+  type AppServiceMode,
+  type AppServiceStatusRecord,
+} from "@/utils/app-service-status";
 
 const modeLabels: Record<AppServiceMode, string> = {
   maintenance: "전체 점검",
@@ -26,7 +30,8 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
   const [message, setMessage] = useState(initialStatus.message);
   const [startsAt, setStartsAt] = useState(koreaDateTimeInput(initialStatus.startsAt));
   const [endsAt, setEndsAt] = useState(koreaDateTimeInput(initialStatus.endsAt));
-  const [affectedFeatures, setAffectedFeatures] = useState(initialStatus.affectedFeatures.join(", "));
+  const [affectedFeatures, setAffectedFeatures] = useState(initialStatus.affectedFeatures);
+  const [customFeature, setCustomFeature] = useState("");
   const [androidMinVersion, setAndroidMinVersion] = useState(initialStatus.androidMinVersion);
   const [iosMinVersion, setIosMinVersion] = useState(initialStatus.iosMinVersion);
   const [androidForceUpdate, setAndroidForceUpdate] = useState(initialStatus.androidForceUpdate);
@@ -36,6 +41,43 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ error?: boolean; message: string } | null>(null);
 
+  const toggleFeature = (feature: string) => {
+    setAffectedFeatures((current) => {
+      if (current.includes(feature)) return current.filter((item) => item !== feature);
+      if (current.length >= 12) {
+        setResult({ error: true, message: "기능은 최대 12개까지 선택할 수 있습니다." });
+        return current;
+      }
+      return [...current, feature];
+    });
+  };
+
+  const addCustomFeature = () => {
+    const feature = customFeature.trim();
+    if (!feature) return;
+    if (feature.length > 40) {
+      setResult({ error: true, message: "직접 추가 기능은 40자 이내로 입력해 주세요." });
+      return;
+    }
+    if (affectedFeatures.includes(feature)) {
+      setCustomFeature("");
+      return;
+    }
+    if (affectedFeatures.length >= 12) {
+      setResult({ error: true, message: "기능은 최대 12개까지 선택할 수 있습니다." });
+      return;
+    }
+    setAffectedFeatures((current) => [...current, feature]);
+    setCustomFeature("");
+    setResult(null);
+  };
+
+  const addCustomFeatureOnEnter = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addCustomFeature();
+  };
+
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
@@ -43,7 +85,7 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
     try {
       const response = await fetch("/api/admin/app-status", {
         body: JSON.stringify({
-          affectedFeatures: affectedFeatures.split(",").map((item) => item.trim()).filter(Boolean),
+          affectedFeatures,
           androidForceUpdate,
           androidMinVersion,
           androidStoreUrl,
@@ -108,11 +150,62 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
             <span>점검 종료 시간 <small>한국 시간</small></span>
             <input onChange={(event) => setEndsAt(event.target.value)} type="datetime-local" value={endsAt} />
           </label>
-          <label className="service-field service-field-wide">
-            <span>영향받는 기능 <small>쉼표로 구분</small></span>
-            <input onChange={(event) => setAffectedFeatures(event.target.value)} placeholder="장소 찾기, 코스 추천, 직장인 식사" value={affectedFeatures} />
-          </label>
         </div>
+
+        <fieldset className="service-feature-picker">
+          <legend>기능 선택</legend>
+          <div className="service-feature-heading">
+            <p>
+              {mode === "operational"
+                ? "정상 운영 상태에서도 관리할 기능을 선택해 둘 수 있습니다. 앱에는 점검 안내가 표시되지 않습니다."
+                : "선택한 기능은 Android·iOS 점검 안내의 영향받는 기능에 표시됩니다."}
+            </p>
+            <div>
+              <button
+                onClick={() => setAffectedFeatures((current) => Array.from(new Set([...appServiceFeatureOptions, ...current])).slice(0, 12))}
+                type="button"
+              >전체 선택</button>
+              <button onClick={() => setAffectedFeatures([])} type="button">선택 해제</button>
+            </div>
+          </div>
+          <div className="service-feature-options">
+            {appServiceFeatureOptions.map((feature) => (
+              <label className="service-feature-option" key={feature}>
+                <input
+                  checked={affectedFeatures.includes(feature)}
+                  onChange={() => toggleFeature(feature)}
+                  type="checkbox"
+                />
+                <span>{feature}</span>
+              </label>
+            ))}
+          </div>
+          <div className="service-custom-feature">
+            <label className="service-field">
+              <span>기타 기능 직접 추가 <small>최대 40자</small></span>
+              <input
+                maxLength={40}
+                onChange={(event) => setCustomFeature(event.target.value)}
+                onKeyDown={addCustomFeatureOnEnter}
+                placeholder="예: 네이버 예약"
+                value={customFeature}
+              />
+            </label>
+            <button disabled={!customFeature.trim()} onClick={addCustomFeature} type="button">추가</button>
+          </div>
+          {affectedFeatures.length > 0 ? (
+            <div className="service-selected-features">
+              <strong>선택됨 {affectedFeatures.length}/12</strong>
+              <div>
+                {affectedFeatures.map((feature) => (
+                  <button aria-label={`${feature} 선택 해제`} key={feature} onClick={() => toggleFeature(feature)} type="button">
+                    {feature}<span aria-hidden="true">×</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : <p className="service-feature-empty">선택한 기능이 없습니다.</p>}
+        </fieldset>
 
         <div className="update-control-grid">
           <article>

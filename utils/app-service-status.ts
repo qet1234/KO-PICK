@@ -1,5 +1,18 @@
 export type AppServiceMode = "operational" | "partial" | "maintenance";
 
+export const appServiceFeatureOptions = [
+  "홈 추천",
+  "장소 찾기",
+  "코스 설정",
+  "직장인 회식",
+  "빠른 점심",
+  "실시간 날씨",
+  "네이버 지도",
+  "로그인·계정",
+  "커플 공간",
+  "공유 기능",
+] as const;
+
 export type AppServiceStatusRecord = {
   affectedFeatures: string[];
   androidForceUpdate: boolean;
