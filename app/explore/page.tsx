@@ -23,6 +23,8 @@ interface ExplorePageProps {
     category?: string | string[];
     detail?: string | string[];
     journey?: string | string[];
+    query?: string | string[];
+    region?: string | string[];
   }>;
 }
 
@@ -49,6 +51,8 @@ export default async function ExplorePage({
     <FastCategoryExplorePage
       initialCategory={initialCategory}
       initialDetail={firstValue(params.detail) ?? "전체"}
+      initialQuery={firstValue(params.query) ?? ""}
+      initialRegion={firstValue(params.region) ?? "전국"}
       journey={firstValue(params.journey) ?? ""}
     />
   );

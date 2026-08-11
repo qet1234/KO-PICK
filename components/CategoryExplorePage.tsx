@@ -334,6 +334,8 @@ function TourPlaceCardMedia({ place }: { place: Place }) {
 interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
   initialDetail?: string;
+  initialQuery?: string;
+  initialRegion?: string;
   journeyLabel?: string;
   resultLabel?: string;
 }
@@ -341,6 +343,8 @@ interface CategoryExplorePageProps {
 export default function CategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
+  initialQuery = "",
+  initialRegion = "전국",
   journeyLabel,
   resultLabel,
 }: CategoryExplorePageProps) {
@@ -364,8 +368,9 @@ export default function CategoryExplorePage({
       ? [initialDetail]
       : []
   );
-  const [selectedRegion, setSelectedRegion] =
-    useState<RegionName>("전국");
+  const [selectedRegion, setSelectedRegion] = useState<RegionName>(() =>
+    initialRegion in regionCenters ? initialRegion as RegionName : "전국"
+  );
   const [selectedSubregion, setSelectedSubregion] = useState("전체");
   const [subregions, setSubregions] = useState<SubregionOption[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
@@ -376,8 +381,9 @@ export default function CategoryExplorePage({
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
   const [openNowOnly, setOpenNowOnly] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const normalizedInitialQuery = initialQuery.trim().slice(0, 80);
+  const [searchInput, setSearchInput] = useState(normalizedInitialQuery);
+  const [searchQuery, setSearchQuery] = useState(normalizedInitialQuery);
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());

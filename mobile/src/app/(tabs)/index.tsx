@@ -1,19 +1,13 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
-import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LiveWeatherCard } from '@/components/live-weather-card';
 import { MotionPressable } from '@/components/motion-pressable';
 import { SeasonalFoods } from '@/components/seasonal-foods';
 import { appConfig } from '@/lib/config';
-
-const categoryCards = [
-  { number: '01', english: 'DINING', title: '음식', category: '맛집', description: '한식부터 세계음식까지', background: '#fff1ef', accent: '#ff4b45', border: '#ffc2bd', depth: '#d73530' },
-  { number: '02', english: 'CAFE', title: '카페', category: '카페', description: '개성 있는 카페와 분위기별 추천', background: '#fff7e8', accent: '#d98a18', border: '#f1d19d', depth: '#a96308' },
-  { number: '03', english: 'FESTIVAL', title: '축제', category: '축제', description: '축제·페스티벌·지역 행사', background: '#f6efff', accent: '#8457cc', border: '#d9c5f5', depth: '#6035a4' },
-  { number: '04', english: 'ATTRACTION', title: '관광지', category: '관광지', description: '박물관·전시회·공원', background: '#eaf8f3', accent: '#278564', border: '#b9dfd1', depth: '#176348' },
-] as const;
 
 const journeyCards = [
   { number: '01', label: '혼자', title: '내 취향대로 가볍게', description: '혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소만 모아보세요.' },
@@ -24,22 +18,77 @@ const journeyCards = [
 
 const privacyCards = [
   { number: '01', title: '필요한 정보만 처리', description: '소셜 로그인 정보는 회원 식별과 서비스 제공 목적으로만 사용합니다.' },
-  { number: '02', title: '공간 정보 비공개', description: '개인·친구·가족 공간의 일정과 기록은 구성원만 확인할 수 있습니다.' },
+  { number: '02', title: '회원별 접근 제한', description: '저장 장소와 최근 본 장소는 로그인한 본인만 확인할 수 있습니다.' },
   { number: '03', title: '탈퇴 시 안전하게 삭제', description: '법령상 보관 의무가 있는 경우를 제외하고 개인정보와 저장 데이터를 삭제합니다.' },
+] as const;
+
+const homeRegions = ['전국', '서울', '경기', '인천', '부산', '제주', '강원'] as const;
+
+const homeShortcuts = [
+  { label: '맛집', icon: '식', category: '맛집', background: '#ffe4e1', color: '#c52d28' },
+  { label: '카페', icon: '잔', category: '카페', background: '#fff0cf', color: '#9a620d' },
+  { label: '관광지', icon: '길', category: '관광지', background: '#dff5eb', color: '#176a4d' },
+  { label: '축제', icon: '별', category: '축제', background: '#eee4ff', color: '#673ba5' },
 ] as const;
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const compact = width < 370;
   const tablet = width >= 640;
+  const [homeRegion, setHomeRegion] = useState('전국');
+  const [homeQuery, setHomeQuery] = useState('');
 
-  const explore = (category: string) => {
-    router.push({ pathname: '/(tabs)/explore', params: { category } });
+  const explore = (category: string, query = '') => {
+    router.push({ pathname: '/(tabs)/explore', params: { category, region: homeRegion, query } });
   };
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={[styles.container, compact && styles.containerCompact]}>
+        <View style={styles.discoveryHero}>
+          <Text style={styles.discoveryEyebrow}>오늘어디 PLACE DISCOVERY</Text>
+          <Text style={styles.discoveryTitle}>오늘, 어디로{`\n`}갈까요?</Text>
+          <Text style={styles.discoveryDescription}>맛집부터 카페·축제·관광지까지 한 번에 찾아보세요.</Text>
+
+          <View style={styles.discoverySearchCard}>
+            <Text style={styles.discoverySearchLabel}>장소·지역·음식 검색</Text>
+            <View style={styles.discoverySearchRow}>
+              <TextInput
+                accessibilityLabel="홈 장소 검색"
+                onChangeText={setHomeQuery}
+                onSubmitEditing={() => explore('전체', homeQuery.trim())}
+                placeholder="성수 파스타, 제주 오션뷰 카페"
+                placeholderTextColor="#8f8f89"
+                returnKeyType="search"
+                style={styles.discoverySearchInput}
+                value={homeQuery}
+              />
+              <MotionPressable accessibilityRole="button" onPress={() => explore('전체', homeQuery.trim())} style={styles.discoverySearchButton}><Text style={styles.discoverySearchButtonText}>검색</Text></MotionPressable>
+            </View>
+            <Text style={styles.discoveryRegionLabel}>어디에서 찾을까요?</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
+              {homeRegions.map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => setHomeRegion(item)} style={[styles.discoveryRegionButton, homeRegion === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeRegion === item && styles.discoveryRegionTextActive]}>{item}</Text></MotionPressable>)}
+            </ScrollView>
+          </View>
+        </View>
+
+        <View style={styles.homeShortcuts}>
+          {homeShortcuts.map((item) => <MotionPressable key={item.label} accessibilityRole="button" onPress={() => explore(item.category)} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: item.background }]}><Text style={[styles.homeShortcutIconText, { color: item.color }]}>{item.icon}</Text></View><Text style={styles.homeShortcutLabel}>{item.label}</Text></MotionPressable>)}
+          <MotionPressable accessibilityRole="button" onPress={() => void Linking.openURL(`${appConfig.webUrl}/recommend`)} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: '#e2ecff' }]}><Text style={[styles.homeShortcutIconText, { color: '#3157c8' }]}>코</Text></View><Text style={styles.homeShortcutLabel}>코스 설정</Text></MotionPressable>
+          <MotionPressable accessibilityRole="button" onPress={() => router.push('/(tabs)/office')} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: '#eaffaa' }]}><Text style={[styles.homeShortcutIconText, { color: '#334600' }]}>회</Text></View><Text style={styles.homeShortcutLabel}>직장인 식사</Text></MotionPressable>
+        </View>
+
+        <View style={styles.quickPicks}>
+          <Text style={styles.eyebrow}>QUICK PICKS</Text>
+          <Text style={styles.quickPicksTitle}>상황별로 빠르게 찾기</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPicksRow}>
+            <MotionPressable onPress={() => explore('카페', '데이트 카페')} style={styles.quickPick}><Text style={styles.quickPickText}>데이트 카페</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('관광지', '가족 나들이')} style={styles.quickPick}><Text style={styles.quickPickText}>가족 나들이</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('맛집', '혼밥')} style={styles.quickPick}><Text style={styles.quickPickText}>혼밥</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('축제', '축제')} style={styles.quickPick}><Text style={styles.quickPickText}>이번 주 축제</Text></MotionPressable>
+          </ScrollView>
+        </View>
+
         <View style={styles.heroFrame}>
           <LiveWeatherCard />
 
@@ -64,72 +113,6 @@ export default function HomeScreen() {
                 </MotionPressable>
               ))}
             </View>
-          </View>
-        </View>
-
-        <View style={styles.categorySection}>
-          <Text style={styles.eyebrow}>WHAT TO FIND</Text>
-          <Text style={styles.sectionTitle}>무엇을 찾고 있나요?</Text>
-          <Text style={styles.sectionDescription}>맛집과 카페를 찾고, 예약 지원 매장은 카드에서 네이버 예약으로 바로 이동하세요.</Text>
-          <View style={styles.categoryGrid}>
-            {categoryCards.map((item) => (
-              <MotionPressable
-                accessibilityRole="button"
-                key={item.number}
-                onPress={() => explore(item.category)}
-                pressedOpacity={0.96}
-                pressedScale={0.975}
-                pressedTranslateY={4}
-                style={[
-                  styles.categoryCard,
-                  {
-                    backgroundColor: item.background,
-                    borderColor: item.border,
-                    borderBottomColor: item.depth,
-                    shadowColor: item.depth,
-                  },
-                ]}
-              >
-                <View style={[styles.categoryAccent, { backgroundColor: item.accent }]} />
-                <Text
-                  adjustsFontSizeToFit
-                  maxFontSizeMultiplier={1.1}
-                  minimumFontScale={0.85}
-                  numberOfLines={1}
-                  style={[styles.categoryNumber, { borderColor: item.border, color: item.accent }]}
-                >
-                  {item.number}
-                </Text>
-                <View style={styles.categoryCopy}>
-                  <Text
-                    adjustsFontSizeToFit
-                    maxFontSizeMultiplier={1.05}
-                    minimumFontScale={0.72}
-                    numberOfLines={1}
-                    style={[styles.categoryEnglish, { color: item.accent }]}
-                  >
-                    {item.english}
-                  </Text>
-                  <Text maxFontSizeMultiplier={1.1} numberOfLines={1} style={styles.categoryTitle}>{item.title}</Text>
-                </View>
-                <View style={styles.categoryBottomRow}>
-                  <Text maxFontSizeMultiplier={1.1} numberOfLines={2} style={styles.categoryDescription}>{item.description}</Text>
-                  <View style={[styles.categoryArrow, { backgroundColor: item.accent, borderColor: item.depth }]}>
-                    <Text maxFontSizeMultiplier={1} style={styles.categoryArrowText}>↗</Text>
-                  </View>
-                </View>
-              </MotionPressable>
-            ))}
-          </View>
-        </View>
-
-        <View accessible accessibilityLabel="새로운 기능을 준비하고 있어요. 현재 개발 중입니다." style={styles.comingSection}>
-          <View style={styles.comingSoon}>
-            <View style={styles.dots}><View style={styles.dot} /><View style={styles.dot} /><View style={styles.dot} /></View>
-            <Text style={styles.comingLabel}>NEW FEATURE</Text>
-            <Text style={styles.comingTitle}>새로운 기능을{`\n`}준비하고 있어요</Text>
-            <Text style={styles.comingDescription}>더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.{`\n`}조금만 기다려 주세요.</Text>
-            <Text style={styles.comingStatus}>현재 개발 중</Text>
           </View>
         </View>
 
@@ -164,6 +147,12 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
   container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 38 },
   containerCompact: { paddingHorizontal: 12 },
+  discoveryHero: { padding: 22, borderRadius: 26, backgroundColor: '#ff3b36', shadowColor: '#a51d19', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.24, shadowRadius: 20, elevation: 7 },
+  discoveryEyebrow: { color: '#fff5b4', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 }, discoveryTitle: { marginTop: 12, color: '#ffffff', fontSize: 45, lineHeight: 43, fontWeight: '900', letterSpacing: -2 }, discoveryDescription: { marginTop: 12, color: '#fff2ef', fontSize: 12, lineHeight: 19, fontWeight: '700' },
+  discoverySearchCard: { marginTop: 23, padding: 14, borderRadius: 19, backgroundColor: '#ffffff' }, discoverySearchLabel: { color: '#101010', fontSize: 11, fontWeight: '900' }, discoverySearchRow: { minHeight: 52, marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 7 }, discoverySearchInput: { flex: 1, minHeight: 52, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '700' }, discoverySearchButton: { minWidth: 61, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010' }, discoverySearchButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
+  discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' },
+  homeShortcuts: { marginTop: -12, marginHorizontal: 10, paddingTop: 27, paddingBottom: 16, flexDirection: 'row', flexWrap: 'wrap', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.08, shadowRadius: 15, elevation: 3 }, homeShortcut: { width: '33.333%', minHeight: 85, alignItems: 'center', justifyContent: 'center', gap: 7 }, homeShortcutIcon: { width: 49, height: 49, alignItems: 'center', justifyContent: 'center', borderRadius: 17 }, homeShortcutIconText: { fontSize: 14, fontWeight: '900' }, homeShortcutLabel: { color: '#101010', fontSize: 10, fontWeight: '900' },
+  quickPicks: { marginTop: 34 }, quickPicksTitle: { marginTop: 6, color: '#101010', fontSize: 20, fontWeight: '900' }, quickPicksRow: { gap: 7, paddingTop: 12, paddingBottom: 3 }, quickPick: { minHeight: 39, justifyContent: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 15 }, quickPickText: { color: '#101010', fontSize: 10, fontWeight: '900' },
   heroFrame: { padding: 10, borderWidth: 1, borderColor: '#deded8', borderRadius: 28, backgroundColor: '#ffffff', shadowColor: '#1f1914', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.13, shadowRadius: 22, elevation: 7 },
   journeyPanel: { marginTop: 12, padding: 20, borderWidth: 1, borderColor: '#deded8', borderRadius: 19, backgroundColor: '#f8f8f5' },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },

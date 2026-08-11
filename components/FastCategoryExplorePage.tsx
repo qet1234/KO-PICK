@@ -17,6 +17,8 @@ type JourneyMenu = {
 interface FastCategoryExplorePageProps {
   initialCategory: CategoryValue;
   initialDetail?: string;
+  initialQuery?: string;
+  initialRegion?: string;
   journey?: string;
 }
 
@@ -146,6 +148,8 @@ function normalize(value: unknown) {
 export default function FastCategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
+  initialQuery = "",
+  initialRegion = "전국",
   journey = "",
 }: FastCategoryExplorePageProps) {
   const availableJourneyMenus = journeyMenus[journey] ?? [];
@@ -446,6 +450,8 @@ export default function FastCategoryExplorePage({
         key={`${journey || "default"}-${selectedJourneyType}`}
         initialCategory={journey ? "전체" : initialCategory}
         initialDetail={journey ? "전체" : initialDetail}
+        initialQuery={journey ? "" : initialQuery}
+        initialRegion={initialRegion}
         journeyLabel={journey || undefined}
         resultLabel={journey ? selectedJourneyType : undefined}
       />

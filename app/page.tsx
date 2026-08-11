@@ -1,6 +1,6 @@
 import AuthHeader from "@/components/AuthHeader";
 import Image from "next/image";
-import CategoryCards from "@/components/CategoryCards";
+import HomeDiscoveryHub from "@/components/HomeDiscoveryHub";
 import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
 import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
 import SeasonalFoodList from "@/components/SeasonalFoodList";
@@ -13,12 +13,13 @@ import "./home-place-location.css";
 import "./home-clarity.css";
 import "./home-seasonal-food.css";
 import "./home-category-grid.css";
+import "./home-catchtable.css";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
-    <main className="korea-pick-home">
+    <main className="korea-pick-home" id="top">
       <header className="kp-header">
         <div className="kp-container kp-header-inner">
           <a className="kp-brand" href="#top" aria-label="오늘어디 홈">
@@ -26,7 +27,7 @@ export default function Home() {
             <span>오늘어디</span>
           </a>
           <nav className="kp-navigation" aria-label="주요 메뉴">
-            <a href="#categories">카테고리</a><a href="#coming-soon">새 기능 준비 중</a><a href="#seasonal-foods">사계절 음식</a>
+            <a href="#discovery">장소 찾기</a><a href="#journeys">맞춤 추천</a><a href="#seasonal-foods">사계절 음식</a>
           </nav>
           <div className="kp-header-service-buttons">
             <a
@@ -50,42 +51,12 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="kp-hero" id="top">
+      <div id="discovery"><HomeDiscoveryHub /></div>
+
+      <section className="kp-hero" id="journeys">
         <div className="kp-container kp-hero-frame kp-hero-frame--discovery">
           <HeroWeatherDashboard />
           <HeroDiscoveryPanel />
-        </div>
-      </section>
-
-      <section className="kp-category-section" id="categories">
-        <div className="kp-container">
-          <div className="kp-section-heading">
-            <div>
-              <p className="kp-overline">WHAT TO FIND</p>
-              <h2>무엇을 찾고 있나요?</h2>
-              <p>맛집과 카페를 찾고, 예약 지원 매장은 카드에서 네이버 예약으로 바로 이동하세요.</p>
-            </div>
-          </div>
-          <CategoryCards />
-        </div>
-      </section>
-
-      <section className="kp-popular-section kp-coming-soon-section" id="coming-soon">
-        <div className="kp-container">
-          <div className="kp-coming-soon-panel">
-            <div className="kp-coming-soon-icon" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-            </div>
-            <p className="kp-coming-soon-label">NEW FEATURE</p>
-            <h2>새로운 기능을 준비하고 있어요</h2>
-            <p className="kp-coming-soon-description">
-              더 편리하게 장소를 찾을 수 있는 기능을 개발 중입니다.
-              <br />조금만 기다려 주세요.
-            </p>
-            <span className="kp-coming-soon-status">현재 개발 중</span>
-          </div>
         </div>
       </section>
 
