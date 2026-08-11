@@ -66,6 +66,7 @@ export type PlaceQuery = {
   detailType?: string;
   openNow?: boolean;
   query?: string;
+  locality?: string;
 };
 
 export type TourSubregion = { code: string; name: string };
@@ -187,6 +188,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
   }
   if (query.openNow) params.set('openNow', 'true');
   if (query.query?.trim()) params.set('query', query.query.trim());
+  if (query.locality?.trim()) params.set('locality', query.locality.trim());
 
   const result = await fetchKoPick<{
     places: TourPlace[];

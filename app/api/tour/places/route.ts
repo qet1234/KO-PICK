@@ -460,6 +460,7 @@ export async function GET(request: NextRequest) {
     );
     const requestedCategory = searchParams.get("category") ?? "전체";
     const searchQuery = (searchParams.get("query") ?? "").trim().slice(0, 80);
+    const locality = (searchParams.get("locality") ?? "").trim().slice(0, 40);
     const categoryAliases: Record<string, string> = {
       맛집: "음식",
       여행지: "관광지",
@@ -514,7 +515,7 @@ export async function GET(request: NextRequest) {
 
     const keywordSearch = sources.some((source) => source.keyword);
     const multiSourceSearch = sources.length > 1;
-    const rowsPerSource = keywordSearch
+    const rowsPerSource = keywordSearch || locality
       ? PAGE_SIZE_MAX
       : multiSourceSearch
         ? Math.max(1, Math.floor(pageSize / sources.length))
@@ -523,7 +524,7 @@ export async function GET(request: NextRequest) {
     const payloads = await Promise.all(
       sources.map((source) => {
         const params = new URLSearchParams(commonParams);
-        params.set("pageNo", keywordSearch ? "1" : String(page));
+        params.set("pageNo", keywordSearch || locality ? "1" : String(page));
         params.set("numOfRows", String(rowsPerSource));
         params.set("arrange", "Q");
 
@@ -652,17 +653,22 @@ export async function GET(request: NextRequest) {
           restDayText: null,
           breakTimeText: null,
         }));
-    const places = openNowOnly
-      ? placesWithHours.filter((place) => place.openingState === "open")
+    const localityKey = locality.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+    const localityPlaces = localityKey
+      ? placesWithHours.filter((place) =>
+          String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
       : placesWithHours;
+    const places = openNowOnly
+      ? localityPlaces.filter((place) => place.openingState === "open")
+      : localityPlaces;
 
     const bodies = payloads.map((payload) => payload.response?.body);
     const totalCount = openNowOnly
       ? places.length
-      : keywordSearch
+      : keywordSearch || localityKey
         ? places.length
         : bodies.reduce((sum, body) => sum + Number(body?.totalCount ?? 0), 0);
-    const totalPages = openNowOnly || keywordSearch
+    const totalPages = openNowOnly || keywordSearch || Boolean(localityKey)
       ? 1
       : Math.max(
           1,
@@ -677,7 +683,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       places,
       pagination: {
-        pageNo: keywordSearch ? 1 : page,
+        pageNo: keywordSearch || localityKey ? 1 : page,
         numOfRows: pageSize,
         totalCount,
         totalPages,
@@ -686,6 +692,7 @@ export async function GET(request: NextRequest) {
       openNowOnly,
       openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
       query: searchQuery || null,
+      locality: locality || null,
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);

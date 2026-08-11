@@ -335,6 +335,7 @@ interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
   initialDetail?: string;
   initialDistrict?: string;
+  initialLocality?: string;
   initialQuery?: string;
   initialRegion?: string;
   journeyLabel?: string;
@@ -345,6 +346,7 @@ export default function CategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
   initialDistrict = "전체",
+  initialLocality = "",
   initialQuery = "",
   initialRegion = "전국",
   journeyLabel,
@@ -376,6 +378,9 @@ export default function CategoryExplorePage({
   const [selectedSubregion, setSelectedSubregion] = useState(() =>
     initialRegion === "전국" ? "전체" : initialDistrict
   );
+  const normalizedInitialLocality = initialLocality.trim().slice(0, 40);
+  const [localityInput, setLocalityInput] = useState(normalizedInitialLocality);
+  const [selectedLocality, setSelectedLocality] = useState(normalizedInitialLocality);
   const [subregions, setSubregions] = useState<SubregionOption[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [page, setPage] = useState(1);
@@ -500,6 +505,7 @@ export default function CategoryExplorePage({
         }
         if (openNowOnly) params.set("openNow", "true");
         if (searchQuery) params.set("query", searchQuery);
+        if (selectedLocality) params.set("locality", selectedLocality);
 
         const response = await fetch(
           `${tourPlacesApiUrl}?` + params.toString()
@@ -561,6 +567,7 @@ export default function CategoryExplorePage({
     selectedSubregion,
     subregions,
     searchQuery,
+    selectedLocality,
   ]);
 
   const sortedPlaces = useMemo(() => {
@@ -736,6 +743,8 @@ export default function CategoryExplorePage({
   const selectRegion = (regionName: RegionName) => {
     setSelectedRegion(regionName);
     setSelectedSubregion("전체");
+    setLocalityInput("");
+    setSelectedLocality("");
     setPage(1);
     moveToRegion(regionName);
   };
@@ -1035,6 +1044,8 @@ export default function CategoryExplorePage({
                   disabled={selectedRegion === "전국"}
                   onChange={(event) => {
                     setSelectedSubregion(event.target.value);
+                    setLocalityInput("");
+                    setSelectedLocality("");
                     setPage(1);
                   }}
                 >
@@ -1045,6 +1056,24 @@ export default function CategoryExplorePage({
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                <span>읍·면·동</span>
+                <div className="kp-explore-locality-input">
+                  <input
+                    disabled={selectedRegion === "전국" || selectedSubregion === "전체"}
+                    onChange={(event) => setLocalityInput(event.target.value.slice(0, 40))}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        setSelectedLocality(localityInput.trim());
+                        setPage(1);
+                      }
+                    }}
+                    placeholder="예: 역삼동"
+                    value={localityInput}
+                  />
+                  <button disabled={selectedRegion === "전국" || selectedSubregion === "전체"} onClick={() => { setSelectedLocality(localityInput.trim()); setPage(1); }} type="button">적용</button>
+                </div>
               </label>
             </div>
 
@@ -1068,6 +1097,7 @@ export default function CategoryExplorePage({
                 {selectedSubregion !== "전체"
                   ? " · " + selectedSubregion
                   : ""}
+                {selectedLocality ? " · " + selectedLocality : ""}
                 {" · "}
                 {resultCategoryLabel}
                 {!journeyLabel && selectedDetailSummary

@@ -32,16 +32,18 @@ const homeShortcuts = [
   { label: '축제', icon: '별', category: '축제', background: '#eee4ff', color: '#673ba5' },
 ] as const;
 
-function resolveHomeLocation(input: string, selectedRegion: string, selectedDistrict: string) {
+function resolveHomeLocation(input: string, selectedRegion: string, selectedDistrict: string, selectedLocality: string) {
   let remaining = input.trim();
   let region = selectedRegion;
   let district = selectedDistrict;
+  let locality = selectedLocality;
   const matchedRegion = homeRegions
     .filter((item) => item !== '전국')
     .find((item) => remaining.replace(/\s+/g, '').includes(item.replace(/\s+/g, '')));
   if (matchedRegion) {
     region = matchedRegion;
     district = '전체';
+    locality = '';
     remaining = remaining.replace(matchedRegion, ' ');
   }
   const districtPool = region === '전국'
@@ -52,9 +54,16 @@ function resolveHomeLocation(input: string, selectedRegion: string, selectedDist
   if (matchedDistrict) {
     region = matchedDistrict.regionName;
     district = matchedDistrict.districtName;
+    locality = '';
     remaining = remaining.replace(matchedDistrict.districtName, ' ');
   }
-  return { region, district, query: remaining.replace(/\s+/g, ' ').trim() };
+  const localityToken = remaining.split(/\s+/).find((token) => /[읍면동리]$/.test(token));
+  if (localityToken) {
+    locality = localityToken;
+    remaining = remaining.replace(localityToken, ' ');
+  }
+  const query = remaining.replace(/\s+/g, ' ').trim().replace(/^(맛집|음식점|장소)$/, '');
+  return { region, district, locality, query };
 }
 
 export default function HomeScreen() {
@@ -63,15 +72,16 @@ export default function HomeScreen() {
   const tablet = width >= 640;
   const [homeRegion, setHomeRegion] = useState('전국');
   const [homeDistrict, setHomeDistrict] = useState('전체');
+  const [homeLocality, setHomeLocality] = useState('');
   const [homeQuery, setHomeQuery] = useState('');
 
-  const explore = (category: string, query = '', region = homeRegion, district = homeDistrict) => {
-    router.push({ pathname: '/(tabs)/explore', params: { category, district, region, query } });
+  const explore = (category: string, query = '', region = homeRegion, district = homeDistrict, locality = homeLocality) => {
+    router.push({ pathname: '/(tabs)/explore', params: { category, district, locality, region, query } });
   };
 
   const searchRestaurants = () => {
-    const resolved = resolveHomeLocation(homeQuery.trim(), homeRegion, homeDistrict);
-    explore('맛집', resolved.query, resolved.region, resolved.district);
+    const resolved = resolveHomeLocation(homeQuery.trim(), homeRegion, homeDistrict, homeLocality);
+    explore('맛집', resolved.query, resolved.region, resolved.district, resolved.locality);
   };
 
   return (
@@ -99,11 +109,12 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.discoveryRegionLabel}>어디에서 찾을까요?</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
-              {homeRegions.map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => { setHomeRegion(item); setHomeDistrict('전체'); }} style={[styles.discoveryRegionButton, homeRegion === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeRegion === item && styles.discoveryRegionTextActive]}>{item}</Text></MotionPressable>)}
+              {homeRegions.map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => { setHomeRegion(item); setHomeDistrict('전체'); setHomeLocality(''); }} style={[styles.discoveryRegionButton, homeRegion === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeRegion === item && styles.discoveryRegionTextActive]}>{item}</Text></MotionPressable>)}
             </ScrollView>
             {homeRegion !== '전국' ? <><Text style={styles.discoveryDistrictLabel}>시·군·구</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
-              {['전체', ...(koreaRegionDistricts[homeRegion] ?? [])].map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => setHomeDistrict(item)} style={[styles.discoveryRegionButton, homeDistrict === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeDistrict === item && styles.discoveryRegionTextActive]}>{item === '전체' ? `${homeRegion} 전체` : item}</Text></MotionPressable>)}
+              {['전체', ...(koreaRegionDistricts[homeRegion] ?? [])].map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => { setHomeDistrict(item); setHomeLocality(''); }} style={[styles.discoveryRegionButton, homeDistrict === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeDistrict === item && styles.discoveryRegionTextActive]}>{item === '전체' ? `${homeRegion} 전체` : item}</Text></MotionPressable>)}
             </ScrollView></> : null}
+            {homeDistrict !== '전체' ? <><Text style={styles.discoveryDistrictLabel}>읍·면·동</Text><TextInput accessibilityLabel="읍면동 입력" onChangeText={(value) => setHomeLocality(value.slice(0, 40))} placeholder="예: 역삼동, 애월읍" placeholderTextColor="#8f8f89" style={styles.discoveryLocalityInput} value={homeLocality} /></> : null}
           </View>
         </View>
 
@@ -185,7 +196,7 @@ const styles = StyleSheet.create({
   discoveryHero: { padding: 22, borderRadius: 26, backgroundColor: '#ff3b36', shadowColor: '#a51d19', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.24, shadowRadius: 20, elevation: 7 },
   discoveryEyebrow: { color: '#fff5b4', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 }, discoveryTitle: { marginTop: 12, color: '#ffffff', fontSize: 45, lineHeight: 43, fontWeight: '900', letterSpacing: -2 }, discoveryDescription: { marginTop: 12, color: '#fff2ef', fontSize: 12, lineHeight: 19, fontWeight: '700' },
   discoverySearchCard: { marginTop: 23, padding: 14, borderRadius: 19, backgroundColor: '#ffffff' }, discoverySearchLabel: { color: '#101010', fontSize: 11, fontWeight: '900' }, discoverySearchRow: { minHeight: 52, marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 7 }, discoverySearchInput: { flex: 1, minHeight: 52, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '700' }, discoverySearchButton: { minWidth: 61, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010' }, discoverySearchButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-  discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryDistrictLabel: { marginTop: 12, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' },
+  discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryDistrictLabel: { marginTop: 12, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' }, discoveryLocalityInput: { minHeight: 44, marginTop: 8, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 12, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '800' },
   homeShortcuts: { marginTop: -12, marginHorizontal: 10, paddingTop: 27, paddingBottom: 16, flexDirection: 'row', flexWrap: 'wrap', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.08, shadowRadius: 15, elevation: 3 }, homeShortcut: { width: '33.333%', minHeight: 85, alignItems: 'center', justifyContent: 'center', gap: 7 }, homeShortcutIcon: { width: 49, height: 49, alignItems: 'center', justifyContent: 'center', borderRadius: 17 }, homeShortcutIconText: { fontSize: 14, fontWeight: '900' }, homeShortcutLabel: { color: '#101010', fontSize: 10, fontWeight: '900' },
   quickPicks: { marginTop: 34 }, quickPicksTitle: { marginTop: 6, color: '#101010', fontSize: 20, fontWeight: '900' }, quickPicksRow: { gap: 7, paddingTop: 12, paddingBottom: 3 }, quickPick: { minHeight: 39, justifyContent: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 15 }, quickPickText: { color: '#101010', fontSize: 10, fontWeight: '900' },
   heroFrame: { padding: 10, borderWidth: 1, borderColor: '#deded8', borderRadius: 28, backgroundColor: '#ffffff', shadowColor: '#1f1914', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.13, shadowRadius: 22, elevation: 7 },

@@ -42,17 +42,19 @@ const themes = [
   { label: "비 오는 날", category: "카페", query: "실내" },
 ];
 
-function exploreHref(category: string, region: string, query = "", district = "전체") {
+function exploreHref(category: string, region: string, query = "", district = "전체", locality = "") {
   const params = new URLSearchParams({ category, region });
   if (query) params.set("query", query);
   if (region !== "전국" && district !== "전체") params.set("district", district);
+  if (locality) params.set("locality", locality);
   return `/explore?${params.toString()}`;
 }
 
-function resolveLocationInput(input: string, selectedRegion: string, selectedDistrict: string) {
+function resolveLocationInput(input: string, selectedRegion: string, selectedDistrict: string, selectedLocality: string) {
   let remaining = input.trim();
   let region = selectedRegion;
   let district = selectedDistrict;
+  let locality = selectedLocality;
   const matchedRegion = koreaRegions
     .filter((item) => item !== "전국")
     .find((item) => remaining.replace(/\s+/g, "").includes(item.replace(/\s+/g, "")));
@@ -60,6 +62,7 @@ function resolveLocationInput(input: string, selectedRegion: string, selectedDis
   if (matchedRegion) {
     region = matchedRegion;
     district = "전체";
+    locality = "";
     remaining = remaining.replace(matchedRegion, " ");
   }
 
@@ -75,10 +78,17 @@ function resolveLocationInput(input: string, selectedRegion: string, selectedDis
   if (matchedDistrict) {
     region = matchedDistrict.regionName;
     district = matchedDistrict.districtName;
+    locality = "";
     remaining = remaining.replace(matchedDistrict.districtName, " ");
   }
 
-  return { region, district, query: remaining.replace(/\s+/g, " ").trim() };
+  const localityToken = remaining.split(/\s+/).find((token) => /[읍면동리]$/.test(token));
+  if (localityToken) {
+    locality = localityToken;
+    remaining = remaining.replace(localityToken, " ");
+  }
+  const query = remaining.replace(/\s+/g, " ").trim().replace(/^(맛집|음식점|장소)$/, "");
+  return { region, district, locality, query };
 }
 
 function hasActivity(place: TrendingPlace) {
@@ -93,6 +103,7 @@ function hasActivity(place: TrendingPlace) {
 export default function HomeDiscoveryHub() {
   const [region, setRegion] = useState("전국");
   const [district, setDistrict] = useState("전체");
+  const [locality, setLocality] = useState("");
   const [query, setQuery] = useState("");
   const [popularPlaces, setPopularPlaces] = useState<TrendingPlace[]>([]);
 
@@ -117,9 +128,9 @@ export default function HomeDiscoveryHub() {
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalized = query.trim().slice(0, 80);
-    const resolved = resolveLocationInput(normalized, region, district);
+    const resolved = resolveLocationInput(normalized, region, district, locality);
     if (resolved.query) void trackKeywordSearch(resolved.query, "search");
-    window.location.assign(exploreHref("음식", resolved.region, resolved.query, resolved.district));
+    window.location.assign(exploreHref("음식", resolved.region, resolved.query, resolved.district, resolved.locality));
   };
 
   return (
@@ -153,16 +164,20 @@ export default function HomeDiscoveryHub() {
               <div className="kp-home-region-selects">
                 <label>
                   <span>시·도</span>
-                  <select value={region} onChange={(event) => { setRegion(event.target.value); setDistrict("전체"); }}>
+                  <select value={region} onChange={(event) => { setRegion(event.target.value); setDistrict("전체"); setLocality(""); }}>
                     {koreaRegions.map((item) => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </label>
                 <label>
                   <span>시·군·구</span>
-                  <select disabled={region === "전국"} value={district} onChange={(event) => setDistrict(event.target.value)}>
+                  <select disabled={region === "전국"} value={district} onChange={(event) => { setDistrict(event.target.value); setLocality(""); }}>
                     <option value="전체">{region === "전국" ? "시·도를 먼저 선택" : `${region} 전체`}</option>
                     {(koreaRegionDistricts[region] ?? []).map((item) => <option key={item} value={item}>{item}</option>)}
                   </select>
+                </label>
+                <label>
+                  <span>읍·면·동</span>
+                  <input disabled={region === "전국" || district === "전체"} onChange={(event) => setLocality(event.target.value.slice(0, 40))} placeholder="예: 역삼동, 애월읍" value={locality} />
                 </label>
               </div>
             </div>
@@ -172,7 +187,7 @@ export default function HomeDiscoveryHub() {
         <div className="kp-home-shortcuts" aria-label="주요 장소 카테고리">
           {shortcuts.map((shortcut) => (
             <a
-              href={shortcut.href ?? exploreHref(shortcut.category ?? "전체", region, "", district)}
+              href={shortcut.href ?? exploreHref(shortcut.category ?? "전체", region, "", district, locality)}
               key={shortcut.label}
             >
               <span className={`is-${shortcut.tone}`} aria-hidden="true">{shortcut.icon}</span>
@@ -188,7 +203,7 @@ export default function HomeDiscoveryHub() {
           </div>
           <nav aria-label="상황별 빠른 장소 찾기">
             {themes.map((theme) => (
-              <a href={exploreHref(theme.category, region, theme.query, district)} key={theme.label}>
+              <a href={exploreHref(theme.category, region, theme.query, district, locality)} key={theme.label}>
                 {theme.label}
               </a>
             ))}
@@ -203,7 +218,7 @@ export default function HomeDiscoveryHub() {
             </div>
             <div className="kp-home-popular-grid">
               {popularPlaces.map((place, index) => (
-                <a href={exploreHref(place.category, region, place.title, district)} key={place.id}>
+                <a href={exploreHref(place.category, region, place.title, district, locality)} key={place.id}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <small>{place.location} · {place.category}</small>
                   <strong>{place.title}</strong>

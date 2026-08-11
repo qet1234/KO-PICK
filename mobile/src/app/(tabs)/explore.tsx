@@ -61,7 +61,7 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
 });
 
 export default function ExploreScreen() {
-  const params = useLocalSearchParams<{ region?: string; district?: string; category?: string; query?: string }>();
+  const params = useLocalSearchParams<{ region?: string; district?: string; locality?: string; category?: string; query?: string }>();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -70,6 +70,8 @@ export default function ExploreScreen() {
   const [region, setRegion] = useState<PlaceQuery['region']>('서울');
   const [district, setDistrict] = useState('전체');
   const [subregions, setSubregions] = useState<TourSubregion[]>([]);
+  const [localityInput, setLocalityInput] = useState('');
+  const [locality, setLocality] = useState('');
   const [category, setCategory] = useState<PlaceQuery['category']>('전체');
   const [places, setPlaces] = useState<TourPlace[]>([]);
   const [selected, setSelected] = useState<TourPlace | null>(null);
@@ -110,12 +112,14 @@ export default function ExploreScreen() {
     nextOpenNow = openNow,
     nextQuery = searchQuery,
     nextSigunguCode = district === '전체' ? '' : subregions.find((item) => item.name === district)?.code ?? '',
+    nextLocality = locality,
   ) => {
     requestControllerRef.current?.abort();
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     const normalizedQuery = nextQuery.trim();
-    const cacheKey = `${nextRegion}:${nextSigunguCode}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
+    const normalizedLocality = nextLocality.trim();
+    const cacheKey = `${nextRegion}:${nextSigunguCode}:${normalizedLocality}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -131,7 +135,7 @@ export default function ExploreScreen() {
     setError('');
     try {
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -210,6 +214,7 @@ export default function ExploreScreen() {
     const nextCategory = categories.includes(rawCategory as typeof categories[number]) ? rawCategory as PlaceQuery['category'] : '전체';
     const nextQuery = String(params.query ?? '').trim().slice(0, 80);
     const requestedDistrict = String(params.district ?? '전체').trim();
+    const requestedLocality = String(params.locality ?? '').trim().slice(0, 40);
     queueMicrotask(() => {
       setRegion(nextRegion);
       setCategory(nextCategory);
@@ -220,16 +225,20 @@ export default function ExploreScreen() {
         const matched = nextSubregions.find((item) => item.name === requestedDistrict);
         setSubregions(nextSubregions);
         setDistrict(matched?.name ?? '전체');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '');
+        setLocalityInput(matched ? requestedLocality : '');
+        setLocality(matched ? requestedLocality : '');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '');
       }).catch(() => {
         setSubregions([]);
         setDistrict('전체');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '');
+        setLocalityInput('');
+        setLocality('');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '');
       });
     });
     // Load URL parameters once when this tab opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.category, params.district, params.query, params.region]);
+  }, [params.category, params.district, params.locality, params.query, params.region]);
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
@@ -257,20 +266,25 @@ export default function ExploreScreen() {
           setRegion(value);
           setDistrict('전체');
           setSubregions([]);
+          setLocalityInput('');
+          setLocality('');
           if (value === '전국') {
-            void load(value, category, 1, false, openNow, searchQuery, '');
+            void load(value, category, 1, false, openNow, searchQuery, '', '');
             return;
           }
           void fetchTourSubregions(value).then((result) => {
             setSubregions(result.subregions);
-            void load(value, category, 1, false, openNow, searchQuery, '');
-          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, ''));
+            void load(value, category, 1, false, openNow, searchQuery, '', '');
+          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, '', ''));
         }} />
         {region !== '전국' ? <ChoiceChips label="시·군·구" values={['전체', ...subregions.map((item) => item.name)]} selected={district} onSelect={(value) => {
           setDistrict(value);
+          setLocalityInput('');
+          setLocality('');
           const code = value === '전체' ? '' : subregions.find((item) => item.name === value)?.code ?? '';
-          void load(region, category, 1, false, openNow, searchQuery, code);
+          void load(region, category, 1, false, openNow, searchQuery, code, '');
         }} /> : null}
+        {district !== '전체' ? <View style={styles.localityFilter}><Text style={styles.localityLabel}>읍·면·동</Text><View style={styles.localityRow}><TextInput accessibilityLabel="읍면동 검색" onChangeText={(value) => setLocalityInput(value.slice(0, 40))} onSubmitEditing={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next); }} placeholder="예: 역삼동, 애월읍" placeholderTextColor="#989892" style={styles.localityInput} value={localityInput} /><MotionPressable onPress={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next); }} style={styles.localityButton}><Text style={styles.localityButtonText}>적용</Text></MotionPressable></View></View> : null}
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
           const nextCategory = value as PlaceQuery['category'];
           setCategory(nextCategory);
@@ -331,6 +345,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' }, subtitle: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20 },
   filters: { marginTop: 20, borderRadius: 22, backgroundColor: '#ffffff', padding: 17 }, searchButton: { minHeight: 50, marginTop: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
   searchLabel: { marginBottom: 8, color: '#101010', fontSize: 12, fontWeight: '900' }, searchRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 18 }, searchInput: { flex: 1, minHeight: 50, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 14, fontSize: 13, fontWeight: '700' }, clearButton: { width: 36, height: 36, marginLeft: -47, alignItems: 'center', justifyContent: 'center', borderRadius: 18 }, clearButtonText: { color: '#71716d', fontSize: 22, fontWeight: '700' }, submitButton: { minWidth: 64, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010', paddingHorizontal: 12 }, submitButtonText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
+  localityFilter: { marginTop: 18 }, localityLabel: { marginBottom: 9, color: '#454541', fontSize: 13, fontWeight: '900' }, localityRow: { flexDirection: 'row', gap: 7 }, localityInput: { flex: 1, minHeight: 46, borderWidth: 1, borderColor: '#dadad4', borderRadius: 13, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 12, fontWeight: '800' }, localityButton: { minWidth: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#101010' }, localityButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
   instantNote: { marginTop: 12, color: '#71716d', fontSize: 11, lineHeight: 17 },
   openFilter: { minHeight: 54, marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#ffffff', paddingHorizontal: 12 }, openFilterActive: { borderColor: '#18a65a', backgroundColor: '#effcf5' }, openCheck: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#cfcfc8', borderRadius: 8 }, openCheckActive: { borderColor: '#18a65a', backgroundColor: '#18a65a' }, openCheckText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, openFilterCopy: { flex: 1 }, openFilterTitle: { color: '#101010', fontSize: 12, fontWeight: '900' }, openFilterNote: { marginTop: 2, color: '#71716d', fontSize: 10 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },

@@ -18,6 +18,7 @@ interface FastCategoryExplorePageProps {
   initialCategory: CategoryValue;
   initialDetail?: string;
   initialDistrict?: string;
+  initialLocality?: string;
   initialQuery?: string;
   initialRegion?: string;
   journey?: string;
@@ -150,6 +151,7 @@ export default function FastCategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
   initialDistrict = "전체",
+  initialLocality = "",
   initialQuery = "",
   initialRegion = "전국",
   journey = "",
@@ -453,6 +455,7 @@ export default function FastCategoryExplorePage({
         initialCategory={journey ? "전체" : initialCategory}
         initialDetail={journey ? "전체" : initialDetail}
         initialDistrict={initialDistrict}
+        initialLocality={initialLocality}
         initialQuery={journey ? "" : initialQuery}
         initialRegion={initialRegion}
         journeyLabel={journey || undefined}
