@@ -11,6 +11,7 @@ import {
 } from "@/utils/place-library";
 import { createPlacePoll } from "@/utils/place-polls";
 import { naverMapSearchUrl } from "@/utils/naver-maps";
+import { getCurrentUser } from "@/utils/spring-api";
 
 const emptyLibrary: PlaceLibrary = { saved: [], recent: [] };
 
@@ -22,6 +23,7 @@ export default function PlaceLibraryPanel() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [notice, setNotice] = useState("");
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   const refresh = async () => {
     setLibrary(await loadPlaceLibrary());
@@ -30,9 +32,15 @@ export default function PlaceLibraryPanel() {
 
   useEffect(() => {
     let active = true;
-    void loadPlaceLibrary().then((result) => {
+    void getCurrentUser().then(async (user) => {
+      if (!active) return;
+      const signedIn = Boolean(user);
+      setAuthenticated(signedIn);
+      if (signedIn) setLibrary(await loadPlaceLibrary());
+      if (active) setLoading(false);
+    }).catch(() => {
       if (active) {
-        setLibrary(result);
+        setAuthenticated(false);
         setLoading(false);
       }
     });
@@ -103,6 +111,26 @@ export default function PlaceLibraryPanel() {
       setWorking(false);
     }
   };
+
+  if (authenticated === false) {
+    return (
+      <main className="saved-page">
+        <header className="saved-header">
+          <a href="/">오늘어디</a>
+          <div><small>MY PLACE LIBRARY</small><h1>저장한 장소</h1></div>
+          <a href="/explore">장소 찾기</a>
+        </header>
+        <section className="saved-login-gate">
+          <span aria-hidden="true">♡</span>
+          <small>MEMBER LIBRARY</small>
+          <h2>로그인하고 장소를 저장하세요</h2>
+          <p>찜한 장소와 최근 본 기록을 계정에 안전하게 저장하고 다른 기기에서도 이어서 확인할 수 있습니다.</p>
+          <a href="/login?next=/saved">로그인 / 회원가입</a>
+          <a className="saved-guest-link" href="/explore">로그인 없이 장소 둘러보기 →</a>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="saved-page">

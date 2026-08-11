@@ -45,8 +45,15 @@ button, input { font: inherit; }
 .saved-poll-note { margin-top: 12px; display: block; color: var(--saved-muted)!important; font-size: 9px!important; line-height: 1.5; letter-spacing: 0!important; }
 .saved-notice { padding: 11px; border-radius: 11px; color: #7b302e!important; background: #fff0ee; }
 .saved-state, .saved-empty { margin-top: 22px; padding: 70px 20px; color: var(--saved-muted); text-align: center; }
+.saved-login-gate { width: min(560px, calc(100% - 32px)); margin: 72px auto; padding: 48px 36px; display: grid; justify-items: center; border: 1px solid var(--saved-line); border-radius: 28px; background: #fff; text-align: center; box-shadow: 0 22px 60px rgba(17,17,17,.08); }
+.saved-login-gate > span { width: 72px; height: 72px; display: grid; place-items: center; border-radius: 50%; color: var(--saved-red); background: #fff0ee; font-size: 38px; }
+.saved-login-gate > small { margin-top: 20px; color: var(--saved-red); font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.saved-login-gate h2 { margin: 8px 0 0; font-size: 28px; }
+.saved-login-gate p { max-width: 430px; margin: 12px 0 24px; color: var(--saved-muted); font-size: 13px; line-height: 1.7; }
+.saved-login-gate > a:not(.saved-guest-link) { min-width: 220px; padding: 14px 22px; border-radius: 14px; color: #fff; background: var(--saved-red); font-size: 13px; font-weight: 900; text-decoration: none; }
+.saved-login-gate .saved-guest-link { margin-top: 17px; color: #555; font-size: 11px; font-weight: 800; text-decoration: none; }
 .saved-empty { display: grid; gap: 12px; border: 1px dashed var(--saved-line); border-radius: 18px; }
 .saved-empty a { color: var(--saved-red); font-size: 12px; font-weight: 900; }
 @media (max-width: 850px) { .saved-layout { grid-template-columns: 1fr; } .saved-poll-builder { position: static; } }
-@media (max-width: 560px) { .saved-header { padding: 10px 14px; } .saved-header div { display: none; } .saved-layout { width: min(100% - 20px, 1180px); padding-top: 20px; } .saved-list-section { padding: 15px; } .saved-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .saved-header { padding: 10px 14px; } .saved-header div { display: none; } .saved-layout { width: min(100% - 20px, 1180px); padding-top: 20px; } .saved-list-section { padding: 15px; } .saved-grid { grid-template-columns: 1fr; } .saved-login-gate { margin-top: 36px; padding: 38px 22px; } .saved-login-gate h2 { font-size: 23px; } }
 @media (prefers-reduced-motion: reduce) { .saved-card, .saved-create-poll { transition: none; } }

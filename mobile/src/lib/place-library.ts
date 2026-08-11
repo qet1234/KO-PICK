@@ -6,6 +6,14 @@ const SAVED_KEY = 'todaywhere:saved-places:v1';
 const RECENT_KEY = 'todaywhere:recent-places:v1';
 const MAX_SAVED = 100;
 const MAX_RECENT = 30;
+export const PLACE_LIBRARY_LOGIN_REQUIRED = '장소 저장과 최근 기록은 로그인이 필요합니다.';
+
+export class PlaceLibraryLoginRequiredError extends Error {
+  constructor() {
+    super(PLACE_LIBRARY_LOGIN_REQUIRED);
+    this.name = 'PlaceLibraryLoginRequiredError';
+  }
+}
 
 export type LibraryPlace = {
   source: string;
@@ -136,7 +144,7 @@ export async function loadPlaceLibrary(): Promise<PlaceLibrary> {
     recent: unique(localRecent, MAX_RECENT, 'viewedAt'),
   };
   const user = userResult.data.user;
-  if (!user) return local;
+  if (!user) return { saved: [], recent: [] };
 
   const [savedResult, recentResult] = await Promise.all([
     supabase.from('user_saved_places').select('*').order('saved_at', { ascending: false }).limit(MAX_SAVED),
@@ -153,6 +161,9 @@ export async function loadPlaceLibrary(): Promise<PlaceLibrary> {
 }
 
 export async function toggleSavedPlace(input: LibraryPlaceInput) {
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) throw new PlaceLibraryLoginRequiredError();
+
   const place = toLibraryPlace(input);
   const current = unique(await read(SAVED_KEY), MAX_SAVED, 'savedAt');
   const key = libraryPlaceKey(place);
@@ -162,29 +173,29 @@ export async function toggleSavedPlace(input: LibraryPlaceInput) {
     : unique([{ ...place, savedAt: new Date().toISOString() }, ...current], MAX_SAVED, 'savedAt');
   await AsyncStorage.setItem(SAVED_KEY, JSON.stringify(saved));
 
-  const { data } = await supabase.auth.getUser();
-  if (data.user) {
-    if (exists) {
-      await supabase.from('user_saved_places').delete().eq('user_id', data.user.id).eq('place_source', place.source).eq('place_id', place.sourceId);
-    } else {
-      await supabase.from('user_saved_places').upsert(savedRow({ ...place, savedAt: new Date().toISOString() }, data.user.id), { onConflict: 'user_id,place_source,place_id' });
-    }
+  if (exists) {
+    await supabase.from('user_saved_places').delete().eq('user_id', data.user.id).eq('place_source', place.source).eq('place_id', place.sourceId);
+  } else {
+    await supabase.from('user_saved_places').upsert(savedRow({ ...place, savedAt: new Date().toISOString() }, data.user.id), { onConflict: 'user_id,place_source,place_id' });
   }
   return !exists;
 }
 
 export async function recordRecentPlace(input: LibraryPlaceInput) {
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return false;
+
   const place = { ...toLibraryPlace(input), viewedAt: new Date().toISOString() };
   const recent = unique([place, ...await read(RECENT_KEY)], MAX_RECENT, 'viewedAt');
   await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-  const { data } = await supabase.auth.getUser();
-  if (data.user) {
-    await supabase.from('user_recent_places').upsert(recentRow(place, data.user.id), { onConflict: 'user_id,place_source,place_id' });
-  }
+  await supabase.from('user_recent_places').upsert(recentRow(place, data.user.id), { onConflict: 'user_id,place_source,place_id' });
+  return true;
 }
 
 export async function clearRecentPlaces() {
-  await AsyncStorage.setItem(RECENT_KEY, '[]');
   const { data } = await supabase.auth.getUser();
-  if (data.user) await supabase.from('user_recent_places').delete().eq('user_id', data.user.id);
+  if (!data.user) throw new PlaceLibraryLoginRequiredError();
+
+  await AsyncStorage.setItem(RECENT_KEY, '[]');
+  await supabase.from('user_recent_places').delete().eq('user_id', data.user.id);
 }

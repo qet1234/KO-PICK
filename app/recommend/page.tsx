@@ -5,6 +5,8 @@ import Image from "next/image";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import { prepareKakaoShare, shareCourseOnKakao } from "@/utils/kakao-share";
 import type { CreatedCourseShare, OwnedCourseShare } from "@/utils/course-share";
+import { toggleSavedPlace } from "@/utils/place-library";
+import { getCurrentUser } from "@/utils/spring-api";
 import "./recommend.css";
 
 type Place = {
@@ -168,6 +170,15 @@ export default function RecommendPage() {
   const [latestShare, setLatestShare] = useState<CreatedCourseShare | null>(null);
   const [latestShareDescription, setLatestShareDescription] = useState("");
   const [sharing, setSharing] = useState(false);
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getCurrentUser()
+      .then((user) => { if (active) setAuthenticated(Boolean(user)); })
+      .catch(() => { if (active) setAuthenticated(false); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -189,6 +200,7 @@ export default function RecommendPage() {
   }, []);
 
   useEffect(() => {
+    if (authenticated !== true) return;
     const loadShares = async () => {
       const response = await fetch("/api/course-shares", { cache: "no-store" }).catch(() => null);
       if (!response?.ok) return;
@@ -196,7 +208,7 @@ export default function RecommendPage() {
       setActiveShares(Array.isArray(data.shares) ? data.shares : []);
     };
     void loadShares();
-  }, []);
+  }, [authenticated]);
 
   const visiblePlaces = useMemo(
     () => form.mode === "course" ? places : places.slice(0, RECOMMENDATION_LIMIT),
@@ -309,13 +321,10 @@ export default function RecommendPage() {
     }
   };
 
-  const savePlace = (place: Place) => {
-    const saved = JSON.parse(localStorage.getItem("kopick-saved-places") || "[]") as Place[];
-    if (!saved.some((item) => item.id === place.id)) {
-      localStorage.setItem("kopick-saved-places", JSON.stringify([place, ...saved]));
-    }
+  const savePlace = async (place: Place) => {
+    await toggleSavedPlace(place);
     setSelected(place.id);
-    setNotice("장소를 이 기기에 저장했습니다.");
+    setNotice("장소를 내 계정에 저장했습니다.");
   };
 
   const itineraryTitle = (course?: CourseBundle) => `${form.date} ${course?.region || form.region} ${form.relationship} ${form.duration} 코스`;
@@ -432,7 +441,28 @@ export default function RecommendPage() {
     void recommend(nextVariation);
   };
 
-  if (!profileLoaded) return null;
+  if (!profileLoaded || authenticated === null) return null;
+
+  if (!authenticated) {
+    return (
+      <main className="recommend-page">
+        <header className="recommend-header">
+          <a href="/" className="recommend-brand">
+            <Image src="/brand-mark.svg" alt="" width={38} height={38} />
+            오늘어디
+          </a>
+        </header>
+        <section className="recommend-login-gate">
+          <span aria-hidden="true">✦</span>
+          <p className="recommend-eyebrow">PERSONAL CURATION</p>
+          <h1>로그인하고 맞춤 코스를 만들어보세요</h1>
+          <p>내 성향과 저장한 장소를 바탕으로 코스를 만들고, 완성한 코스와 공유 링크를 계정에서 관리할 수 있습니다.</p>
+          <a href="/login?next=/recommend">로그인 / 회원가입</a>
+          <a className="recommend-guest-link" href="/explore">로그인 없이 장소 둘러보기 →</a>
+        </section>
+      </main>
+    );
+  }
 
   const scopeLabel = form.region;
 
@@ -571,7 +601,7 @@ export default function RecommendPage() {
                   )}
                   <div className="place-grid is-list-mode is-course-mode">
                     {course.items.map((place, index) => (
-                      <PlaceCard key={`${course.id}-${place.id}-${index}`} place={place} index={index} duration={course.duration} selected={selected} onSave={savePlace} showCourseTime />
+                      <PlaceCard key={`${course.id}-${place.id}-${index}`} place={place} index={index} duration={course.duration} selected={selected} onSave={(item) => void savePlace(item)} showCourseTime />
                     ))}
                   </div>
                 </section>
@@ -580,7 +610,7 @@ export default function RecommendPage() {
           ) : (
             <div className="place-grid is-list-mode">
               {visiblePlaces.map((place, index) => (
-                <PlaceCard key={`${place.id}-${index}`} place={place} index={index} duration={form.duration} selected={selected} onSave={savePlace} />
+                <PlaceCard key={`${place.id}-${index}`} place={place} index={index} duration={form.duration} selected={selected} onSave={(item) => void savePlace(item)} />
               ))}
             </div>
           )}

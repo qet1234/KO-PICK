@@ -11,6 +11,13 @@
 
 @media(max-width:980px){.course-collection.is-nationwide{grid-template-columns:1fr}}
 @media(max-width:600px){.course-bundle-heading{align-items:flex-start;flex-direction:column}.course-bundle-heading>div:last-child{width:100%}.course-bundle-heading button{flex:1}}
+.recommend-login-gate{width:min(620px,calc(100% - 32px));margin:76px auto;padding:52px 40px;display:grid;justify-items:center;border:1px solid #d8e4dc;border-radius:30px;background:#fff;text-align:center;box-shadow:0 24px 70px rgba(23,63,44,.1)}
+.recommend-login-gate>span{width:76px;height:76px;display:grid;place-items:center;border-radius:50%;color:#fff;background:#173f2c;font-size:34px}
+.recommend-login-gate h1{margin:8px 0 0;font-size:32px;line-height:1.25}
+.recommend-login-gate>p:not(.recommend-eyebrow){max-width:470px;margin:14px 0 26px;color:#607067;font-size:14px;line-height:1.75}
+.recommend-login-gate>a:not(.recommend-guest-link){min-width:230px;padding:15px 24px;border-radius:14px;color:#fff;background:#ff3b36;font-size:14px;font-weight:900;text-decoration:none}
+.recommend-login-gate .recommend-guest-link{margin-top:18px;color:#355e48;font-size:12px;font-weight:800;text-decoration:none}
+@media(max-width:600px){.recommend-login-gate{margin-top:38px;padding:40px 23px}.recommend-login-gate h1{font-size:25px}}
 
 .recommend-district-field select{width:100%;box-sizing:border-box;border:1px solid #d9e1dc;border-radius:16px;padding:16px 18px;font-size:16px;background:#fbfcfb;color:#243d30}.recommend-district-field small{display:block;margin-top:9px;color:#68776f;line-height:1.5}
 

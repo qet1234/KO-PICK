@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,7 +13,8 @@ import { createPlacePoll } from '@/lib/place-polls';
 const emptyLibrary: PlaceLibrary = { saved: [], recent: [] };
 
 export default function SavedPlacesScreen() {
-  const { session } = useSession();
+  const router = useRouter();
+  const { loading: sessionLoading, session } = useSession();
   const [library, setLibrary] = useState<PlaceLibrary>(emptyLibrary);
   const [tab, setTab] = useState<'saved' | 'recent'>('saved');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -28,11 +29,16 @@ export default function SavedPlacesScreen() {
 
   useFocusEffect(useCallback(() => {
     let active = true;
+    if (!session) {
+      setLibrary(emptyLibrary);
+      setLoading(false);
+      return () => { active = false; };
+    }
     void loadPlaceLibrary().then((result) => {
       if (active) { setLibrary(result); setLoading(false); }
     });
     return () => { active = false; };
-  }, []));
+  }, [session]));
 
   const visible = tab === 'saved' ? library.saved : library.recent;
   const candidatesByKey = new Map([...library.saved, ...library.recent].map((place) => [libraryPlaceKey(place), place]));
@@ -57,7 +63,7 @@ export default function SavedPlacesScreen() {
 
   const makePoll = async () => {
     if (!session) {
-      Alert.alert('로그인이 필요합니다', '투표 링크를 만들려면 내 계정에서 로그인해 주세요. 찜과 최근 기록은 로그인 없이도 이 기기에 저장됩니다.');
+      Alert.alert('로그인이 필요합니다', '투표 링크와 저장 장소를 관리하려면 내 계정에서 로그인해 주세요.');
       return;
     }
     const candidates = selectedKeys.map((key) => candidatesByKey.get(key)).filter((place): place is LibraryPlace => Boolean(place));
@@ -76,6 +82,25 @@ export default function SavedPlacesScreen() {
       setWorking(false);
     }
   };
+
+  if (!sessionLoading && !session) {
+    return (
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.eyebrow}>MY PLACE LIBRARY</Text>
+          <Text style={styles.title}>저장한 장소</Text>
+          <View style={styles.loginGate}>
+            <Text style={styles.loginIcon}>♡</Text>
+            <Text style={styles.loginEyebrow}>MEMBER LIBRARY</Text>
+            <Text style={styles.loginTitle}>로그인하고 장소를 저장하세요</Text>
+            <Text style={styles.loginDescription}>찜한 장소와 최근 본 기록을 계정에 저장하고 다른 기기에서도 이어서 확인할 수 있습니다.</Text>
+            <MotionPressable accessibilityRole="button" onPress={() => router.push('/login')} style={styles.loginButton}><Text style={styles.loginButtonText}>로그인 / 회원가입</Text></MotionPressable>
+            <MotionPressable accessibilityRole="button" onPress={() => router.push('/(tabs)/explore')}><Text style={styles.guestLink}>로그인 없이 장소 둘러보기 →</Text></MotionPressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -132,4 +157,5 @@ const styles = StyleSheet.create({
   empty: { marginTop: 20, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#dadad4', borderRadius: 20, padding: 42 }, emptyTitle: { color: '#101010', fontSize: 15, fontWeight: '900', textAlign: 'center' }, emptyText: { marginTop: 7, color: '#71716d', fontSize: 11, lineHeight: 17, textAlign: 'center' },
   card: { marginTop: 12, borderWidth: 1, borderColor: '#dadad4', borderRadius: 19, backgroundColor: '#ffffff', padding: 16 }, cardSelected: { borderColor: '#ff3b36', backgroundColor: '#fff9f8' }, selectButton: { alignSelf: 'flex-start', minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, paddingHorizontal: 11 }, selectButtonActive: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' }, selectText: { color: '#454541', fontSize: 10, fontWeight: '900' }, selectTextActive: { color: '#ff3b36' }, category: { marginTop: 15, color: '#ff3b36', fontSize: 10, fontWeight: '900' }, placeName: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, address: { marginTop: 5, marginBottom: 13, color: '#71716d', fontSize: 11, lineHeight: 17 }, removeButton: { minHeight: 38, marginTop: 8, alignItems: 'center', justifyContent: 'center' }, removeText: { color: '#9a3b39', fontSize: 11, fontWeight: '800' },
   pollCard: { marginTop: 24, borderRadius: 22, backgroundColor: '#101010', padding: 20 }, pollEyebrow: { color: '#caff2c', fontSize: 9, fontWeight: '900', letterSpacing: 1.1 }, pollTitle: { marginTop: 6, color: '#ffffff', fontSize: 24, fontWeight: '900' }, pollDescription: { marginTop: 7, color: '#bcbcb6', fontSize: 11, lineHeight: 18 }, label: { marginTop: 18, color: '#ffffff', fontSize: 10, fontWeight: '900' }, input: { minHeight: 46, marginTop: 7, borderWidth: 1, borderColor: '#454541', borderRadius: 13, backgroundColor: '#222222', color: '#ffffff', paddingHorizontal: 12 }, count: { marginTop: 14, color: '#bcbcb6', fontSize: 11, fontWeight: '800' }, countStrong: { color: '#caff2c', fontSize: 25, fontWeight: '900' }, createButton: { minHeight: 50, marginTop: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.4 }, createText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, pollNote: { marginTop: 9, color: '#90908b', fontSize: 9, lineHeight: 14 },
+  loginGate: { marginTop: 36, alignItems: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 24, backgroundColor: '#ffffff', paddingHorizontal: 24, paddingVertical: 40 }, loginIcon: { width: 68, height: 68, borderRadius: 34, backgroundColor: '#fff0ee', color: '#ff3b36', fontSize: 38, lineHeight: 68, textAlign: 'center' }, loginEyebrow: { marginTop: 20, color: '#ff3b36', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, loginTitle: { marginTop: 7, color: '#101010', fontSize: 21, fontWeight: '900', textAlign: 'center' }, loginDescription: { marginTop: 10, color: '#71716d', fontSize: 12, lineHeight: 19, textAlign: 'center' }, loginButton: { width: '100%', minHeight: 50, marginTop: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, loginButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, guestLink: { marginTop: 17, color: '#555555', fontSize: 11, fontWeight: '800' },
 });

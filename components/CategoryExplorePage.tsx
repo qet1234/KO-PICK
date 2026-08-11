@@ -10,6 +10,7 @@ import NaverBookingButton from "@/components/NaverBookingButton";
 import {
   libraryPlaceKey,
   loadPlaceLibrary,
+  PlaceLibraryLoginRequiredError,
   recordRecentPlace,
   toggleSavedPlace,
   toLibraryPlace,
@@ -816,16 +817,27 @@ export default function CategoryExplorePage({
   };
 
   const toggleSaved = async (place: Place) => {
-    const normalized = toLibraryPlace(place);
-    const key = libraryPlaceKey(normalized);
-    const saved = await toggleSavedPlace(place);
-    setSavedKeys((current) => {
-      const next = new Set(current);
-      if (saved) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-    if (saved) void trackPlaceActivity(place, "favorite");
+    try {
+      const normalized = toLibraryPlace(place);
+      const key = libraryPlaceKey(normalized);
+      const saved = await toggleSavedPlace(place);
+      setSavedKeys((current) => {
+        const next = new Set(current);
+        if (saved) next.add(key);
+        else next.delete(key);
+        return next;
+      });
+      if (saved) void trackPlaceActivity(place, "favorite");
+    } catch (error) {
+      if (!(error instanceof PlaceLibraryLoginRequiredError)) throw error;
+      const shouldLogin = window.confirm(
+        "장소를 저장하려면 로그인이 필요합니다.\n로그인하면 다른 기기에서도 저장한 장소를 확인할 수 있습니다.\n\n로그인 화면으로 이동할까요?",
+      );
+      if (shouldLogin) {
+        const next = `${window.location.pathname}${window.location.search}`;
+        window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+      }
+    }
   };
 
   return (

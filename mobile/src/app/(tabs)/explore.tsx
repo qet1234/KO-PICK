@@ -1,4 +1,4 @@
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
+import { useSession } from '@/context/session-context';
 import { fetchTourPlaces, fetchTourSubregions, type PlaceQuery, type TourPlace, type TourSubregion } from '@/lib/api';
 import { libraryPlaceKey, loadPlaceLibrary, recordRecentPlace, toggleSavedPlace, toLibraryPlace } from '@/lib/place-library';
 import { reportMobilePlace, trackMobileOperation } from '@/lib/operations';
@@ -62,6 +63,8 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
 });
 
 export default function ExploreScreen() {
+  const router = useRouter();
+  const { session } = useSession();
   const params = useLocalSearchParams<{ region?: string; district?: string; locality?: string; category?: string; query?: string }>();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
@@ -206,6 +209,17 @@ export default function ExploreScreen() {
   };
 
   const toggleSaved = async (place: TourPlace) => {
+    if (!session) {
+      Alert.alert(
+        '로그인이 필요합니다',
+        '로그인하면 저장한 장소와 최근 기록을 다른 기기에서도 이어서 확인할 수 있습니다.',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '로그인', onPress: () => router.push('/login') },
+        ],
+      );
+      return;
+    }
     const normalized = toLibraryPlace(place);
     const key = libraryPlaceKey(normalized);
     const saved = await toggleSavedPlace(place);
