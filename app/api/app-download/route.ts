@@ -5,8 +5,6 @@ const defaultAndroidApkUrl =
 
 const androidApkUrl =
   process.env.NEXT_PUBLIC_ANDROID_APK_URL?.trim() || defaultAndroidApkUrl;
-const iosTestFlightUrl = process.env.IOS_TESTFLIGHT_URL?.trim();
-
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
 };
@@ -14,25 +12,7 @@ const noStoreHeaders = {
 export const dynamic = "force-dynamic";
 
 function getDownloadUrl(platform: string | null) {
-  if (platform !== "ios") {
-    return androidApkUrl;
-  }
-
-  if (!iosTestFlightUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(iosTestFlightUrl);
-    const isTestFlightInvite =
-      url.protocol === "https:" &&
-      url.hostname === "testflight.apple.com" &&
-      /^\/join\/[A-Za-z0-9]+\/?$/.test(url.pathname);
-
-    return isTestFlightInvite ? url.toString() : null;
-  } catch {
-    return null;
-  }
+  return platform === "android" ? androidApkUrl : null;
 }
 
 export async function GET(request: Request) {
@@ -46,12 +26,6 @@ export async function GET(request: Request) {
       { ready: false },
       { status: 503, headers: noStoreHeaders },
     );
-  }
-
-  if (platform === "ios") {
-    return statusOnly
-      ? NextResponse.json({ ready: true }, { headers: noStoreHeaders })
-      : NextResponse.redirect(downloadUrl, 307);
   }
 
   try {
