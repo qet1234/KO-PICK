@@ -68,6 +68,7 @@ export function MotionPressable({
       progress.setValue(0);
       return;
     }
+    progress.stopAnimation();
     Animated.spring(progress, {
       toValue: pressed ? 1 : 0,
       damping: pressed ? 18 : 12,
@@ -82,12 +83,20 @@ export function MotionPressable({
       inputRange: [0, 1],
       outputRange: [1, pressedOpacity],
     }),
-    transform: [{
-      scale: progress.interpolate({
-        inputRange: [0, 1],
-        outputRange: [1, pressedScale],
-      }),
-    }],
+    transform: [
+      {
+        scale: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, pressedScale],
+        }),
+      },
+      {
+        translateY: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 2],
+        }),
+      },
+    ],
   };
 
   const resolveStyle = (state: PressableStateCallbackType): StyleProp<ViewStyle> => [
