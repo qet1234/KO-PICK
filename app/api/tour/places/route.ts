@@ -514,19 +514,17 @@ export async function GET(request: NextRequest) {
       Number.isFinite(latitude) &&
       Number.isFinite(longitude);
 
-    const keywordSearch = sources.some((source) => source.keyword);
-    const multiSourceSearch = sources.length > 1;
-    const rowsPerSource = keywordSearch || locality
-      ? PAGE_SIZE_MAX
-      : multiSourceSearch
-        ? Math.max(1, Math.floor(pageSize / sources.length))
-        : pageSize;
-
-    const payloads = await Promise.all(
-      sources.map((source) => {
+    const loadSourcePayloads = async (querySources: QuerySource[]) => {
+      const usesKeywordSearch = querySources.some((source) => source.keyword);
+      const sourceRows = usesKeywordSearch || locality
+        ? PAGE_SIZE_MAX
+        : querySources.length > 1
+          ? Math.max(1, Math.floor(pageSize / querySources.length))
+          : pageSize;
+      const responses = await Promise.all(querySources.map((source) => {
         const params = new URLSearchParams(commonParams);
-        params.set("pageNo", keywordSearch || locality ? "1" : String(page));
-        params.set("numOfRows", String(rowsPerSource));
+        params.set("pageNo", usesKeywordSearch || locality ? "1" : String(page));
+        params.set("numOfRows", String(sourceRows));
         params.set("arrange", "Q");
 
         if (areaCode) params.set("areaCode", areaCode);
@@ -557,12 +555,26 @@ export async function GET(request: NextRequest) {
         }
 
         return requestTourApi("areaBasedList2", params);
-      })
-    );
+      }));
+      return { payloads: responses, keywordSearch: usesKeywordSearch, rowsPerSource: sourceRows };
+    };
 
-    const rawItems = uniqueItems(payloads.flatMap((payload) => asItems(payload)));
+    let sourceResult = await loadSourcePayloads(sources);
+    let rawItems = uniqueItems(sourceResult.payloads.flatMap((payload) => asItems(payload)));
+    let detailFallbackApplied = false;
+    if (!searchQuery && selectedDetailTypes.length > 0 && rawItems.length < pageSize) {
+      const fallbackSources = getQuerySources(category, "전체");
+      const fallbackResult = await loadSourcePayloads(fallbackSources);
+      const fallbackItems = uniqueItems(fallbackResult.payloads.flatMap((payload) => asItems(payload)));
+      if (fallbackItems.length > 0) {
+        rawItems = uniqueItems([...rawItems, ...fallbackItems]);
+        detailFallbackApplied = true;
+      }
+      if (rawItems.length === fallbackItems.length) sourceResult = fallbackResult;
+    }
+    const { payloads, keywordSearch, rowsPerSource } = sourceResult;
     const categoryItems =
-      category === "음식" && selectedDetailTypes.length === 0
+      category === "음식" && (selectedDetailTypes.length === 0 || detailFallbackApplied)
         ? rawItems.filter((item) => item.cat3 !== cafeCategoryCode)
         : rawItems;
 
@@ -577,7 +589,7 @@ export async function GET(request: NextRequest) {
             ? item.cat3 === cafeCategoryCode
               ? "카페"
               : contentTypeNames[contentTypeId] ?? "기타"
-            : selectedDetailTypes.length === 0
+            : selectedDetailTypes.length === 0 || detailFallbackApplied
               ? category
               : `${category} · ${selectedDetailTypes.join(" · ")}`;
 
@@ -693,6 +705,7 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
       detailTypes,
+      detailFallbackApplied,
       openNowOnly,
       includeHours,
       openingHoursCoverage: includeHours ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
