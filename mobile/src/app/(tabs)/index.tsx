@@ -9,10 +9,10 @@ import { SeasonalFoods } from '@/components/seasonal-foods';
 import { appConfig } from '@/lib/config';
 
 const categoryCards = [
-  { number: '01', english: 'DINING', title: '음식', category: '맛집', description: '한식부터 세계음식까지' },
-  { number: '02', english: 'CAFE', title: '카페', category: '카페', description: '개성 있는 카페와 분위기별 추천' },
-  { number: '03', english: 'FESTIVAL', title: '축제', category: '축제', description: '축제·페스티벌·지역 행사' },
-  { number: '04', english: 'ATTRACTION', title: '관광지', category: '관광지', description: '박물관·전시회·공원' },
+  { number: '01', english: 'DINING', title: '음식', category: '맛집', description: '한식부터 세계음식까지', background: '#fff1ef', accent: '#ff4b45', border: '#ffc2bd', depth: '#d73530' },
+  { number: '02', english: 'CAFE', title: '카페', category: '카페', description: '개성 있는 카페와 분위기별 추천', background: '#fff7e8', accent: '#d98a18', border: '#f1d19d', depth: '#a96308' },
+  { number: '03', english: 'FESTIVAL', title: '축제', category: '축제', description: '축제·페스티벌·지역 행사', background: '#f6efff', accent: '#8457cc', border: '#d9c5f5', depth: '#6035a4' },
+  { number: '04', english: 'ATTRACTION', title: '관광지', category: '관광지', description: '박물관·전시회·공원', background: '#eaf8f3', accent: '#278564', border: '#b9dfd1', depth: '#176348' },
 ] as const;
 
 const journeyCards = [
@@ -77,17 +77,46 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 key={item.number}
                 onPress={() => explore(item.category)}
-                style={[styles.categoryCard, tablet && styles.categoryCardTablet]}
+                pressedOpacity={0.96}
+                pressedScale={0.975}
+                pressedTranslateY={4}
+                style={[
+                  styles.categoryCard,
+                  {
+                    backgroundColor: item.background,
+                    borderColor: item.border,
+                    borderBottomColor: item.depth,
+                    shadowColor: item.depth,
+                  },
+                ]}
               >
-                <View style={styles.categoryAccent} />
-                <Text maxFontSizeMultiplier={1.15} style={styles.categoryNumber}>{item.number}</Text>
+                <View style={[styles.categoryAccent, { backgroundColor: item.accent }]} />
+                <Text
+                  adjustsFontSizeToFit
+                  maxFontSizeMultiplier={1.1}
+                  minimumFontScale={0.85}
+                  numberOfLines={1}
+                  style={[styles.categoryNumber, { borderColor: item.border, color: item.accent }]}
+                >
+                  {item.number}
+                </Text>
                 <View style={styles.categoryCopy}>
-                  <Text maxFontSizeMultiplier={1.15} style={styles.categoryEnglish}>{item.english}</Text>
-                  <Text maxFontSizeMultiplier={1.15} style={styles.categoryTitle}>{item.title}</Text>
+                  <Text
+                    adjustsFontSizeToFit
+                    maxFontSizeMultiplier={1.05}
+                    minimumFontScale={0.72}
+                    numberOfLines={1}
+                    style={[styles.categoryEnglish, { color: item.accent }]}
+                  >
+                    {item.english}
+                  </Text>
+                  <Text maxFontSizeMultiplier={1.1} numberOfLines={1} style={styles.categoryTitle}>{item.title}</Text>
                 </View>
                 <View style={styles.categoryBottomRow}>
-                  <Text maxFontSizeMultiplier={1.2} style={styles.categoryDescription}>{item.description}</Text>
-                  <View style={styles.categoryArrow}><Text maxFontSizeMultiplier={1} style={styles.categoryArrowText}>↗</Text></View>
+                  <Text maxFontSizeMultiplier={1.1} numberOfLines={2} style={styles.categoryDescription}>{item.description}</Text>
+                  <View style={[styles.categoryArrow, { backgroundColor: item.accent, borderColor: item.depth }]}>
+                    <Text maxFontSizeMultiplier={1} style={styles.categoryArrowText}>↗</Text>
+                  </View>
                 </View>
               </MotionPressable>
             ))}
@@ -151,18 +180,17 @@ const styles = StyleSheet.create({
   categorySection: { marginTop: 44 },
   sectionTitle: { marginTop: 9, color: '#111111', fontSize: 32, lineHeight: 38, fontWeight: '900', letterSpacing: -1.5 },
   sectionDescription: { marginTop: 10, color: '#454541', fontSize: 13, fontWeight: '600', lineHeight: 21 },
-  categoryGrid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  categoryCard: { width: '100%', minHeight: 214, padding: 20, position: 'relative', justifyContent: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 20, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.06, shadowRadius: 15, elevation: 3 },
-  categoryCardTablet: { width: '48%' },
-  categoryAccent: { width: 5, height: 72, position: 'absolute', top: 62, left: 0, borderTopRightRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#ff3b36' },
-  categoryNumber: { alignSelf: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', color: '#111111', paddingHorizontal: 10, paddingVertical: 5, fontSize: 10, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
+  categoryGrid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 18 },
+  categoryCard: { width: '48%', height: 250, padding: 17, position: 'relative', justifyContent: 'flex-start', borderWidth: 1, borderBottomWidth: 6, borderRadius: 22, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.22, shadowRadius: 12, elevation: 7 },
+  categoryAccent: { width: 5, height: 66, position: 'absolute', top: 67, left: -1, borderTopRightRadius: 999, borderBottomRightRadius: 999 },
+  categoryNumber: { minWidth: 40, alignSelf: 'flex-start', overflow: 'hidden', borderWidth: 1, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.82)', paddingHorizontal: 10, paddingVertical: 5, fontSize: 10, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
   categoryCopy: { marginTop: 18, alignItems: 'flex-start' },
-  categoryEnglish: { color: '#ff3b36', fontSize: 10, lineHeight: 14, fontWeight: '900', letterSpacing: 0.9, textAlign: 'left' },
-  categoryTitle: { marginTop: 7, color: '#111111', fontSize: 24, lineHeight: 31, fontWeight: '900', letterSpacing: -1, textAlign: 'left' },
-  categoryBottomRow: { minHeight: 52, marginTop: 12, flexDirection: 'row', alignItems: 'flex-end' },
-  categoryDescription: { flex: 1, paddingRight: 12, color: '#494945', fontSize: 12, fontWeight: '600', lineHeight: 19, textAlign: 'left' },
-  categoryArrow: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d2d2cc', borderRadius: 23, backgroundColor: '#ffffff' },
-  categoryArrowText: { color: '#101010', fontSize: 20, lineHeight: 24, fontWeight: '800', textAlign: 'center' },
+  categoryEnglish: { width: '100%', fontSize: 10, lineHeight: 14, fontWeight: '900', letterSpacing: 0.65, textAlign: 'left' },
+  categoryTitle: { marginTop: 7, color: '#111111', fontSize: 23, lineHeight: 30, fontWeight: '900', letterSpacing: -1, textAlign: 'left' },
+  categoryBottomRow: { flex: 1, width: '100%', marginTop: 10, alignItems: 'stretch' },
+  categoryDescription: { width: '100%', color: '#444440', fontSize: 11, fontWeight: '700', lineHeight: 17, textAlign: 'left' },
+  categoryArrow: { width: 44, height: 44, marginTop: 'auto', alignSelf: 'flex-end', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 22, shadowColor: '#111111', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 6, elevation: 4 },
+  categoryArrowText: { color: '#ffffff', fontSize: 20, lineHeight: 24, fontWeight: '900', textAlign: 'center' },
   comingSection: { marginTop: 52, marginHorizontal: -16, padding: 16, backgroundColor: '#101010' },
   comingSoon: { minHeight: 360, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#30302e', borderRadius: 28, backgroundColor: '#191918', padding: 28 },
   dots: { width: 72, height: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: '#617524', borderRadius: 24, backgroundColor: '#202414' },
