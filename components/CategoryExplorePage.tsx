@@ -27,7 +27,7 @@ type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 type SortMode = "recommended" | "name";
 type ViewMode = "split" | "list" | "map";
 
-const DEFAULT_RESULTS_PER_PAGE = 24;
+const DEFAULT_RESULTS_PER_PAGE = 50;
 const FOOD_RESULTS_PER_PAGE = 50;
 
 interface Place {
