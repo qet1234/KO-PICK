@@ -45,6 +45,7 @@ type NativePressableProps = ComponentProps<typeof Pressable>;
 type MotionPressableProps = NativePressableProps & {
   pressedOpacity?: number;
   pressedScale?: number;
+  pressedTranslateY?: number;
 };
 
 export function MotionPressable({
@@ -53,6 +54,7 @@ export function MotionPressable({
   onPressOut,
   pressedOpacity = 0.88,
   pressedScale = 0.96,
+  pressedTranslateY = 2,
   style,
   ...props
 }: MotionPressableProps) {
@@ -93,16 +95,15 @@ export function MotionPressable({
       {
         translateY: progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [0, 2],
+          outputRange: [0, pressedTranslateY],
         }),
       },
     ],
   };
 
-  const resolveStyle = (state: PressableStateCallbackType): StyleProp<ViewStyle> => [
-    typeof style === 'function' ? style(state) : style,
-    motionStyle,
-  ];
+  const resolvedStyle = typeof style === 'function'
+    ? (state: PressableStateCallbackType): StyleProp<ViewStyle> => [style(state), motionStyle]
+    : [style, motionStyle];
 
   return (
     <NativeAnimatedPressable
@@ -116,7 +117,7 @@ export function MotionPressable({
         onPressOut?.(event);
         animate(false);
       }}
-      style={resolveStyle}
+      style={resolvedStyle}
     />
   );
 }
