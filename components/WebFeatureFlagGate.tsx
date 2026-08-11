@@ -12,7 +12,6 @@ const pathFeatures: Array<[string, OperationalFeatureKey, string]> = [
   ["/office-dining", "office_dining", "직장인 식사"],
   ["/saved", "saved_places", "저장한 장소"],
   ["/choose", "shared_poll", "함께 고르기"],
-  ["/reservations", "reservations", "예약 연결"],
 ];
 
 export default function WebFeatureFlagGate({ children }: { children: ReactNode }) {

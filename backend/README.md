@@ -28,7 +28,7 @@
 
 ## 데이터베이스
 
-Flyway가 회원, Refresh Token, 함께 공간, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다. 과거 커플 공간 테이블은 기존 데이터 보존과 마이그레이션 호환성을 위해 유지됩니다.
+Flyway가 회원, Refresh Token, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다. 과거 협업 기능 테이블은 최종 종료 마이그레이션에서 삭제됩니다.
 
 ## Render 배포
 

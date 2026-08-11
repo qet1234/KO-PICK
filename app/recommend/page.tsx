@@ -141,10 +141,6 @@ function modeLabel(mode: FormState["mode"]) {
   return mode === "course" ? "맞춤 코스" : "한 곳 추천";
 }
 
-function purposeFor(relationship: string) {
-  return ({ 개인: "혼자 외출", 커플: "데이트", 친구: "친구 모임", 가족: "가족 나들이" } as Record<string, string>)[relationship] || "외출";
-}
-
 function courseTime(index: number, duration: string) {
   const schedules: Record<string, string[]> = {
     "2시간": ["START", "+ 40분", "+ 80분"],
@@ -436,18 +432,6 @@ export default function RecommendPage() {
     void recommend(nextVariation);
   };
 
-  const voteUrl = (place: Place) => {
-    const query = new URLSearchParams({
-      placeName: place.name,
-      placeId: place.id,
-      category: place.category,
-      address: place.address,
-      date: form.date,
-      purpose: purposeFor(form.relationship),
-    });
-    return `/reservations?${query}`;
-  };
-
   if (!profileLoaded) return null;
 
   const scopeLabel = form.region;
@@ -587,7 +571,7 @@ export default function RecommendPage() {
                   )}
                   <div className="place-grid is-list-mode is-course-mode">
                     {course.items.map((place, index) => (
-                      <PlaceCard key={`${course.id}-${place.id}-${index}`} place={place} index={index} duration={course.duration} selected={selected} onSave={savePlace} voteUrl={voteUrl} showCourseTime />
+                      <PlaceCard key={`${course.id}-${place.id}-${index}`} place={place} index={index} duration={course.duration} selected={selected} onSave={savePlace} showCourseTime />
                     ))}
                   </div>
                 </section>
@@ -596,7 +580,7 @@ export default function RecommendPage() {
           ) : (
             <div className="place-grid is-list-mode">
               {visiblePlaces.map((place, index) => (
-                <PlaceCard key={`${place.id}-${index}`} place={place} index={index} duration={form.duration} selected={selected} onSave={savePlace} voteUrl={voteUrl} />
+                <PlaceCard key={`${place.id}-${index}`} place={place} index={index} duration={form.duration} selected={selected} onSave={savePlace} />
               ))}
             </div>
           )}
@@ -635,7 +619,7 @@ export default function RecommendPage() {
   );
 }
 
-function PlaceCard({ place, index, duration, selected, onSave, voteUrl, showCourseTime = false }: { place: Place; index: number; duration: string; selected: string | null; onSave: (place: Place) => void; voteUrl: (place: Place) => string; showCourseTime?: boolean }) {
+function PlaceCard({ place, index, duration, selected, onSave, showCourseTime = false }: { place: Place; index: number; duration: string; selected: string | null; onSave: (place: Place) => void; showCourseTime?: boolean }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(
     place.imageUrl &&
@@ -672,7 +656,6 @@ function PlaceCard({ place, index, duration, selected, onSave, voteUrl, showCour
       <div className="place-actions">
         <button onClick={() => onSave(place)}>{selected === place.id ? "저장 완료 ✓" : "장소 저장"}</button>
         <a href={place.mapUrl} target="_blank" rel="noreferrer">지도에서 보기</a>
-        <a href={voteUrl(place)}>함께 투표 후보로</a>
       </div>
     </article>
   );

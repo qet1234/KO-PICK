@@ -44,27 +44,8 @@ function normalizedProvider(value: unknown) {
   return provider.startsWith("custom:") ? provider.slice("custom:".length) : provider;
 }
 
-function parseBody(init: RequestInit) {
-  if (!init.body) return {} as Record<string, unknown>;
-  if (typeof init.body === "string") {
-    try { return JSON.parse(init.body) as Record<string, unknown>; }
-    catch { throw new Error("요청 데이터를 읽지 못했습니다."); }
-  }
-  throw new Error("JSON 요청만 지원합니다.");
-}
-
 function errorMessage(error: { message?: string } | null | undefined, fallback: string) {
   return error?.message?.trim() || fallback;
-}
-
-async function rpcJson<T>(name: string, args: Record<string, unknown> = {}) {
-  const { data, error } = await browserClient().rpc(name, args);
-  if (error) throw new Error(errorMessage(error, "Supabase 요청을 처리하지 못했습니다."));
-  if (data && typeof data === "object" && !Array.isArray(data) && "error" in data) {
-    const message = (data as { error?: unknown }).error;
-    if (typeof message === "string" && message.trim()) throw new Error(message);
-  }
-  return data as T;
 }
 
 async function edgeHeaders(extra?: HeadersInit) {
@@ -119,94 +100,6 @@ export async function springFetch(path: string, init: RequestInit = {}) {
 }
 
 export async function springJson<T>(path: string, init: RequestInit = {}) {
-  const method = (init.method ?? "GET").toUpperCase();
-  const body = parseBody(init);
-  const url = new URL(path, "https://kopick.local");
-  const pathname = url.pathname;
-
-  if (pathname === "/api/web/spaces" && method === "GET") {
-    const user = await getCurrentUser();
-    if (!user) throw new Error("로그인이 필요합니다.");
-    return rpcJson<T>("list_my_spaces", { p_display_name: user.displayName });
-  }
-  if (pathname === "/api/web/spaces" && method === "POST") {
-    return rpcJson<T>("create_shared_space", {
-      p_type: body.type,
-      p_name: body.name,
-      p_display_name: body.displayName,
-    });
-  }
-  if (pathname === "/api/web/spaces/join" && method === "POST") {
-    return rpcJson<T>("join_shared_space", {
-      p_invite_code: body.inviteCode,
-      p_display_name: body.displayName,
-    });
-  }
-  const inviteMatch = pathname.match(/^\/api\/web\/spaces\/([^/]+)\/invite$/);
-  if (inviteMatch && method === "POST") {
-    return rpcJson<T>("refresh_space_invite", { p_space_id: decodeURIComponent(inviteMatch[1]) });
-  }
-  const spaceMatch = pathname.match(/^\/api\/web\/spaces\/([^/]+)$/);
-  if (spaceMatch && method === "DELETE") {
-    const success = await rpcJson<boolean>("leave_shared_space", { p_space_id: decodeURIComponent(spaceMatch[1]) });
-    return { success } as T;
-  }
-
-  if (pathname === "/api/web/reservations" && method === "GET") {
-    return rpcJson<T>("list_my_reservations", {
-      p_space_id: url.searchParams.get("spaceId") || null,
-    });
-  }
-  if (pathname === "/api/web/reservations" && method === "POST") {
-    return rpcJson<T>("create_reservation_plan", {
-      p_space_id: body.spaceId,
-      p_title: body.title,
-      p_purpose: body.purpose,
-      p_reservation_date: body.reservationDate,
-      p_party_size: body.partySize,
-      p_budget_per_person: body.budgetPerPerson ?? null,
-      p_note: body.note ?? null,
-    });
-  }
-  const candidateCreateMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/candidates$/);
-  if (candidateCreateMatch && method === "POST") {
-    return rpcJson<T>("add_reservation_candidate", {
-      p_plan_id: decodeURIComponent(candidateCreateMatch[1]),
-      p_place_source: body.placeSource ?? "manual",
-      p_place_id: body.placeId ?? null,
-      p_place_name: body.placeName,
-      p_category: body.category ?? null,
-      p_address: body.address ?? null,
-      p_starts_at: body.startsAt,
-      p_external_reservation_url: body.externalReservationUrl ?? null,
-    });
-  }
-  const voteMatch = pathname.match(/^\/api\/web\/reservations\/candidates\/([^/]+)\/vote$/);
-  if (voteMatch && method === "POST") {
-    return rpcJson<T>("toggle_reservation_vote", { p_candidate_id: decodeURIComponent(voteMatch[1]) });
-  }
-  const finalizeMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/finalize$/);
-  if (finalizeMatch && method === "POST") {
-    return rpcJson<T>("finalize_reservation_plan", {
-      p_plan_id: decodeURIComponent(finalizeMatch[1]),
-      p_candidate_id: body.candidateId,
-    });
-  }
-  const statusMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)\/status$/);
-  if (statusMatch && method === "PATCH") {
-    return rpcJson<T>("update_reservation_status", {
-      p_plan_id: decodeURIComponent(statusMatch[1]),
-      p_status: body.status,
-    });
-  }
-  const planMatch = pathname.match(/^\/api\/web\/reservations\/([^/]+)$/);
-  if (planMatch && method === "DELETE") {
-    const success = await rpcJson<boolean>("delete_reservation_plan", {
-      p_plan_id: decodeURIComponent(planMatch[1]),
-    });
-    return { success } as T;
-  }
-
   const response = await springFetch(path, init);
   const payload = await response.json().catch(() => null) as (T & { error?: string }) | null;
   if (!response.ok) throw new Error(payload?.error || "Supabase Edge Function 요청에 실패했습니다.");

@@ -49,6 +49,7 @@ jobs:
           LEGAL_SHARE_MIGRATION: supabase/migrations/20260731223000_legal_course_sharing.sql
           PLACE_LIBRARY_MIGRATION: supabase/migrations/20260811113000_place_library_and_shared_polls.sql
           OPERATIONS_MIGRATION: supabase/migrations/20260811150000_operations_observability.sql
+          TOGETHER_REMOVAL_MIGRATION: supabase/migrations/20260811180000_remove_together_spaces.sql
         shell: bash
         run: |
           set -euo pipefail
@@ -64,7 +65,7 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$COUPLE_DISABLE_MIGRATION" "$PLACE_LIBRARY_MIGRATION" "$OPERATIONS_MIGRATION"; do
+            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$COUPLE_DISABLE_MIGRATION" "$PLACE_LIBRARY_MIGRATION" "$OPERATIONS_MIGRATION" "$TOGETHER_REMOVAL_MIGRATION"; do
               echo "Applying reviewed migration $(basename "$migration") through the Supabase Management API."
               jq -Rs '{query: .}' "$migration" > reviewed-migration.json
               curl --fail-with-body --silent --show-error \
@@ -92,21 +93,21 @@ jobs:
             | tee verify-migration-response.json
           jq -e '.[0].ready == true' verify-migration-response.json >/dev/null
 
-      - name: Verify couple-space feature is disabled
+      - name: Verify Together Spaces data and APIs are removed
         shell: bash
         run: |
           set -euo pipefail
           jq -n '{
-            query: "select to_regprocedure('\''public.create_couple_space(text)'\'') is null and to_regprocedure('\''public.join_couple_space_secure(text)'\'') is null and case when to_regclass('\''public.spaces'\'') is null then true else to_regprocedure('\''public.list_my_spaces_with_legacy_couple(text)'\'') is not null and not has_function_privilege('\''authenticated'\'', '\''public.list_my_spaces_with_legacy_couple(text)'\'', '\''execute'\'') end as ready"
-          }' > verify-couple-disabled.json
+            query: "select to_regclass('\''public.spaces'\'') is null and to_regclass('\''public.space_members'\'') is null and to_regclass('\''public.space_reservation_plans'\'') is null and to_regclass('\''public.couples'\'') is null and to_regclass('\''public.couple_members'\'') is null and to_regprocedure('\''public.list_my_spaces(text)'\'') is null and to_regprocedure('\''public.create_shared_space(text,text,text)'\'') is null and to_regprocedure('\''public.list_my_reservations(uuid)'\'') is null and to_regprocedure('\''public.prepare_account_deletion(uuid,text)'\'') is not null as ready"
+          }' > verify-together-removed.json
           curl --fail-with-body --silent --show-error \
             --request POST \
             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             --header "Content-Type: application/json" \
-            --data-binary @verify-couple-disabled.json \
+            --data-binary @verify-together-removed.json \
             "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
-            | tee verify-couple-disabled-response.json
-          jq -e '.[0].ready == true' verify-couple-disabled-response.json >/dev/null
+            | tee verify-together-removed-response.json
+          jq -e '.[0].ready == true' verify-together-removed-response.json >/dev/null
 
       - name: Deploy regular Edge Functions
         shell: bash

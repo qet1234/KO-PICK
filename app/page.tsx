@@ -100,7 +100,7 @@ export default function Home() {
           </div>
           <div className="kp-privacy-grid">
             <article><span>01</span><strong>필요한 정보만 처리</strong><p>소셜 로그인 계정 식별자, 이메일 및 공개 프로필 정보는 회원 식별과 서비스 제공 목적으로만 사용합니다.</p></article>
-            <article><span>02</span><strong>공간 정보 비공개</strong><p>개인·친구·가족 공간의 일정과 기록은 해당 공간의 구성원만 확인할 수 있도록 접근 권한을 제한합니다.</p></article>
+            <article><span>02</span><strong>회원별 접근 제한</strong><p>저장 장소와 최근 본 장소는 로그인한 본인만 확인할 수 있도록 접근 권한을 제한합니다.</p></article>
             <article><span>03</span><strong>탈퇴 시 안전하게 삭제</strong><p>회원탈퇴 시 개인정보와 저장 데이터는 관련 법령상 보관 의무가 있는 경우를 제외하고 삭제합니다.</p></article>
           </div>
           <div className="kp-privacy-footer">

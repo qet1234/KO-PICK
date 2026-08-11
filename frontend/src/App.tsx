@@ -3,9 +3,7 @@ import { Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import Home from "@/app/page";
 import LoginPage from "@/app/login/page";
 import AccountPage from "@/app/account/page";
-import SpacesHub from "@/components/SpacesHub";
 import CategoryExplorePage from "@/components/CategoryExplorePage";
-import ReservationPage from "@/components/ReservationPage";
 
 const allowedCategories = ["전체", "음식", "카페", "축제", "관광지"] as const;
 type Category = (typeof allowedCategories)[number];
@@ -30,11 +28,7 @@ function PageMetadata() {
   useEffect(() => {
     document.title = location.pathname === "/login"
       ? "로그인 | 오늘어디"
-      : location.pathname === "/spaces"
-          ? "함께 공간 | 오늘어디"
-        : location.pathname === "/reservations"
-          ? "함께 예약 | 오늘어디"
-        : location.pathname === "/account"
+      : location.pathname === "/account"
           ? "계정 설정 | 오늘어디"
           : "오늘어디 | 지역별 추천";
     window.scrollTo(0, 0);
@@ -50,8 +44,6 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/account" element={<AccountPage />} />
-        <Route path="/spaces" element={<SpacesHub />} />
-        <Route path="/reservations" element={<ReservationPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="*" element={<Home />} />
       </Routes>

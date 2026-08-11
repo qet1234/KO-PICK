@@ -7,7 +7,7 @@ This document defines the minimum controls for production operation of 오늘어
 ## Data classification
 
 - **Restricted:** OAuth client secrets, JWT secrets, database passwords, refresh tokens, session identifiers.
-- **Personal:** email, provider account identifier, profile name/photo, retained legacy couple-space records, saved places, account-deletion records.
+- **Personal:** email, provider account identifier, profile name/photo, saved places, account-deletion records.
 - **Public:** place and tourism information already intended for public display.
 
 Restricted data must never be sent to the browser, written to Git, placed in URLs, or stored in browser storage. Personal API responses must use `Cache-Control: private, no-store`.
@@ -19,16 +19,15 @@ Restricted data must never be sent to the browser, written to Git, placed in URL
 - Use `SameSite=Lax` where the OAuth flow permits it; use `None` only when cross-site cookies are strictly required.
 - Rotate refresh tokens and revoke the complete token family after reuse detection.
 - Invalidate sessions after password/account changes, account deletion, suspicious login, or OAuth unlinking.
-- Never accept a user ID, role, shared-space ID, or ownership claim solely from a request body. Resolve identity from the authenticated server session.
+- Never accept a user ID, role, or ownership claim solely from a request body. Resolve identity from the authenticated server session.
 
 ## Authorization and database
 
 - Every personal-data query must be scoped by the authenticated user ID.
-- Retained legacy couple-space data is unavailable to authenticated clients and remains service-role-only for deletion or recovery.
 - Apply least-privilege database roles. The application role must not own the database or schema.
 - Do not expose PostgreSQL publicly. Restrict inbound connections to the application platform/private network when the provider supports it.
 - Encrypt provider tokens and especially sensitive personal fields at the application or database layer when retained.
-- Keep audit events for login, logout, account deletion, shared-space membership changes, permission changes, and administrative access. Do not log tokens, secrets, full cookies, or sensitive request bodies.
+- Keep audit events for login, logout, account deletion, permission changes, and administrative access. Do not log tokens, secrets, full cookies, or sensitive request bodies.
 
 ## API protection
 
@@ -41,7 +40,7 @@ Restricted data must never be sent to the browser, written to Git, placed in URL
 - Validate request size, content type, enum values, text length, dates, coordinates, pagination limits, and uploaded file type/size.
 - Add request timeouts, bounded retries with jitter, circuit breakers, and concurrency limits for TourAPI and other external APIs.
 - Return generic authentication and server errors. Keep detailed causes in protected server logs only.
-- Require idempotency keys for sensitive retryable writes such as account deletion or shared-space removal.
+- Require idempotency keys for sensitive retryable writes such as account deletion.
 
 ## Browser protection
 
@@ -74,7 +73,7 @@ Alert on:
 - elevated 401/403/429/5xx rates;
 - repeated OAuth failures;
 - refresh-token reuse;
-- unusual account deletion or shared-space removal;
+- unusual account deletion activity;
 - database connection saturation, slow queries, storage growth;
 - external API errors and latency;
 - unexpected origin traffic bypassing the WAF.

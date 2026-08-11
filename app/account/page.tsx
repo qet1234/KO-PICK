@@ -112,8 +112,8 @@ export default function AccountPage() {
             <h2>회원탈퇴</h2>
 
             <p>
-              회원탈퇴 시 개인정보, 프로필, 함께 공간
-              구성원 정보, 추천 기록 및 이 기기의 서비스
+              회원탈퇴 시 개인정보, 프로필, 저장 장소,
+              추천 기록 및 이 기기의 서비스
               이용 식별정보가 삭제됩니다.
             </p>
 
@@ -163,9 +163,8 @@ export default function AccountPage() {
 
             <ul>
               <li>회원 프로필과 개인정보</li>
-              <li>본인이 만든 개인 공간과 단독 저장 데이터</li>
+              <li>저장한 장소와 최근 본 장소</li>
               <li>추천 기록과 이 기기의 방문자 식별정보</li>
-              <li>함께 공간은 다른 구성원에게 소유권 이전 후 본인만 탈퇴</li>
             </ul>
 
             <p className="account-google-notice">
