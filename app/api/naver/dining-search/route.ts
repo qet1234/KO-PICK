@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
 
 type DiningMode = "회식" | "점심";
 
@@ -248,6 +249,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 export async function GET(request: NextRequest) {
+  if (!(await isOperationalFeatureEnabled("office_dining"))) return NextResponse.json({ error: "직장인 식사 기능을 점검하고 있습니다." }, { status: 503 });
   if (isRateLimited(request)) {
     return NextResponse.json(
       { error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },

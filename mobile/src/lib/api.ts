@@ -1,5 +1,6 @@
 import { appConfig } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
+import { trackMobileOperation } from '@/lib/operations';
 
 export type TourPlace = {
   id: string;
@@ -75,6 +76,7 @@ export type RecommendationQuery = {
 };
 
 async function fetchKoPick<T>(path: string, requestSignal?: AbortSignal) {
+  const startedAt = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   const abortRequest = () => controller.abort();
@@ -92,12 +94,28 @@ async function fetchKoPick<T>(path: string, requestSignal?: AbortSignal) {
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => null) as (T & { error?: string }) | null;
+    void trackMobileOperation({
+      durationMs: Date.now() - startedAt,
+      eventType: 'api_request',
+      feature: path.startsWith('/api/tour') ? 'place_search' : path.startsWith('/api/recommend') ? 'recommendations' : path.startsWith('/api/naver/dining') ? 'office_dining' : 'mobile_api',
+      route: path.split('?')[0],
+      statusCode: response.status,
+      success: response.ok,
+    });
     if (!response.ok) {
       throw new Error(payload?.error || `오늘어디 서버 요청에 실패했습니다. (${response.status})`);
     }
     if (!payload) throw new Error('오늘어디 서버 응답을 읽지 못했습니다.');
     return payload;
   } catch (error) {
+    void trackMobileOperation({
+      durationMs: Date.now() - startedAt,
+      errorMessage: error instanceof Error ? error.message : 'Network request failed',
+      eventType: 'api_request',
+      feature: path.startsWith('/api/tour') ? 'place_search' : path.startsWith('/api/recommend') ? 'recommendations' : path.startsWith('/api/naver/dining') ? 'office_dining' : 'mobile_api',
+      route: path.split('?')[0],
+      success: false,
+    });
     if (error instanceof Error && error.name === 'AbortError') {
       if (requestSignal?.aborted) throw error;
       throw new Error('장소 조회 시간이 초과되었습니다. 잠시 후 다시 시도해 주세요.');
@@ -166,7 +184,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
   }
   if (query.openNow) params.set('openNow', 'true');
 
-  return fetchKoPick<{
+  const result = await fetchKoPick<{
     places: TourPlace[];
     pagination: {
       pageNo: number;
@@ -175,6 +193,14 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
       totalPages: number;
     };
   }>(`/api/tour/places?${params.toString()}`, signal);
+  if (result.places.length === 0) {
+    void trackMobileOperation({
+      eventType: 'search_no_results',
+      feature: 'place_search',
+      route: `/api/tour/places?region=${encodeURIComponent(query.region)}&category=${encodeURIComponent(query.category)}`,
+    });
+  }
+  return result;
 }
 
 export async function fetchNaverDiningPlaces(query: {

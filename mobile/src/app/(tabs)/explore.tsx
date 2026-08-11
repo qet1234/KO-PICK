@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChoiceChips } from '@/components/choice-chips';
@@ -10,6 +10,7 @@ import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
 import { fetchTourPlaces, type PlaceQuery, type TourPlace } from '@/lib/api';
 import { libraryPlaceKey, loadPlaceLibrary, recordRecentPlace, toggleSavedPlace, toLibraryPlace } from '@/lib/place-library';
+import { reportMobilePlace, trackMobileOperation } from '@/lib/operations';
 
 const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
 const categories = ['전체', '맛집', '카페', '관광지', '축제'] as const;
@@ -22,12 +23,14 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
   saved,
   onSelect,
   onToggleSaved,
+  onReport,
 }: {
   place: TourPlace;
   selected: boolean;
   saved: boolean;
   onSelect: (place: TourPlace) => void;
   onToggleSaved: (place: TourPlace) => void;
+  onReport: (place: TourPlace) => void;
 }) {
   return (
     <View style={[styles.card, selected && styles.cardSelected]}>
@@ -48,6 +51,9 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
         <Text style={[styles.saveIcon, saved && styles.saveIconActive]}>{saved ? '♥' : '♡'}</Text>
       </MotionPressable>
       <RouteMapChooser place={place} />
+      <MotionPressable accessibilityRole="button" onPress={() => onReport(place)} style={styles.reportButton}>
+        <Text style={styles.reportButtonText}>잘못된 장소 정보 신고</Text>
+      </MotionPressable>
     </View>
   );
 });
@@ -136,6 +142,20 @@ export default function ExploreScreen() {
   const selectPlace = (place: TourPlace) => {
     setSelected(place);
     void recordRecentPlace(place);
+    void trackMobileOperation({ category: place.category, eventType: 'place_card_click', feature: 'place_search', placeId: place.id, placeName: place.name, route: '/explore' });
+  };
+
+  const reportPlace = (place: TourPlace) => {
+    const submit = (reason: 'incorrect_info' | 'closed' | 'wrong_location') => {
+      void reportMobilePlace(place, reason)
+        .then(() => Alert.alert('접수 완료', '확인 후 장소 정보에 반영하겠습니다.'))
+        .catch((reportError) => Alert.alert('접수 실패', reportError instanceof Error ? reportError.message : '잠시 후 다시 시도해 주세요.'));
+    };
+    Alert.alert('잘못된 장소 정보 신고', place.name, [
+      { text: '취소', style: 'cancel' },
+      { text: '폐업·없어진 장소', onPress: () => submit('closed') },
+      { text: '위치·정보 오류', onPress: () => submit('incorrect_info') },
+    ]);
   };
 
   const toggleSaved = async (place: TourPlace) => {
@@ -208,7 +228,7 @@ export default function ExploreScreen() {
           <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
         </View> : null}
         {places.map((place) => (
-          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onToggleSaved={toggleSaved} />
+          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onToggleSaved={toggleSaved} onReport={reportPlace} />
         ))}
         {totalPages > 1 ? <View style={styles.paginationBottom}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
@@ -231,6 +251,7 @@ const styles = StyleSheet.create({
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
   list: { marginTop: 26 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
   card: { marginTop: 12, position: 'relative', borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { borderRadius: 14 }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 10, color: '#71716d', fontSize: 11, lineHeight: 17 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 10, color: '#71716d', fontSize: 10, lineHeight: 15 }, saveButton: { width: 42, height: 42, position: 'absolute', top: 20, right: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 21, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 23, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
+  reportButton: { minHeight: 42, marginTop: 8, alignItems: 'center', justifyContent: 'center' }, reportButtonText: { color: '#71716d', fontSize: 11, fontWeight: '800', textDecorationLine: 'underline' },
   pagination: { marginTop: 14, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }, paginationBottom: { marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   pageButton: { minWidth: 82, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 14 }, pageButtonDisabled: { opacity: 0.38 }, pageButtonText: { color: '#101010', fontSize: 12, fontWeight: '900' },
   pageStatus: { minWidth: 86, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#101010', paddingHorizontal: 12 }, pageCurrent: { color: '#caff2c', fontSize: 13, fontWeight: '900' }, pageDivider: { color: '#8b8b85', fontSize: 11, fontWeight: '800' }, pageTotal: { color: '#ffffff', fontSize: 11, fontWeight: '800' },

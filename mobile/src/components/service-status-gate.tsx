@@ -1,4 +1,5 @@
 import * as Linking from 'expo-linking';
+import { usePathname, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
@@ -29,6 +30,8 @@ function scheduleText(status: MobileServiceStatus) {
 }
 
 export function ServiceStatusGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [status, setStatus] = useState<MobileServiceStatus | null>(null);
   const [checking, setChecking] = useState(true);
   const [dismissedPartial, setDismissedPartial] = useState<string | null>(null);
@@ -73,14 +76,22 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
   const updateRequired = status?.update.required === true;
   const maintenance = status?.mode === 'maintenance';
   const partial = status?.mode === 'partial' && dismissedPartial !== status.updatedAt;
+  const pathFeature = pathname.startsWith('/explore')
+    ? ['place_search', '장소 찾기'] as const
+    : pathname.startsWith('/office')
+      ? ['office_dining', '직장인 식사'] as const
+      : pathname.startsWith('/saved')
+        ? ['saved_places', '저장한 장소'] as const
+        : null;
+  const disabledFeature = pathFeature && status?.featureFlags[pathFeature[0]] === false ? pathFeature[1] : null;
 
-  if (!status || (!updateRequired && !maintenance && !partial)) return children;
+  if (!status || (!updateRequired && !maintenance && !partial && !disabledFeature)) return children;
 
-  const kind = updateRequired ? 'update' : maintenance ? 'maintenance' : 'partial';
-  const title = updateRequired ? '필수 업데이트 안내' : status.title;
+  const kind = updateRequired ? 'update' : maintenance ? 'maintenance' : disabledFeature ? 'feature' : 'partial';
+  const title = updateRequired ? '필수 업데이트 안내' : disabledFeature ? `${disabledFeature} 기능을 잠시 중지했습니다` : status.title;
   const message = updateRequired
     ? `안정적인 서비스 이용을 위해 오늘어디 ${status.update.minimumVersion} 이상 버전으로 업데이트해 주세요.`
-    : status.message;
+    : disabledFeature ? '운영자가 기능을 점검하고 있습니다. 다른 기능은 정상적으로 이용할 수 있습니다.' : status.message;
   const schedule = scheduleText(status);
 
   const openUpdate = async () => {
@@ -95,7 +106,7 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
         <Text style={styles.brand}>오늘어디</Text>
       </View>
       <View style={styles.noticeCard}>
-        <Text style={styles.eyebrow}>{kind === 'update' ? 'APP UPDATE' : kind === 'partial' ? 'PARTIAL MAINTENANCE' : 'SERVICE MAINTENANCE'}</Text>
+        <Text style={styles.eyebrow}>{kind === 'update' ? 'APP UPDATE' : kind === 'partial' ? 'PARTIAL MAINTENANCE' : kind === 'feature' ? 'FEATURE PAUSED' : 'SERVICE MAINTENANCE'}</Text>
         <Text style={styles.noticeTitle}>{title}</Text>
         <Text style={styles.noticeMessage}>{message}</Text>
         {schedule && !updateRequired ? (
@@ -111,6 +122,10 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
           <MotionPressable accessibilityRole="button" onPress={() => void openUpdate()} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>업데이트하기</Text>
           </MotionPressable>
+        ) : disabledFeature ? (
+          <MotionPressable accessibilityRole="button" onPress={() => router.replace('/')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>홈으로 돌아가기</Text>
+          </MotionPressable>
         ) : (
           <MotionPressable accessibilityRole="button" disabled={checking} onPress={() => void refresh(true)} style={[styles.primaryButton, checking && styles.disabled]}>
             {checking ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>다시 확인</Text>}
@@ -121,7 +136,7 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
             <Text style={styles.secondaryButtonText}>확인하고 계속 이용</Text>
           </MotionPressable>
         ) : null}
-        <Text style={styles.help}>점검 종료 후 다시 확인하면 정상적으로 이용할 수 있습니다.</Text>
+        <Text style={styles.help}>{disabledFeature ? '운영 상태가 정상화되면 별도 업데이트 없이 다시 이용할 수 있습니다.' : '점검 종료 후 다시 확인하면 정상적으로 이용할 수 있습니다.'}</Text>
       </View>
     </SafeAreaView>
   );

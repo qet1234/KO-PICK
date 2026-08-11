@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import {
   appServiceFeatureOptions,
+  operationalFeatureDefinitions,
   type AppServiceMode,
   type AppServiceStatusRecord,
 } from "@/utils/app-service-status";
@@ -31,6 +32,7 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
   const [startsAt, setStartsAt] = useState(koreaDateTimeInput(initialStatus.startsAt));
   const [endsAt, setEndsAt] = useState(koreaDateTimeInput(initialStatus.endsAt));
   const [affectedFeatures, setAffectedFeatures] = useState(initialStatus.affectedFeatures);
+  const [featureFlags, setFeatureFlags] = useState(initialStatus.featureFlags);
   const [customFeature, setCustomFeature] = useState("");
   const [androidMinVersion, setAndroidMinVersion] = useState(initialStatus.androidMinVersion);
   const [iosMinVersion, setIosMinVersion] = useState(initialStatus.iosMinVersion);
@@ -90,6 +92,7 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
           androidMinVersion,
           androidStoreUrl,
           endsAt: inputToIso(endsAt),
+          featureFlags,
           iosForceUpdate,
           iosMinVersion,
           iosStoreUrl,
@@ -205,6 +208,30 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
               </div>
             </div>
           ) : <p className="service-feature-empty">선택한 기능이 없습니다.</p>}
+        </fieldset>
+
+        <fieldset className="service-feature-picker operational-flags">
+          <legend>기능별 원격 활성화·비활성화</legend>
+          <div className="service-feature-heading">
+            <p>배포 없이 기능을 즉시 숨길 수 있습니다. 장애가 발생한 기능만 끄고 나머지 서비스는 계속 운영하세요.</p>
+            <div>
+              <button onClick={() => setFeatureFlags(Object.fromEntries(operationalFeatureDefinitions.map(({ key }) => [key, true])) as typeof featureFlags)} type="button">전체 켜기</button>
+              <button onClick={() => setFeatureFlags(Object.fromEntries(operationalFeatureDefinitions.map(({ key }) => [key, false])) as typeof featureFlags)} type="button">전체 끄기</button>
+            </div>
+          </div>
+          <div className="operational-flag-grid">
+            {operationalFeatureDefinitions.map(({ key, label }) => (
+              <label className={`operational-flag${featureFlags[key] ? " is-enabled" : ""}`} key={key}>
+                <span><strong>{label}</strong><small>{featureFlags[key] ? "사용 가능" : "사용 중지"}</small></span>
+                <input
+                  checked={featureFlags[key]}
+                  onChange={(event) => setFeatureFlags((current) => ({ ...current, [key]: event.target.checked }))}
+                  type="checkbox"
+                />
+                <i aria-hidden="true" />
+              </label>
+            ))}
+          </div>
         </fieldset>
 
         <div className="update-control-grid">

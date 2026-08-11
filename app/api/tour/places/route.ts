@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
 import { verifiedTourImageFromList } from "@/utils/tourapi-image";
 
 const TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2";
@@ -378,6 +379,7 @@ async function loadOpeningStatus(contentId: string, contentTypeId: string, commo
 }
 
 export async function GET(request: NextRequest) {
+  if (!(await isOperationalFeatureEnabled("place_search"))) return NextResponse.json({ error: "장소 찾기 기능을 점검하고 있습니다." }, { status: 503 });
   const rawServiceKey = (
     process.env.TOUR_API_SERVICE_KEY ?? process.env.TOUR_API_KEY
   )?.trim();

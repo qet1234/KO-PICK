@@ -4,6 +4,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminAccounts, { type AdminAccount } from "./AdminAccounts";
 import AdminServiceControl from "./AdminServiceControl";
+import {
+  AdminOperationsDashboard,
+  AdminPlaceReports,
+  type OperationsSummary,
+  type PlaceReport,
+} from "./AdminOperations";
 import { createAdminClient, getAdminAccess } from "@/utils/admin";
 import { defaultAppServiceStatus, normalizeAppServiceStatus } from "@/utils/app-service-status";
 import "./admin.css";
@@ -44,6 +50,23 @@ const emptyTraffic: TrafficSummary = {
   visitors30d: 0,
 };
 
+const emptyOperations: OperationsSummary = {
+  apiErrorCount: 0,
+  appCrashes: 0,
+  appErrors: 0,
+  conversions: {
+    booking: { count: 0, rate: 0 },
+    directions: { count: 0, rate: 0 },
+    map: { count: 0, rate: 0 },
+  },
+  noResultQueries: [],
+  placeClicks: 0,
+  recentErrors: [],
+  searchNoResults: 0,
+  slowApiCount: 0,
+  slowApis: [],
+};
+
 function number(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -63,6 +86,30 @@ function trafficSummary(value: unknown): TrafficSummary {
     views30d: number(data.views30d),
     visitors7d: number(data.visitors7d),
     visitors30d: number(data.visitors30d),
+  };
+}
+
+function operationsSummary(value: unknown): OperationsSummary {
+  if (!value || typeof value !== "object") return emptyOperations;
+  const data = value as Record<string, unknown>;
+  const conversions = data.conversions && typeof data.conversions === "object"
+    ? data.conversions as Record<string, unknown>
+    : {};
+  const conversion = (key: string) => {
+    const item = conversions[key] && typeof conversions[key] === "object" ? conversions[key] as Record<string, unknown> : {};
+    return { count: number(item.count), rate: number(item.rate) };
+  };
+  return {
+    apiErrorCount: number(data.apiErrorCount),
+    appCrashes: number(data.appCrashes),
+    appErrors: number(data.appErrors),
+    conversions: { booking: conversion("booking"), directions: conversion("directions"), map: conversion("map") },
+    noResultQueries: Array.isArray(data.noResultQueries) ? data.noResultQueries as OperationsSummary["noResultQueries"] : [],
+    placeClicks: number(data.placeClicks),
+    recentErrors: Array.isArray(data.recentErrors) ? data.recentErrors as OperationsSummary["recentErrors"] : [],
+    searchNoResults: number(data.searchNoResults),
+    slowApiCount: number(data.slowApiCount),
+    slowApis: Array.isArray(data.slowApis) ? data.slowApis as OperationsSummary["slowApis"] : [],
   };
 }
 
@@ -97,15 +144,19 @@ export default async function AdminPage() {
   }
 
   const adminClient = createAdminClient();
-  const [usersResult, trafficResult, serviceStatusResult] = await Promise.all([
+  const [usersResult, trafficResult, serviceStatusResult, operationsResult, reportsResult] = await Promise.all([
     adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     adminClient.rpc("get_admin_traffic_dashboard", { p_days: 30 }),
     adminClient.from("app_service_status").select("*").eq("id", 1).maybeSingle(),
+    adminClient.rpc("get_admin_operations_dashboard", { p_days: 30 }),
+    adminClient.from("place_information_reports").select("id,place_id,place_name,category,address,reason,details,platform,status,created_at").order("created_at", { ascending: false }).limit(60),
   ]);
 
   if (usersResult.error) console.error("관리자 계정 목록 오류:", usersResult.error.message);
   if (trafficResult.error) console.error("관리자 트래픽 요약 오류:", trafficResult.error.message);
   if (serviceStatusResult.error) console.error("앱 서비스 상태 오류:", serviceStatusResult.error.message);
+  if (operationsResult.error) console.error("운영 지표 조회 오류:", operationsResult.error.message);
+  if (reportsResult.error) console.error("장소 신고 조회 오류:", reportsResult.error.message);
 
   const accounts: AdminAccount[] = (usersResult.data?.users ?? []).map((user) => ({
     createdAt: user.created_at,
@@ -120,6 +171,8 @@ export default async function AdminPage() {
   const serviceStatus = serviceStatusResult.data
     ? normalizeAppServiceStatus(serviceStatusResult.data)
     : defaultAppServiceStatus;
+  const operations = operationsSummary(operationsResult.data);
+  const reports = (reportsResult.data ?? []) as PlaceReport[];
   const maxDailyViews = Math.max(1, ...traffic.daily.map((day) => number(day.views)));
   const totalDeviceViews = Math.max(1, traffic.devices.reduce((sum, item) => sum + number(item.views), 0));
   const loginRatio = traffic.views30d
@@ -135,8 +188,10 @@ export default async function AdminPage() {
         </Link>
         <nav aria-label="관리자 메뉴">
           <a href="#service-control"><span>01</span>앱 운영 제어</a>
-          <a href="#traffic"><span>02</span>트래픽 현황</a>
-          <a href="#accounts"><span>03</span>로그인 계정</a>
+          <a href="#operations"><span>02</span>기능 운영 지표</a>
+          <a href="#traffic"><span>03</span>트래픽 현황</a>
+          <a href="#reports"><span>04</span>장소 신고</a>
+          <a href="#accounts"><span>05</span>로그인 계정</a>
         </nav>
         <div className="admin-sidebar-bottom">
           <small>접속 계정</small>
@@ -156,6 +211,8 @@ export default async function AdminPage() {
         </header>
 
         <AdminServiceControl initialStatus={serviceStatus} />
+
+        <AdminOperationsDashboard summary={operations} />
 
         <section id="traffic">
           <div className="metric-grid">
@@ -236,6 +293,7 @@ export default async function AdminPage() {
           </article>
         </section>
 
+        <AdminPlaceReports initialReports={reports} />
         <AdminAccounts accounts={accounts} />
         <p className="admin-privacy-note">IP 주소와 정밀 위치는 저장하지 않으며, 익명 트래픽 기록은 90일 후 자동 삭제됩니다.</p>
       </div>

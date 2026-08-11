@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
 
 type NaverLocalItem = {
   title?: string;
@@ -207,6 +208,7 @@ export const revalidate = 0;
 export const fetchCache = "force-no-store";
 
 export async function GET(request: NextRequest) {
+  if (!(await isOperationalFeatureEnabled("reservations"))) return NextResponse.json({ matched: false, bookable: false }, { status: 503 });
   if (isRateLimited(request)) {
     return NextResponse.json(
       { matched: false, reason: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },

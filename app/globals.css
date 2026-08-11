@@ -801,3 +801,5 @@ h1 strong {
   user-select: none;
   pointer-events: none;
 }
+/* 운영자가 원격으로 중지한 기능의 안전한 대체 화면 */
+.feature-disabled-screen{min-height:72vh;padding:24px;display:grid;place-items:center;background:#f7f7f4;color:#101010}.feature-disabled-screen section{width:min(100%,620px);padding:44px;border:1px solid #deded8;border-radius:24px;background:#fff;text-align:center}.feature-disabled-screen span{color:#ff3b36;font-size:10px;font-weight:900;letter-spacing:.18em}.feature-disabled-screen h1{margin:14px 0 10px;font-size:clamp(30px,5vw,48px);letter-spacing:-.05em}.feature-disabled-screen p{margin:0;color:#6f6f69;line-height:1.7}.feature-disabled-screen a{min-height:46px;margin-top:24px;padding:0 18px;display:inline-flex;align-items:center;border-radius:12px;color:#fff;background:#101010;font-weight:900;text-decoration:none}

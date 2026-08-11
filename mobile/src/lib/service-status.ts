@@ -3,9 +3,17 @@ import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 
+type MobileFeatureKey = keyof MobileServiceStatus['featureFlags'];
+let latestFeatureFlags: MobileServiceStatus['featureFlags'] | null = null;
+
+export function isMobileFeatureEnabled(feature: MobileFeatureKey) {
+  return latestFeatureFlags?.[feature] !== false;
+}
+
 export type MobileServiceStatus = {
   affectedFeatures: string[];
   endsAt: string | null;
+  featureFlags: Record<'place_search' | 'recommendations' | 'office_dining' | 'saved_places' | 'shared_poll' | 'reservations' | 'weather' | 'navigation', boolean>;
   message: string;
   mode: 'operational' | 'partial' | 'maintenance';
   startsAt: string | null;
@@ -27,6 +35,8 @@ function isMobileServiceStatus(value: unknown): value is MobileServiceStatus {
     && typeof status.title === 'string'
     && typeof status.message === 'string'
     && Array.isArray(status.affectedFeatures)
+    && Boolean(status.featureFlags)
+    && typeof status.featureFlags === 'object'
     && typeof status.updatedAt === 'string'
     && Boolean(update)
     && typeof update === 'object'
@@ -48,6 +58,7 @@ export async function fetchMobileServiceStatus() {
     if (!response.ok) throw new Error('앱 운영 상태를 확인하지 못했습니다.');
     const payload: unknown = await response.json();
     if (!isMobileServiceStatus(payload)) throw new Error('앱 운영 상태 응답이 올바르지 않습니다.');
+    latestFeatureFlags = payload.featureFlags;
     return payload;
   } finally {
     clearTimeout(timeout);

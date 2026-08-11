@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
 import { loadVerifiedTourImages } from "@/utils/tourapi-image";
 
 type TourPlace = {
@@ -471,6 +472,7 @@ async function buildNationwideCourses(params: URLSearchParams) {
 }
 
 export async function GET(request: NextRequest) {
+  if (!(await isOperationalFeatureEnabled("recommendations"))) return NextResponse.json({ error: "추천 기능을 점검하고 있습니다." }, { status: 503 });
   try {
     const params = request.nextUrl.searchParams;
     const requestedCount = Math.min(

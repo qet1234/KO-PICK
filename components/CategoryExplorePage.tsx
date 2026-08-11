@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLocationPin from "@/components/BrandLocationPin";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
+import { reportPlaceInformation, trackOperationEvent } from "@/utils/operations-telemetry";
+import { isClientFeatureEnabled } from "@/utils/feature-flags-client";
 import { tourPlacesApiUrl } from "@/utils/spring-api";
 import NaverBookingButton from "@/components/NaverBookingButton";
 import {
@@ -691,6 +693,14 @@ export default function CategoryExplorePage({
 
   const focusPlace = (place: Place) => {
     void trackPlaceActivity(place, "detail");
+    trackOperationEvent({
+      category: place.category,
+      eventType: "place_card_click",
+      feature: "place_search",
+      placeId: place.id,
+      placeName: place.name,
+      route: "/explore",
+    });
     void recordRecentPlace(place);
 
     const naverMaps = naverMapsApi();
@@ -1004,7 +1014,16 @@ export default function CategoryExplorePage({
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={place.name + " 네이버 지도에서 보기"}
-                      onClick={() => { void recordRecentPlace(place); void trackPlaceActivity(place, "outbound"); }}
+                      onClick={(event) => {
+                        if (!isClientFeatureEnabled("navigation")) {
+                          event.preventDefault();
+                          window.alert("지도·길찾기 기능을 점검하고 있습니다.");
+                          return;
+                        }
+                        void recordRecentPlace(place);
+                        void trackPlaceActivity(place, "outbound");
+                        trackOperationEvent({ category: place.category, eventType: "map_open", feature: "navigation", placeId: place.id, placeName: place.name, route: "/explore" });
+                      }}
                     >
                       네이버 지도에서 보기 ↗
                     </a>
@@ -1014,7 +1033,17 @@ export default function CategoryExplorePage({
                       category={place.category}
                       source="tour"
                       className="kp-explore-naver-booking-link"
+                      onClick={() => trackOperationEvent({ category: place.category, eventType: "booking_open", feature: "reservations", placeId: place.id, placeName: place.name, route: "/explore" })}
                     />
+                    <button
+                      className="kp-explore-report-link"
+                      type="button"
+                      onClick={() => void reportPlaceInformation(place)
+                        .then((submitted) => { if (submitted) window.alert("신고가 접수되었습니다. 확인 후 장소 정보에 반영하겠습니다."); })
+                        .catch((reportError) => window.alert(reportError instanceof Error ? reportError.message : "신고를 접수하지 못했습니다."))}
+                    >
+                      잘못된 정보 신고
+                    </button>
                     <a className="kp-explore-choose-link" href="/saved">함께 고르기 후보 확인 →</a>
                   </div>
                 </article>

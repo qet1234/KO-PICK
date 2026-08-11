@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -16,6 +17,8 @@ import {
   type RoutablePlace,
   setPreferredMap,
 } from '@/lib/map-links';
+import { trackMobileOperation } from '@/lib/operations';
+import { isMobileFeatureEnabled } from '@/lib/service-status';
 
 export function RouteMapChooser({ place }: { place: RoutablePlace }) {
   const [visible, setVisible] = useState(false);
@@ -27,7 +30,12 @@ export function RouteMapChooser({ place }: { place: RoutablePlace }) {
   }, []);
 
   const start = async () => {
+    if (!isMobileFeatureEnabled('navigation')) {
+      Alert.alert('기능 점검 중', '지도·길찾기 기능을 잠시 중지했습니다.');
+      return;
+    }
     if (preferredMap) {
+      void trackMobileOperation({ eventType: 'directions_open', feature: 'navigation', placeId: String(place.id), placeName: place.name, route: '/explore', metadata: { provider: preferredMap } });
       await openRouteMap(preferredMap, place);
       return;
     }
@@ -40,6 +48,7 @@ export function RouteMapChooser({ place }: { place: RoutablePlace }) {
       await setPreferredMap(provider);
       setPreferredMapState(provider);
     }
+    void trackMobileOperation({ eventType: 'directions_open', feature: 'navigation', placeId: String(place.id), placeName: place.name, route: '/explore', metadata: { provider } });
     await openRouteMap(provider, place);
   };
 

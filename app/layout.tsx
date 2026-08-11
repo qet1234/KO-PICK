@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import LegalFooter from "@/components/LegalFooter";
+import OperationsTelemetry from "@/components/OperationsTelemetry";
 import TrafficTracker from "@/components/TrafficTracker";
+import WebFeatureFlagGate from "@/components/WebFeatureFlagGate";
 import "./globals.css";
 import "./legal.css";
 
@@ -21,8 +23,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <OperationsTelemetry />
         <TrafficTracker />
-        {children}
+        <WebFeatureFlagGate>{children}</WebFeatureFlagGate>
         <LegalFooter />
       </body>
     </html>

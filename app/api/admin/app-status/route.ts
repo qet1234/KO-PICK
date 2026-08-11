@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient, getAdminAccess } from "@/utils/admin";
-import { normalizeAppServiceStatus, type AppServiceMode } from "@/utils/app-service-status";
+import {
+  normalizeAppServiceStatus,
+  operationalFeatureDefinitions,
+  type AppServiceMode,
+} from "@/utils/app-service-status";
 
 const versionPattern = /^\d+\.\d+\.\d+$/;
 
@@ -71,6 +75,12 @@ export async function PUT(request: NextRequest) {
     if (affectedFeatures.some((item) => item.length > 40)) {
       throw new Error("영향 기능은 항목당 40자 이내로 입력해 주세요.");
     }
+    const rawFeatureFlags = body.featureFlags && typeof body.featureFlags === "object"
+      ? body.featureFlags as Record<string, unknown>
+      : {};
+    const featureFlags = Object.fromEntries(
+      operationalFeatureDefinitions.map(({ key }) => [key, rawFeatureFlags[key] !== false]),
+    );
 
     const payload = {
       affected_features: affectedFeatures,
@@ -78,6 +88,7 @@ export async function PUT(request: NextRequest) {
       android_min_version: version(body.androidMinVersion, "Android 최소 버전"),
       android_store_url: nullableHttpsUrl(body.androidStoreUrl, "Android 업데이트 주소"),
       ends_at: endsAt,
+      feature_flags: featureFlags,
       id: 1,
       ios_force_update: body.iosForceUpdate === true,
       ios_min_version: version(body.iosMinVersion, "iOS 최소 버전"),

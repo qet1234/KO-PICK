@@ -12,12 +12,31 @@ export const appServiceFeatureOptions = [
   "공유 기능",
 ] as const;
 
+export const operationalFeatureDefinitions = [
+  { key: "place_search", label: "장소 찾기" },
+  { key: "recommendations", label: "추천·코스" },
+  { key: "office_dining", label: "직장인 식사" },
+  { key: "saved_places", label: "찜·최근 장소" },
+  { key: "shared_poll", label: "함께 고르기" },
+  { key: "reservations", label: "예약 연결" },
+  { key: "weather", label: "실시간 날씨" },
+  { key: "navigation", label: "지도·길찾기" },
+] as const;
+
+export type OperationalFeatureKey = (typeof operationalFeatureDefinitions)[number]["key"];
+export type OperationalFeatureFlags = Record<OperationalFeatureKey, boolean>;
+
+export const defaultOperationalFeatureFlags: OperationalFeatureFlags = Object.fromEntries(
+  operationalFeatureDefinitions.map(({ key }) => [key, true]),
+) as OperationalFeatureFlags;
+
 export type AppServiceStatusRecord = {
   affectedFeatures: string[];
   androidForceUpdate: boolean;
   androidMinVersion: string;
   androidStoreUrl: string | null;
   endsAt: string | null;
+  featureFlags: OperationalFeatureFlags;
   iosForceUpdate: boolean;
   iosMinVersion: string;
   iosStoreUrl: string | null;
@@ -34,6 +53,7 @@ export const defaultAppServiceStatus: AppServiceStatusRecord = {
   androidMinVersion: "1.0.0",
   androidStoreUrl: null,
   endsAt: null,
+  featureFlags: defaultOperationalFeatureFlags,
   iosForceUpdate: false,
   iosMinVersion: "1.0.0",
   iosStoreUrl: null,
@@ -59,6 +79,12 @@ export function normalizeAppServiceStatus(value: unknown): AppServiceStatusRecor
   const mode: AppServiceMode = rawMode === "maintenance" || rawMode === "partial"
     ? rawMode
     : "operational";
+  const rawFeatureFlags = row.feature_flags && typeof row.feature_flags === "object"
+    ? row.feature_flags as Record<string, unknown>
+    : {};
+  const featureFlags = Object.fromEntries(
+    operationalFeatureDefinitions.map(({ key }) => [key, rawFeatureFlags[key] !== false]),
+  ) as OperationalFeatureFlags;
 
   return {
     affectedFeatures: Array.isArray(row.affected_features)
@@ -68,6 +94,7 @@ export function normalizeAppServiceStatus(value: unknown): AppServiceStatusRecor
     androidMinVersion: string(row.android_min_version, "1.0.0"),
     androidStoreUrl: nullableString(row.android_store_url),
     endsAt: nullableString(row.ends_at),
+    featureFlags,
     iosForceUpdate: row.ios_force_update === true,
     iosMinVersion: string(row.ios_min_version, "1.0.0"),
     iosStoreUrl: nullableString(row.ios_store_url),

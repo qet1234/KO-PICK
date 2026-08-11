@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,7 @@ async function nationwideWeather() {
 }
 
 export async function GET(request: NextRequest) {
+  if (!(await isOperationalFeatureEnabled("weather"))) return NextResponse.json({ error: "날씨 기능을 점검하고 있습니다." }, { status: 503 });
   const scope = request.nextUrl.searchParams.get("scope") || "single";
 
   try {

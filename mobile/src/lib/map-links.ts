@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 export type MapProvider = 'kakao' | 'naver';
 
 export type RoutablePlace = {
+  id?: string | number;
   name: string;
   address?: string | null;
   latitude?: number | null;

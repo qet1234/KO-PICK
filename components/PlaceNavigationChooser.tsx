@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import styles from "./PlaceNavigationChooser.module.css";
+import { trackOperationEvent } from "@/utils/operations-telemetry";
+import { isClientFeatureEnabled } from "@/utils/feature-flags-client";
 
 type Provider = "kakao" | "naver";
 
@@ -193,6 +195,11 @@ export default function PlaceNavigationChooser() {
 
   const choose = (provider: Provider) => {
     if (!target) return;
+    if (!isClientFeatureEnabled("navigation")) {
+      window.alert("지도·길찾기 기능을 점검하고 있습니다.");
+      setTarget(null);
+      return;
+    }
 
     if (remember) {
       window.localStorage.setItem(PREFERENCE_KEY, provider);
@@ -200,6 +207,13 @@ export default function PlaceNavigationChooser() {
     }
 
     if (target.name !== "기본 길찾기 지도 변경") {
+      trackOperationEvent({
+        eventType: "directions_open",
+        feature: "navigation",
+        placeName: target.name,
+        route: "/explore",
+        metadata: { provider },
+      });
       openProvider(provider, target);
     }
 

@@ -44,6 +44,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     affectedFeatures: status.affectedFeatures,
     endsAt: status.endsAt,
+    featureFlags: status.featureFlags,
     message: status.message,
     mode: effectiveServiceMode(status),
     startsAt: status.startsAt,
