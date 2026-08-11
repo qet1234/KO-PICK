@@ -80,13 +80,15 @@ export default function HomeScreen() {
                 style={[styles.categoryCard, tablet && styles.categoryCardTablet]}
               >
                 <View style={styles.categoryAccent} />
-                <Text style={styles.categoryNumber}>{item.number}</Text>
+                <Text maxFontSizeMultiplier={1.15} style={styles.categoryNumber}>{item.number}</Text>
                 <View style={styles.categoryCopy}>
-                  <Text style={styles.categoryEnglish}>{item.english}</Text>
-                  <Text style={styles.categoryTitle}>{item.title}</Text>
-                  <Text style={styles.categoryDescription}>{item.description}</Text>
+                  <Text maxFontSizeMultiplier={1.15} style={styles.categoryEnglish}>{item.english}</Text>
+                  <Text maxFontSizeMultiplier={1.15} style={styles.categoryTitle}>{item.title}</Text>
                 </View>
-                <View style={styles.categoryArrow}><Text style={styles.categoryArrowText}>↗</Text></View>
+                <View style={styles.categoryBottomRow}>
+                  <Text maxFontSizeMultiplier={1.2} style={styles.categoryDescription}>{item.description}</Text>
+                  <View style={styles.categoryArrow}><Text maxFontSizeMultiplier={1} style={styles.categoryArrowText}>↗</Text></View>
+                </View>
               </MotionPressable>
             ))}
           </View>
@@ -149,17 +151,18 @@ const styles = StyleSheet.create({
   categorySection: { marginTop: 44 },
   sectionTitle: { marginTop: 9, color: '#111111', fontSize: 32, lineHeight: 38, fontWeight: '900', letterSpacing: -1.5 },
   sectionDescription: { marginTop: 10, color: '#454541', fontSize: 13, fontWeight: '600', lineHeight: 21 },
-  categoryGrid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  categoryCard: { width: '100%', minHeight: 190, padding: 24, position: 'relative', justifyContent: 'space-between', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 18, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.06, shadowRadius: 15, elevation: 3 },
+  categoryGrid: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  categoryCard: { width: '100%', minHeight: 214, padding: 20, position: 'relative', justifyContent: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 20, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.06, shadowRadius: 15, elevation: 3 },
   categoryCardTablet: { width: '48%' },
-  categoryAccent: { width: 4, height: 68, position: 'absolute', top: 61, left: 0, borderTopRightRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#ff3b36' },
-  categoryNumber: { alignSelf: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', color: '#111111', paddingHorizontal: 9, paddingVertical: 5, fontSize: 10, fontWeight: '900' },
-  categoryCopy: { marginTop: 20 },
-  categoryEnglish: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 0.9 },
-  categoryTitle: { marginTop: 10, color: '#111111', fontSize: 23, fontWeight: '900', letterSpacing: -1 },
-  categoryDescription: { marginTop: 6, maxWidth: '78%', color: '#494945', fontSize: 12, fontWeight: '600', lineHeight: 18 },
-  categoryArrow: { width: 44, height: 44, position: 'absolute', right: 14, bottom: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d2d2cc', borderRadius: 22, backgroundColor: '#ffffff' },
-  categoryArrowText: { color: '#101010', fontSize: 19, fontWeight: '800' },
+  categoryAccent: { width: 5, height: 72, position: 'absolute', top: 62, left: 0, borderTopRightRadius: 999, borderBottomRightRadius: 999, backgroundColor: '#ff3b36' },
+  categoryNumber: { alignSelf: 'flex-start', overflow: 'hidden', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', color: '#111111', paddingHorizontal: 10, paddingVertical: 5, fontSize: 10, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
+  categoryCopy: { marginTop: 18, alignItems: 'flex-start' },
+  categoryEnglish: { color: '#ff3b36', fontSize: 10, lineHeight: 14, fontWeight: '900', letterSpacing: 0.9, textAlign: 'left' },
+  categoryTitle: { marginTop: 7, color: '#111111', fontSize: 24, lineHeight: 31, fontWeight: '900', letterSpacing: -1, textAlign: 'left' },
+  categoryBottomRow: { minHeight: 52, marginTop: 12, flexDirection: 'row', alignItems: 'flex-end' },
+  categoryDescription: { flex: 1, paddingRight: 12, color: '#494945', fontSize: 12, fontWeight: '600', lineHeight: 19, textAlign: 'left' },
+  categoryArrow: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#d2d2cc', borderRadius: 23, backgroundColor: '#ffffff' },
+  categoryArrowText: { color: '#101010', fontSize: 20, lineHeight: 24, fontWeight: '800', textAlign: 'center' },
   comingSection: { marginTop: 52, marginHorizontal: -16, padding: 16, backgroundColor: '#101010' },
   comingSoon: { minHeight: 360, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#30302e', borderRadius: 28, backgroundColor: '#191918', padding: 28 },
   dots: { width: 72, height: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderColor: '#617524', borderRadius: 24, backgroundColor: '#202414' },
