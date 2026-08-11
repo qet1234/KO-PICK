@@ -49,6 +49,38 @@ function exploreHref(category: string, region: string, query = "", district = "�
   return `/explore?${params.toString()}`;
 }
 
+function resolveLocationInput(input: string, selectedRegion: string, selectedDistrict: string) {
+  let remaining = input.trim();
+  let region = selectedRegion;
+  let district = selectedDistrict;
+  const matchedRegion = koreaRegions
+    .filter((item) => item !== "전국")
+    .find((item) => remaining.replace(/\s+/g, "").includes(item.replace(/\s+/g, "")));
+
+  if (matchedRegion) {
+    region = matchedRegion;
+    district = "전체";
+    remaining = remaining.replace(matchedRegion, " ");
+  }
+
+  const districtPool = region === "전국"
+    ? Object.entries(koreaRegionDistricts).flatMap(([regionName, districts]) =>
+        districts.map((districtName) => ({ regionName, districtName })))
+    : (koreaRegionDistricts[region] ?? []).map((districtName) => ({ regionName: region, districtName }));
+  const matches = districtPool.filter(({ districtName }) =>
+    remaining.replace(/\s+/g, "").includes(districtName.replace(/\s+/g, "")));
+  const uniqueRegions = new Set(matches.map((match) => match.regionName));
+  const matchedDistrict = matches.length > 0 && uniqueRegions.size === 1 ? matches[0] : null;
+
+  if (matchedDistrict) {
+    region = matchedDistrict.regionName;
+    district = matchedDistrict.districtName;
+    remaining = remaining.replace(matchedDistrict.districtName, " ");
+  }
+
+  return { region, district, query: remaining.replace(/\s+/g, " ").trim() };
+}
+
 function hasActivity(place: TrendingPlace) {
   return (
     Number(place.viewCount ?? 0) +
@@ -85,8 +117,9 @@ export default function HomeDiscoveryHub() {
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const normalized = query.trim().slice(0, 80);
-    if (normalized) void trackKeywordSearch(normalized, "search");
-    window.location.assign(exploreHref("전체", region, normalized, district));
+    const resolved = resolveLocationInput(normalized, region, district);
+    if (resolved.query) void trackKeywordSearch(resolved.query, "search");
+    window.location.assign(exploreHref("음식", resolved.region, resolved.query, resolved.district));
   };
 
   return (
@@ -101,13 +134,13 @@ export default function HomeDiscoveryHub() {
 
           <div className="kp-home-search-card">
             <form onSubmit={submitSearch} role="search">
-              <label htmlFor="home-place-query">장소·지역·음식 검색</label>
+              <label htmlFor="home-place-query">지역 또는 음식점명 검색</label>
               <div>
                 <span aria-hidden="true">⌕</span>
                 <input
                   id="home-place-query"
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="성수 파스타, 제주 오션뷰 카페"
+                  placeholder="서울 강남구, 성수 파스타"
                   type="search"
                   value={query}
                 />

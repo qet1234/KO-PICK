@@ -633,10 +633,21 @@ export default function CategoryExplorePage({
       }
 
       const position = new naverMaps.LatLng(latitude, longitude);
+      const markerContent = document.createElement("div");
+      markerContent.className = "kp-explore-name-marker";
+      const markerPin = document.createElement("i");
+      markerPin.setAttribute("aria-hidden", "true");
+      const markerName = document.createElement("span");
+      markerName.textContent = place.name;
+      markerContent.append(markerPin, markerName);
       const marker = new naverMaps.Marker({
         position,
         map,
         title: place.name,
+        icon: {
+          content: markerContent,
+          anchor: new naverMaps.Point(13, 38),
+        },
       });
 
       const content = document.createElement("div");

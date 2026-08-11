@@ -32,6 +32,31 @@ const homeShortcuts = [
   { label: '축제', icon: '별', category: '축제', background: '#eee4ff', color: '#673ba5' },
 ] as const;
 
+function resolveHomeLocation(input: string, selectedRegion: string, selectedDistrict: string) {
+  let remaining = input.trim();
+  let region = selectedRegion;
+  let district = selectedDistrict;
+  const matchedRegion = homeRegions
+    .filter((item) => item !== '전국')
+    .find((item) => remaining.replace(/\s+/g, '').includes(item.replace(/\s+/g, '')));
+  if (matchedRegion) {
+    region = matchedRegion;
+    district = '전체';
+    remaining = remaining.replace(matchedRegion, ' ');
+  }
+  const districtPool = region === '전국'
+    ? Object.entries(koreaRegionDistricts).flatMap(([regionName, districts]) => districts.map((districtName) => ({ regionName, districtName })))
+    : (koreaRegionDistricts[region] ?? []).map((districtName) => ({ regionName: region, districtName }));
+  const matches = districtPool.filter(({ districtName }) => remaining.replace(/\s+/g, '').includes(districtName.replace(/\s+/g, '')));
+  const matchedDistrict = matches.length > 0 && new Set(matches.map((item) => item.regionName)).size === 1 ? matches[0] : null;
+  if (matchedDistrict) {
+    region = matchedDistrict.regionName;
+    district = matchedDistrict.districtName;
+    remaining = remaining.replace(matchedDistrict.districtName, ' ');
+  }
+  return { region, district, query: remaining.replace(/\s+/g, ' ').trim() };
+}
+
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const compact = width < 370;
@@ -40,8 +65,13 @@ export default function HomeScreen() {
   const [homeDistrict, setHomeDistrict] = useState('전체');
   const [homeQuery, setHomeQuery] = useState('');
 
-  const explore = (category: string, query = '') => {
-    router.push({ pathname: '/(tabs)/explore', params: { category, district: homeDistrict, region: homeRegion, query } });
+  const explore = (category: string, query = '', region = homeRegion, district = homeDistrict) => {
+    router.push({ pathname: '/(tabs)/explore', params: { category, district, region, query } });
+  };
+
+  const searchRestaurants = () => {
+    const resolved = resolveHomeLocation(homeQuery.trim(), homeRegion, homeDistrict);
+    explore('맛집', resolved.query, resolved.region, resolved.district);
   };
 
   return (
@@ -53,19 +83,19 @@ export default function HomeScreen() {
           <Text style={styles.discoveryDescription}>맛집부터 카페·축제·관광지까지 한 번에 찾아보세요.</Text>
 
           <View style={styles.discoverySearchCard}>
-            <Text style={styles.discoverySearchLabel}>장소·지역·음식 검색</Text>
+            <Text style={styles.discoverySearchLabel}>지역 또는 음식점명 검색</Text>
             <View style={styles.discoverySearchRow}>
               <TextInput
                 accessibilityLabel="홈 장소 검색"
                 onChangeText={setHomeQuery}
-                onSubmitEditing={() => explore('전체', homeQuery.trim())}
-                placeholder="성수 파스타, 제주 오션뷰 카페"
+                onSubmitEditing={searchRestaurants}
+                placeholder="서울 강남구, 성수 파스타"
                 placeholderTextColor="#8f8f89"
                 returnKeyType="search"
                 style={styles.discoverySearchInput}
                 value={homeQuery}
               />
-              <MotionPressable accessibilityRole="button" onPress={() => explore('전체', homeQuery.trim())} style={styles.discoverySearchButton}><Text style={styles.discoverySearchButtonText}>검색</Text></MotionPressable>
+              <MotionPressable accessibilityRole="button" onPress={searchRestaurants} style={styles.discoverySearchButton}><Text style={styles.discoverySearchButtonText}>검색</Text></MotionPressable>
             </View>
             <Text style={styles.discoveryRegionLabel}>어디에서 찾을까요?</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
