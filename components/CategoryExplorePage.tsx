@@ -6,6 +6,13 @@ import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { tourPlacesApiUrl } from "@/utils/spring-api";
 import NaverBookingButton from "@/components/NaverBookingButton";
 import {
+  libraryPlaceKey,
+  loadPlaceLibrary,
+  recordRecentPlace,
+  toggleSavedPlace,
+  toLibraryPlace,
+} from "@/utils/place-library";
+import {
   loadNaverMaps,
   naverMapSearchUrl,
   naverMapsApi,
@@ -32,6 +39,11 @@ interface Place {
   imageModificationAllowed?: boolean;
   imageLicenseUrl?: string | null;
   imageSourceUrl?: string | null;
+  contentTypeId?: string;
+  openingState?: "open" | "closed" | "unknown";
+  openingHoursText?: string | null;
+  restDayText?: string | null;
+  breakTimeText?: string | null;
 }
 
 interface SubregionOption {
@@ -346,6 +358,8 @@ export default function CategoryExplorePage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
+  const [openNowOnly, setOpenNowOnly] = useState(false);
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const [mapError, setMapError] = useState(() =>
     process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
       ? ""
@@ -377,6 +391,14 @@ export default function CategoryExplorePage({
       : selectedDetail === "전체"
         ? ""
         : selectedDetail;
+
+  useEffect(() => {
+    let cancelled = false;
+    loadPlaceLibrary().then((library) => {
+      if (!cancelled) setSavedKeys(new Set(library.saved.map(libraryPlaceKey)));
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -445,6 +467,7 @@ export default function CategoryExplorePage({
         } else if (selectedDetail !== "전체") {
           params.set("detailType", selectedDetail);
         }
+        if (openNowOnly) params.set("openNow", "true");
 
         const response = await fetch(
           `${tourPlacesApiUrl}?` + params.toString()
@@ -501,6 +524,7 @@ export default function CategoryExplorePage({
     selectedCategory,
     selectedDetail,
     selectedFoodDetails,
+    openNowOnly,
     selectedRegion,
     selectedSubregion,
     subregions,
@@ -618,6 +642,7 @@ export default function CategoryExplorePage({
       content.append(category, title, address, mapLink);
 
       naverMaps.Event.addListener(marker, "click", () => {
+        void recordRecentPlace(place);
         infoWindowRef.current?.close();
         const infoWindow = new naverMaps.InfoWindow({
           content,
@@ -666,6 +691,7 @@ export default function CategoryExplorePage({
 
   const focusPlace = (place: Place) => {
     void trackPlaceActivity(place, "detail");
+    void recordRecentPlace(place);
 
     const naverMaps = naverMapsApi();
     const map = mapRef.current;
@@ -692,6 +718,19 @@ export default function CategoryExplorePage({
     }
   };
 
+  const toggleSaved = async (place: Place) => {
+    const normalized = toLibraryPlace(place);
+    const key = libraryPlaceKey(normalized);
+    const saved = await toggleSavedPlace(place);
+    setSavedKeys((current) => {
+      const next = new Set(current);
+      if (saved) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+    if (saved) void trackPlaceActivity(place, "favorite");
+  };
+
   return (
     <main className="kp-explore-page">
       <header className="kp-explore-header">
@@ -705,9 +744,10 @@ export default function CategoryExplorePage({
           <strong>{journeyLabel ? `${journeyLabel} 맞춤 지도` : `${selectedCategoryLabel} 전체 결과`}</strong>
         </div>
 
-        <a href="/" className="kp-explore-home-link">
-          홈으로
-        </a>
+        <div className="kp-explore-header-actions">
+          <a href="/saved" className="kp-explore-saved-link">♡ 저장한 장소</a>
+          <a href="/" className="kp-explore-home-link">홈으로</a>
+        </div>
       </header>
 
       <div className="kp-explore-workspace">
@@ -874,6 +914,16 @@ export default function CategoryExplorePage({
                 </select>
               </label>
             </div>
+
+            <label className={`kp-open-now-filter${openNowOnly ? " is-active" : ""}`}>
+              <input
+                type="checkbox"
+                checked={openNowOnly}
+                onChange={(event) => { setOpenNowOnly(event.target.checked); setPage(1); }}
+              />
+              <span aria-hidden="true">✓</span>
+              <div><strong>현재 영업 중</strong><small>공식 운영시간이 확인된 장소만 표시</small></div>
+            </label>
           </section>
 
           <div className="kp-explore-summary" aria-live="polite">
@@ -891,14 +941,16 @@ export default function CategoryExplorePage({
                   ? " · " + selectedDetailSummary
                   : ""}
                 {" 추천 장소 "}
-                {totalCount.toLocaleString("ko-KR")}곳
+                {(openNowOnly ? places.length : totalCount).toLocaleString("ko-KR")}곳
               </strong>
             )}
           </div>
 
           {!loading && !error && places.length === 0 && (
             <div className="kp-explore-empty">
-              선택한 조건의 장소가 없습니다.
+              {openNowOnly
+                ? "현재 시간에 영업 중인 것으로 확인된 장소가 없습니다. 운영시간이 확인되지 않은 장소는 제외됩니다."
+                : "선택한 조건의 장소가 없습니다."}
             </div>
           )}
 
@@ -906,6 +958,15 @@ export default function CategoryExplorePage({
             <div className="kp-explore-card-grid">
               {places.map((place) => (
                 <article className="kp-explore-place-card" key={place.id}>
+                  <button
+                    type="button"
+                    className={`kp-explore-save-button${savedKeys.has(libraryPlaceKey(toLibraryPlace(place))) ? " is-saved" : ""}`}
+                    aria-label={`${place.name} ${savedKeys.has(libraryPlaceKey(toLibraryPlace(place))) ? "찜 해제" : "찜하기"}`}
+                    aria-pressed={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))}
+                    onClick={() => void toggleSaved(place)}
+                  >
+                    <span aria-hidden="true">{savedKeys.has(libraryPlaceKey(toLibraryPlace(place))) ? "♥" : "♡"}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => focusPlace(place)}
@@ -921,6 +982,12 @@ export default function CategoryExplorePage({
                       </span>
                       <h2>{place.name}</h2>
                       <p>{place.address ?? "주소 정보가 없습니다."}</p>
+                      {place.openingState === "open" && (
+                        <span className="kp-explore-open-badge">● 현재 영업 중</span>
+                      )}
+                      {place.openingHoursText && (
+                        <small className="kp-explore-hours-text">{place.openingHoursText}</small>
+                      )}
                       <strong>오늘어디 지도에서 위치 보기</strong>
                     </div>
                   </button>
@@ -937,6 +1004,7 @@ export default function CategoryExplorePage({
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label={place.name + " 네이버 지도에서 보기"}
+                      onClick={() => { void recordRecentPlace(place); void trackPlaceActivity(place, "outbound"); }}
                     >
                       네이버 지도에서 보기 ↗
                     </a>
@@ -947,6 +1015,7 @@ export default function CategoryExplorePage({
                       source="tour"
                       className="kp-explore-naver-booking-link"
                     />
+                    <a className="kp-explore-choose-link" href="/saved">함께 고르기 후보 확인 →</a>
                   </div>
                 </article>
               ))}

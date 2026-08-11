@@ -105,6 +105,16 @@ interface TourApiItem {
   cat3?: string;
   code?: string;
   name?: string;
+  opentimefood?: string;
+  restdatefood?: string;
+  breaktime?: string;
+  usetime?: string;
+  restdate?: string;
+  usetimeculture?: string;
+  restdateculture?: string;
+  playtime?: string;
+  eventstartdate?: string;
+  eventenddate?: string;
 }
 
 interface TourApiPayload {
@@ -217,9 +227,9 @@ function getCity(address: string, region: string) {
   return parts[0] === region ? parts[1] ?? null : parts[1] ?? null;
 }
 
-async function requestTourApi(path: string, params: URLSearchParams) {
+async function requestTourApi(path: string, params: URLSearchParams, revalidate = 3600) {
   const response = await fetch(`${TOUR_API_BASE}/${path}?${params.toString()}`, {
-    next: { revalidate: 3600 },
+    next: { revalidate },
   });
 
   const responseText = await response.text();
@@ -237,6 +247,134 @@ async function requestTourApi(path: string, params: URLSearchParams) {
   }
 
   return payload;
+}
+
+type OpeningState = "open" | "closed" | "unknown";
+
+interface OpeningStatus {
+  openingState: OpeningState;
+  openingHoursText: string | null;
+  restDayText: string | null;
+  breakTimeText: string | null;
+}
+
+function plainText(value: string | undefined) {
+  return (value ?? "")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\r/g, "")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function normalizeKoreanClock(value: string) {
+  let normalized = value.replace(/(오전|오후)\s*(\d{1,2})(?:\s*시|:)(\d{1,2})?/g, (_match, period: string, hourValue: string, minuteValue?: string) => {
+    let hour = Number(hourValue) % 12;
+    if (period === "오후") hour += 12;
+    return `${String(hour).padStart(2, "0")}:${String(Number(minuteValue ?? 0)).padStart(2, "0")}`;
+  });
+  normalized = normalized.replace(/(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?/g, (_match, hour: string, minute?: string) =>
+    `${String(Number(hour)).padStart(2, "0")}:${String(Number(minute ?? 0)).padStart(2, "0")}`
+  );
+  return normalized;
+}
+
+function minutesOfDay(hour: number, minute: number) {
+  return Math.max(0, Math.min(24 * 60, hour * 60 + minute));
+}
+
+function parseTimeRange(value: string) {
+  const normalized = normalizeKoreanClock(value);
+  const match = normalized.match(/(?:^|\D)([0-2]?\d):([0-5]\d)\s*(?:~|–|—|-)\s*([0-2]?\d):([0-5]\d)(?:\D|$)/);
+  if (!match) return null;
+  return {
+    start: minutesOfDay(Number(match[1]), Number(match[2])),
+    end: minutesOfDay(Number(match[3]), Number(match[4])),
+  };
+}
+
+function isWithinRange(nowMinutes: number, range: { start: number; end: number }) {
+  if (range.start === range.end) return true;
+  if (range.end > range.start) return nowMinutes >= range.start && nowMinutes < range.end;
+  return nowMinutes >= range.start || nowMinutes < range.end;
+}
+
+function relevantHoursLine(hoursText: string, weekday: string, weekend: boolean) {
+  const lines = hoursText.split("\n").map((line) => line.trim()).filter(Boolean);
+  const direct = lines.find((line) => line.includes(`${weekday}요일`) || new RegExp(`(?:^|[\s,(])${weekday}(?:[\s,):]|$)`).test(line));
+  if (direct) return direct;
+  const grouped = lines.find((line) => weekend ? /주말|토.?일/.test(line) : /평일|월.?금/.test(line));
+  return grouped ?? hoursText;
+}
+
+function openingStatus(item: TourApiItem, contentTypeId: string): OpeningStatus {
+  const hoursText = plainText(
+    contentTypeId === "39"
+      ? item.opentimefood
+      : contentTypeId === "14"
+        ? item.usetimeculture
+        : contentTypeId === "15"
+          ? item.playtime
+          : item.usetime
+  );
+  const restDayText = plainText(
+    contentTypeId === "39"
+      ? item.restdatefood
+      : contentTypeId === "14"
+        ? item.restdateculture
+        : item.restdate
+  );
+  const breakTimeText = plainText(item.breaktime);
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", weekday: "short" })
+    .format(now).replace("요일", "");
+  const timeParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = Number(timeParts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(timeParts.find((part) => part.type === "minute")?.value ?? 0);
+  const nowMinutes = minutesOfDay(hour, minute);
+
+  if (restDayText && !/연중무휴|무휴/.test(restDayText)) {
+    const dayPattern = new RegExp(`(?:매주\s*)?${weekday}(?:요일)?`);
+    if (dayPattern.test(restDayText)) {
+      return { openingState: "closed", openingHoursText: hoursText || null, restDayText, breakTimeText: breakTimeText || null };
+    }
+  }
+
+  if (/24\s*시간|24시간\s*운영/.test(hoursText)) {
+    return { openingState: "open", openingHoursText: hoursText, restDayText: restDayText || null, breakTimeText: breakTimeText || null };
+  }
+
+  const weekend = weekday === "토" || weekday === "일";
+  const range = parseTimeRange(relevantHoursLine(hoursText, weekday, weekend));
+  if (!range) {
+    return { openingState: "unknown", openingHoursText: hoursText || null, restDayText: restDayText || null, breakTimeText: breakTimeText || null };
+  }
+
+  const breakRange = breakTimeText ? parseTimeRange(breakTimeText) : null;
+  const open = isWithinRange(nowMinutes, range) && !(breakRange && isWithinRange(nowMinutes, breakRange));
+  return { openingState: open ? "open" : "closed", openingHoursText: hoursText, restDayText: restDayText || null, breakTimeText: breakTimeText || null };
+}
+
+async function loadOpeningStatus(contentId: string, contentTypeId: string, commonParams: URLSearchParams) {
+  const params = new URLSearchParams(commonParams);
+  params.set("contentId", contentId);
+  params.set("contentTypeId", contentTypeId);
+  params.set("pageNo", "1");
+  params.set("numOfRows", "10");
+  try {
+    const payload = await requestTourApi("detailIntro2", params, 6 * 60 * 60);
+    const item = asItems(payload)[0];
+    return item ? openingStatus(item, contentTypeId) : { openingState: "unknown" as const, openingHoursText: null, restDayText: null, breakTimeText: null };
+  } catch (error) {
+    console.warn(`TourAPI 운영시간 조회 실패 (${contentId}):`, error);
+    return { openingState: "unknown" as const, openingHoursText: null, restDayText: null, breakTimeText: null };
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -313,6 +451,7 @@ export async function GET(request: NextRequest) {
       selectedDetailTypes.length > 0 ? selectedDetailTypes : ["전체"];
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
     const includeImages = searchParams.get("includeImages") !== "false";
+    const openNowOnly = searchParams.get("openNow") === "true";
     const sources = Array.from(
       new Map(
         detailTypes
@@ -407,6 +546,7 @@ export async function GET(request: NextRequest) {
 
         return {
           id: item.contentid ?? "",
+          contentTypeId,
           name: item.title ?? "",
           region: normalizedRegion,
           city: getCity(address, normalizedRegion),
@@ -436,7 +576,7 @@ export async function GET(request: NextRequest) {
           place.longitude <= 132
       );
 
-    const places = normalizedPlaces.map((place) => {
+    const basePlaces = normalizedPlaces.map((place) => {
       const image = includeImages
         ? verifiedTourImageFromList({
             imageUrl: place.preferredImageUrl,
@@ -446,6 +586,7 @@ export async function GET(request: NextRequest) {
         : null;
       return {
         id: place.id,
+        contentTypeId: place.contentTypeId,
         name: place.name,
         region: place.region,
         city: place.city,
@@ -464,11 +605,29 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const placesWithHours = openNowOnly
+      ? await Promise.all(basePlaces.map(async (place) => ({
+          ...place,
+          ...(await loadOpeningStatus(place.id, place.contentTypeId, commonParams)),
+        })))
+      : basePlaces.map((place) => ({
+          ...place,
+          openingState: "unknown" as const,
+          openingHoursText: null,
+          restDayText: null,
+          breakTimeText: null,
+        }));
+    const places = openNowOnly
+      ? placesWithHours.filter((place) => place.openingState === "open")
+      : placesWithHours;
+
     const bodies = payloads.map((payload) => payload.response?.body);
-    const totalCount = keywordSearch
+    const totalCount = openNowOnly
       ? places.length
-      : bodies.reduce((sum, body) => sum + Number(body?.totalCount ?? 0), 0);
-    const totalPages = keywordSearch
+      : keywordSearch
+        ? places.length
+        : bodies.reduce((sum, body) => sum + Number(body?.totalCount ?? 0), 0);
+    const totalPages = openNowOnly || keywordSearch
       ? 1
       : Math.max(
           1,
@@ -489,6 +648,8 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
       detailTypes,
+      openNowOnly,
+      openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);

@@ -18,6 +18,11 @@ export type TourPlace = {
   imageModificationAllowed: boolean;
   imageLicenseUrl: string | null;
   imageSourceUrl: string | null;
+  contentTypeId: string;
+  openingState: 'open' | 'closed' | 'unknown';
+  openingHoursText: string | null;
+  restDayText: string | null;
+  breakTimeText: string | null;
 };
 
 export type NaverDiningPlace = {
@@ -58,6 +63,7 @@ export type PlaceQuery = {
   pageSize?: number;
   sigunguCode?: string;
   detailType?: string;
+  openNow?: boolean;
 };
 
 export type RecommendationQuery = {
@@ -158,6 +164,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
   if (query.detailType && query.detailType !== '전체') {
     params.set('detailType', query.detailType);
   }
+  if (query.openNow) params.set('openNow', 'true');
 
   return fetchKoPick<{
     places: TourPlace[];

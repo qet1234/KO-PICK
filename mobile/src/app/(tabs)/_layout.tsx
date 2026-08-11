@@ -61,6 +61,7 @@ export default function TabLayout() {
   }}>
     <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: ({ focused }) => <TabIcon label="K" focused={focused} size={19} /> }} />
     <Tabs.Screen name="explore" options={{ title: '장소 찾기', tabBarIcon: ({ focused }) => <TabIcon label="⌖" focused={focused} size={21} /> }} />
+    <Tabs.Screen name="saved" options={{ title: '저장', tabBarIcon: ({ focused }) => <TabIcon label={focused ? '♥' : '♡'} focused={focused} size={21} /> }} />
     <Tabs.Screen name="office" options={{ title: '직장인 식사', tabBarIcon: ({ focused }) => <TabIcon label="식" focused={focused} size={17} /> }} />
     <Tabs.Screen name="account" options={{ title: '내 계정', tabBarIcon: ({ focused }) => <AccountIcon focused={focused} /> }} />
   </Tabs>;

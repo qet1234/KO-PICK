@@ -72,10 +72,32 @@ select {
   display: block;
 }
 
-.kp-explore-header > div {
+.kp-explore-header > div:not(.kp-explore-header-actions) {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.kp-explore-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kp-explore-header-actions .kp-explore-home-link {
+  margin-left: 0;
+}
+
+.kp-explore-saved-link {
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 59, 54, 0.32);
+  border-radius: 999px;
+  color: var(--explore-red);
+  background: #fff5f3;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .kp-explore-header small {
@@ -184,6 +206,31 @@ select {
   font-weight: 800;
 }
 
+.kp-open-now-filter {
+  min-height: 52px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 0 25px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  overflow: hidden;
+  border: 1px solid var(--explore-line);
+  border-radius: 13px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.kp-open-now-filter:active { transform: translateY(2px); }
+.kp-open-now-filter.is-active { border-color: #17a65a; background: #effcf5; }
+.kp-open-now-filter input { width: 1px; height: 1px; opacity: 0; }
+.kp-open-now-filter > span { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #cfcfc8; border-radius: 8px; color: transparent; font-size: 13px; font-weight: 900; }
+.kp-open-now-filter.is-active > span { border-color: #17a65a; color: #fff; background: #17a65a; }
+.kp-open-now-filter div { display: grid; gap: 2px; }
+.kp-open-now-filter strong { font-size: 11px; }
+.kp-open-now-filter small { color: var(--explore-muted); font-size: 9px; font-weight: 700; }
+
 .kp-explore-summary {
   min-height: 44px;
   margin: 22px 0;
@@ -216,12 +263,37 @@ select {
 
 .kp-explore-place-card {
   min-width: 0;
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--explore-line);
   border-radius: 17px;
   background: #fff;
   transition: transform 220ms ease, box-shadow 220ms ease;
 }
+
+.kp-explore-save-button {
+  width: 38px!important;
+  height: 38px!important;
+  padding: 0!important;
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 6;
+  display: grid!important;
+  place-items: center;
+  border: 1px solid rgba(17, 17, 17, 0.12)!important;
+  border-radius: 50%!important;
+  color: #333!important;
+  background: rgba(255, 255, 255, 0.94)!important;
+  box-shadow: 0 5px 14px rgba(17, 17, 17, 0.16);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.kp-explore-save-button.is-saved { color: #fff!important; background: var(--explore-red)!important; }
+.kp-explore-save-button:active { transform: scale(.9) translateY(2px); }
 
 .kp-explore-place-card > button {
   width: 100%;
@@ -306,6 +378,25 @@ select {
   font-size: 10px;
 }
 
+.kp-explore-card-copy .kp-explore-open-badge {
+  margin-top: 9px;
+  display: block;
+  color: #138a4d;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.kp-explore-card-copy .kp-explore-hours-text {
+  margin-top: 4px;
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--explore-muted);
+  font-size: 8px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .kp-explore-external-actions {
   margin: 0 14px 10px;
   display: grid;
@@ -313,7 +404,8 @@ select {
 }
 
 .kp-explore-naver-map-link,
-.kp-explore-naver-booking-link {
+.kp-explore-naver-booking-link,
+.kp-explore-choose-link {
   min-height: 38px;
   padding: 0 14px;
   display: flex;
@@ -326,6 +418,12 @@ select {
   text-align: center;
   text-decoration: none;
   transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+.kp-explore-choose-link {
+  border: 1px solid rgba(255, 59, 54, 0.25);
+  color: var(--explore-red);
+  background: #fff5f3;
 }
 
 .kp-explore-naver-map-link {

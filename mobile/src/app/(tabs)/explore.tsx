@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { memo, useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
 import { fetchTourPlaces, type PlaceQuery, type TourPlace } from '@/lib/api';
+import { libraryPlaceKey, loadPlaceLibrary, recordRecentPlace, toggleSavedPlace, toLibraryPlace } from '@/lib/place-library';
 
 const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
 const categories = ['전체', '맛집', '카페', '관광지', '축제'] as const;
@@ -18,25 +19,36 @@ type TourPlacesResult = Awaited<ReturnType<typeof fetchTourPlaces>>;
 const ExplorePlaceCard = memo(function ExplorePlaceCard({
   place,
   selected,
+  saved,
   onSelect,
+  onToggleSaved,
 }: {
   place: TourPlace;
   selected: boolean;
+  saved: boolean;
   onSelect: (place: TourPlace) => void;
+  onToggleSaved: (place: TourPlace) => void;
 }) {
   return (
-    <MotionPressable onPress={() => onSelect(place)} style={[styles.card, selected && styles.cardSelected]}>
-      <PlaceImage
-        name={place.name}
-        imageUrl={place.imageThumbnailUrl || place.imageUrl}
-        attribution={place.imageAttribution}
-        copyrightCode={place.imageCopyrightCode}
-        modificationAllowed={place.imageModificationAllowed}
-      />
-      <Text style={styles.cardTitle}>{place.name}</Text>
-      <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
+    <View style={[styles.card, selected && styles.cardSelected]}>
+      <MotionPressable onPress={() => onSelect(place)} style={styles.cardMain}>
+        <PlaceImage
+          name={place.name}
+          imageUrl={place.imageThumbnailUrl || place.imageUrl}
+          attribution={place.imageAttribution}
+          copyrightCode={place.imageCopyrightCode}
+          modificationAllowed={place.imageModificationAllowed}
+        />
+        <Text style={styles.cardTitle}>{place.name}</Text>
+        <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
+        {place.openingState === 'open' ? <Text style={styles.openBadge}>● 현재 영업 중</Text> : null}
+        {place.openingHoursText ? <Text numberOfLines={2} style={styles.hoursText}>{place.openingHoursText}</Text> : null}
+      </MotionPressable>
+      <MotionPressable accessibilityLabel={`${place.name} ${saved ? '찜 해제' : '찜하기'}`} accessibilityRole="button" onPress={() => onToggleSaved(place)} style={[styles.saveButton, saved && styles.saveButtonActive]}>
+        <Text style={[styles.saveIcon, saved && styles.saveIconActive]}>{saved ? '♥' : '♡'}</Text>
+      </MotionPressable>
       <RouteMapChooser place={place} />
-    </MotionPressable>
+    </View>
   );
 });
 
@@ -56,6 +68,16 @@ export default function ExploreScreen() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [openNow, setOpenNow] = useState(false);
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void loadPlaceLibrary().then((library) => {
+      if (active) setSavedKeys(new Set(library.saved.map(libraryPlaceKey)));
+    });
+    return () => { active = false; };
+  }, []));
 
   const applyResult = (result: TourPlacesResult, nextPage: number) => {
     setPlaces(result.places);
@@ -66,11 +88,11 @@ export default function ExploreScreen() {
     if (nextPage > 1) scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const load = async (nextRegion = region, nextCategory = category, nextPage = 1, force = false) => {
+  const load = async (nextRegion = region, nextCategory = category, nextPage = 1, force = false, nextOpenNow = openNow) => {
     requestControllerRef.current?.abort();
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
-    const cacheKey = `${nextRegion}:${nextCategory}:${nextPage}`;
+    const cacheKey = `${nextRegion}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -86,7 +108,7 @@ export default function ExploreScreen() {
     setError('');
     try {
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: fastPageSize },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -109,6 +131,22 @@ export default function ExploreScreen() {
   const movePage = (nextPage: number) => {
     if (loading || nextPage < 1 || nextPage > totalPages || nextPage === page) return;
     void load(region, category, nextPage);
+  };
+
+  const selectPlace = (place: TourPlace) => {
+    setSelected(place);
+    void recordRecentPlace(place);
+  };
+
+  const toggleSaved = async (place: TourPlace) => {
+    const normalized = toLibraryPlace(place);
+    const key = libraryPlaceKey(normalized);
+    const saved = await toggleSavedPlace(place);
+    setSavedKeys((current) => {
+      const next = new Set(current);
+      if (saved) next.add(key); else next.delete(key);
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -141,11 +179,24 @@ export default function ExploreScreen() {
           void load(region, nextCategory, 1);
         }} />
         <Text style={styles.instantNote}>지역이나 카테고리를 누르면 바로 결과가 바뀝니다.</Text>
+        <MotionPressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: openNow }}
+          onPress={() => {
+            const next = !openNow;
+            setOpenNow(next);
+            void load(region, category, 1, false, next);
+          }}
+          style={[styles.openFilter, openNow && styles.openFilterActive]}
+        >
+          <View style={[styles.openCheck, openNow && styles.openCheckActive]}><Text style={styles.openCheckText}>{openNow ? '✓' : ''}</Text></View>
+          <View style={styles.openFilterCopy}><Text style={styles.openFilterTitle}>현재 영업 중</Text><Text style={styles.openFilterNote}>공식 운영시간이 확인된 장소만 표시</Text></View>
+        </MotionPressable>
         <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load(region, category, 1, true)} style={[styles.searchButton, loading && styles.disabled]}>
           {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>현재 조건 새로고침</Text>}
         </MotionPressable>{error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
-      <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={setSelected} /></View>
+      <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={selectPlace} /></View>
       {selected ? <View style={styles.selectedCard}><Text style={styles.selectedLabel}>지도에서 선택한 장소</Text><Text style={styles.selectedTitle}>{selected.name}</Text>
         <Text style={styles.selectedMeta}>{selected.category} · {selected.address}</Text><RouteMapChooser place={selected} /></View> : null}
       {places.length > 0 ? <View style={styles.list}>
@@ -157,7 +208,7 @@ export default function ExploreScreen() {
           <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
         </View> : null}
         {places.map((place) => (
-          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} onSelect={setSelected} />
+          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onToggleSaved={toggleSaved} />
         ))}
         {totalPages > 1 ? <View style={styles.paginationBottom}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
@@ -172,13 +223,14 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' }, container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 34 }, containerCompact: { paddingHorizontal: 14 },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' }, subtitle: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20 },
-  filters: { marginTop: 20, borderRadius: 22, backgroundColor: '#ffffff', padding: 17 }, searchButton: { minHeight: 50, marginTop: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
+  filters: { marginTop: 20, borderRadius: 22, backgroundColor: '#ffffff', padding: 17 }, searchButton: { minHeight: 50, marginTop: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
   instantNote: { marginTop: 12, color: '#71716d', fontSize: 11, lineHeight: 17 },
+  openFilter: { minHeight: 54, marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#ffffff', paddingHorizontal: 12 }, openFilterActive: { borderColor: '#18a65a', backgroundColor: '#effcf5' }, openCheck: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#cfcfc8', borderRadius: 8 }, openCheckActive: { borderColor: '#18a65a', backgroundColor: '#18a65a' }, openCheckText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, openFilterCopy: { flex: 1 }, openFilterTitle: { color: '#101010', fontSize: 12, fontWeight: '900' }, openFilterNote: { marginTop: 2, color: '#71716d', fontSize: 10 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
   list: { marginTop: 26 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
-  card: { marginTop: 12, borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 13, color: '#71716d', fontSize: 11, lineHeight: 17 },
+  card: { marginTop: 12, position: 'relative', borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { borderRadius: 14 }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 10, color: '#71716d', fontSize: 11, lineHeight: 17 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 10, color: '#71716d', fontSize: 10, lineHeight: 15 }, saveButton: { width: 42, height: 42, position: 'absolute', top: 20, right: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 21, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 23, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
   pagination: { marginTop: 14, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }, paginationBottom: { marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   pageButton: { minWidth: 82, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 14 }, pageButtonDisabled: { opacity: 0.38 }, pageButtonText: { color: '#101010', fontSize: 12, fontWeight: '900' },
   pageStatus: { minWidth: 86, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#101010', paddingHorizontal: 12 }, pageCurrent: { color: '#caff2c', fontSize: 13, fontWeight: '900' }, pageDivider: { color: '#8b8b85', fontSize: 11, fontWeight: '800' }, pageTotal: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
