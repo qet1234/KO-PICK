@@ -8,7 +8,7 @@ import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
-import { fetchTourPlaces, type PlaceQuery, type TourPlace } from '@/lib/api';
+import { fetchTourPlaces, fetchTourSubregions, type PlaceQuery, type TourPlace, type TourSubregion } from '@/lib/api';
 import { libraryPlaceKey, loadPlaceLibrary, recordRecentPlace, toggleSavedPlace, toLibraryPlace } from '@/lib/place-library';
 import { reportMobilePlace, trackMobileOperation } from '@/lib/operations';
 
@@ -61,13 +61,15 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
 });
 
 export default function ExploreScreen() {
-  const params = useLocalSearchParams<{ region?: string; category?: string; query?: string }>();
+  const params = useLocalSearchParams<{ region?: string; district?: string; category?: string; query?: string }>();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const resultCacheRef = useRef(new Map<string, TourPlacesResult>());
   const [region, setRegion] = useState<PlaceQuery['region']>('서울');
+  const [district, setDistrict] = useState('전체');
+  const [subregions, setSubregions] = useState<TourSubregion[]>([]);
   const [category, setCategory] = useState<PlaceQuery['category']>('전체');
   const [places, setPlaces] = useState<TourPlace[]>([]);
   const [selected, setSelected] = useState<TourPlace | null>(null);
@@ -107,12 +109,13 @@ export default function ExploreScreen() {
     force = false,
     nextOpenNow = openNow,
     nextQuery = searchQuery,
+    nextSigunguCode = district === '전체' ? '' : subregions.find((item) => item.name === district)?.code ?? '',
   ) => {
     requestControllerRef.current?.abort();
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     const normalizedQuery = nextQuery.trim();
-    const cacheKey = `${nextRegion}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
+    const cacheKey = `${nextRegion}:${nextSigunguCode}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -128,7 +131,7 @@ export default function ExploreScreen() {
     setError('');
     try {
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -206,16 +209,27 @@ export default function ExploreScreen() {
     const rawCategory = params.category === '음식' ? '맛집' : params.category;
     const nextCategory = categories.includes(rawCategory as typeof categories[number]) ? rawCategory as PlaceQuery['category'] : '전체';
     const nextQuery = String(params.query ?? '').trim().slice(0, 80);
+    const requestedDistrict = String(params.district ?? '전체').trim();
     queueMicrotask(() => {
       setRegion(nextRegion);
       setCategory(nextCategory);
       setSearchInput(nextQuery);
       setSearchQuery(nextQuery);
-      void load(nextRegion, nextCategory, 1, false, false, nextQuery);
+      void fetchTourSubregions(nextRegion).then((result) => {
+        const nextSubregions = nextRegion === '전국' ? [] : result.subregions;
+        const matched = nextSubregions.find((item) => item.name === requestedDistrict);
+        setSubregions(nextSubregions);
+        setDistrict(matched?.name ?? '전체');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '');
+      }).catch(() => {
+        setSubregions([]);
+        setDistrict('전체');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '');
+      });
     });
     // Load URL parameters once when this tab opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.category, params.query, params.region]);
+  }, [params.category, params.district, params.query, params.region]);
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
@@ -241,8 +255,22 @@ export default function ExploreScreen() {
         </View>
         <ChoiceChips label="지역" values={regions} selected={region} onSelect={(value) => {
           setRegion(value);
-          void load(value, category, 1);
+          setDistrict('전체');
+          setSubregions([]);
+          if (value === '전국') {
+            void load(value, category, 1, false, openNow, searchQuery, '');
+            return;
+          }
+          void fetchTourSubregions(value).then((result) => {
+            setSubregions(result.subregions);
+            void load(value, category, 1, false, openNow, searchQuery, '');
+          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, ''));
         }} />
+        {region !== '전국' ? <ChoiceChips label="시·군·구" values={['전체', ...subregions.map((item) => item.name)]} selected={district} onSelect={(value) => {
+          setDistrict(value);
+          const code = value === '전체' ? '' : subregions.find((item) => item.name === value)?.code ?? '';
+          void load(region, category, 1, false, openNow, searchQuery, code);
+        }} /> : null}
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
           const nextCategory = value as PlaceQuery['category'];
           setCategory(nextCategory);

@@ -334,6 +334,7 @@ function TourPlaceCardMedia({ place }: { place: Place }) {
 interface CategoryExplorePageProps {
   initialCategory: CategoryValue;
   initialDetail?: string;
+  initialDistrict?: string;
   initialQuery?: string;
   initialRegion?: string;
   journeyLabel?: string;
@@ -343,6 +344,7 @@ interface CategoryExplorePageProps {
 export default function CategoryExplorePage({
   initialCategory,
   initialDetail = "전체",
+  initialDistrict = "전체",
   initialQuery = "",
   initialRegion = "전국",
   journeyLabel,
@@ -371,7 +373,9 @@ export default function CategoryExplorePage({
   const [selectedRegion, setSelectedRegion] = useState<RegionName>(() =>
     initialRegion in regionCenters ? initialRegion as RegionName : "전국"
   );
-  const [selectedSubregion, setSelectedSubregion] = useState("전체");
+  const [selectedSubregion, setSelectedSubregion] = useState(() =>
+    initialRegion === "전국" ? "전체" : initialDistrict
+  );
   const [subregions, setSubregions] = useState<SubregionOption[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [page, setPage] = useState(1);

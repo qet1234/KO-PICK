@@ -8,6 +8,7 @@ import { LiveWeatherCard } from '@/components/live-weather-card';
 import { MotionPressable } from '@/components/motion-pressable';
 import { SeasonalFoods } from '@/components/seasonal-foods';
 import { appConfig } from '@/lib/config';
+import { koreaRegionDistricts } from '@/lib/korea-regions';
 
 const journeyCards = [
   { number: '01', label: '혼자', title: '내 취향대로 가볍게', description: '혼밥, 조용한 카페와 혼자 둘러보기 좋은 장소만 모아보세요.' },
@@ -22,7 +23,7 @@ const privacyCards = [
   { number: '03', title: '탈퇴 시 안전하게 삭제', description: '법령상 보관 의무가 있는 경우를 제외하고 개인정보와 저장 데이터를 삭제합니다.' },
 ] as const;
 
-const homeRegions = ['전국', '서울', '경기', '인천', '부산', '제주', '강원'] as const;
+const homeRegions = ['전국', ...Object.keys(koreaRegionDistricts)];
 
 const homeShortcuts = [
   { label: '맛집', icon: '식', category: '맛집', background: '#ffe4e1', color: '#c52d28' },
@@ -36,10 +37,11 @@ export default function HomeScreen() {
   const compact = width < 370;
   const tablet = width >= 640;
   const [homeRegion, setHomeRegion] = useState('전국');
+  const [homeDistrict, setHomeDistrict] = useState('전체');
   const [homeQuery, setHomeQuery] = useState('');
 
   const explore = (category: string, query = '') => {
-    router.push({ pathname: '/(tabs)/explore', params: { category, region: homeRegion, query } });
+    router.push({ pathname: '/(tabs)/explore', params: { category, district: homeDistrict, region: homeRegion, query } });
   };
 
   return (
@@ -67,8 +69,11 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.discoveryRegionLabel}>어디에서 찾을까요?</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
-              {homeRegions.map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => setHomeRegion(item)} style={[styles.discoveryRegionButton, homeRegion === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeRegion === item && styles.discoveryRegionTextActive]}>{item}</Text></MotionPressable>)}
+              {homeRegions.map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => { setHomeRegion(item); setHomeDistrict('전체'); }} style={[styles.discoveryRegionButton, homeRegion === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeRegion === item && styles.discoveryRegionTextActive]}>{item}</Text></MotionPressable>)}
             </ScrollView>
+            {homeRegion !== '전국' ? <><Text style={styles.discoveryDistrictLabel}>시·군·구</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.discoveryRegionRow}>
+              {['전체', ...(koreaRegionDistricts[homeRegion] ?? [])].map((item) => <MotionPressable key={item} accessibilityRole="button" onPress={() => setHomeDistrict(item)} style={[styles.discoveryRegionButton, homeDistrict === item && styles.discoveryRegionButtonActive]}><Text style={[styles.discoveryRegionText, homeDistrict === item && styles.discoveryRegionTextActive]}>{item === '전체' ? `${homeRegion} 전체` : item}</Text></MotionPressable>)}
+            </ScrollView></> : null}
           </View>
         </View>
 
@@ -150,7 +155,7 @@ const styles = StyleSheet.create({
   discoveryHero: { padding: 22, borderRadius: 26, backgroundColor: '#ff3b36', shadowColor: '#a51d19', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.24, shadowRadius: 20, elevation: 7 },
   discoveryEyebrow: { color: '#fff5b4', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 }, discoveryTitle: { marginTop: 12, color: '#ffffff', fontSize: 45, lineHeight: 43, fontWeight: '900', letterSpacing: -2 }, discoveryDescription: { marginTop: 12, color: '#fff2ef', fontSize: 12, lineHeight: 19, fontWeight: '700' },
   discoverySearchCard: { marginTop: 23, padding: 14, borderRadius: 19, backgroundColor: '#ffffff' }, discoverySearchLabel: { color: '#101010', fontSize: 11, fontWeight: '900' }, discoverySearchRow: { minHeight: 52, marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 7 }, discoverySearchInput: { flex: 1, minHeight: 52, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '700' }, discoverySearchButton: { minWidth: 61, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010' }, discoverySearchButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-  discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' },
+  discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryDistrictLabel: { marginTop: 12, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' },
   homeShortcuts: { marginTop: -12, marginHorizontal: 10, paddingTop: 27, paddingBottom: 16, flexDirection: 'row', flexWrap: 'wrap', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.08, shadowRadius: 15, elevation: 3 }, homeShortcut: { width: '33.333%', minHeight: 85, alignItems: 'center', justifyContent: 'center', gap: 7 }, homeShortcutIcon: { width: 49, height: 49, alignItems: 'center', justifyContent: 'center', borderRadius: 17 }, homeShortcutIconText: { fontSize: 14, fontWeight: '900' }, homeShortcutLabel: { color: '#101010', fontSize: 10, fontWeight: '900' },
   quickPicks: { marginTop: 34 }, quickPicksTitle: { marginTop: 6, color: '#101010', fontSize: 20, fontWeight: '900' }, quickPicksRow: { gap: 7, paddingTop: 12, paddingBottom: 3 }, quickPick: { minHeight: 39, justifyContent: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 15 }, quickPickText: { color: '#101010', fontSize: 10, fontWeight: '900' },
   heroFrame: { padding: 10, borderWidth: 1, borderColor: '#deded8', borderRadius: 28, backgroundColor: '#ffffff', shadowColor: '#1f1914', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.13, shadowRadius: 22, elevation: 7 },

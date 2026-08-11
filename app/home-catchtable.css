@@ -107,30 +107,43 @@
   margin-top: 22px;
 }
 
-.kp-home-region-picker > div {
+.kp-home-region-selects {
   margin-top: 10px;
-  display: flex;
-  gap: 7px;
-  overflow-x: auto;
-  padding-bottom: 3px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
 }
 
-.kp-home-region-picker button {
-  min-width: 48px;
-  min-height: 34px;
-  padding: 0 12px;
-  flex: 0 0 auto;
-  border: 1px solid #deded8;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 10px;
+.kp-home-region-selects label {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.kp-home-region-selects label > span {
+  color: #71716d;
+  font-size: 9px;
   font-weight: 900;
 }
 
-.kp-home-region-picker button.is-active {
-  border-color: #ff3b36;
-  color: #fff;
-  background: #ff3b36;
+.kp-home-region-selects select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #deded8;
+  border-radius: 12px;
+  outline: 0;
+  color: #101010;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.kp-home-region-selects select:focus { border-color: #ff3b36; }
+.kp-home-region-selects select:disabled { color: #9a9a94; background: #f1f1ed; }
+
+@media (max-width: 420px) {
+  .kp-home-region-selects { grid-template-columns: 1fr; }
 }
 
 .kp-home-shortcuts {

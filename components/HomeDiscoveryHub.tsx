@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { springApiUrl } from "@/utils/spring-api";
 import { trackKeywordSearch } from "@/utils/trackKeywordSearch";
+import { koreaRegionDistricts, koreaRegions } from "@/utils/korea-region-districts";
 
 type TrendingPlace = {
   id: string;
@@ -17,8 +18,6 @@ type TrendingPlace = {
   outboundCount?: number;
   favoriteCount?: number;
 };
-
-const regions = ["전국", "서울", "경기", "인천", "부산", "제주", "강원"];
 
 const shortcuts: Array<{
   label: string;
@@ -43,9 +42,10 @@ const themes = [
   { label: "비 오는 날", category: "카페", query: "실내" },
 ];
 
-function exploreHref(category: string, region: string, query = "") {
+function exploreHref(category: string, region: string, query = "", district = "전체") {
   const params = new URLSearchParams({ category, region });
   if (query) params.set("query", query);
+  if (region !== "전국" && district !== "전체") params.set("district", district);
   return `/explore?${params.toString()}`;
 }
 
@@ -60,6 +60,7 @@ function hasActivity(place: TrendingPlace) {
 
 export default function HomeDiscoveryHub() {
   const [region, setRegion] = useState("전국");
+  const [district, setDistrict] = useState("전체");
   const [query, setQuery] = useState("");
   const [popularPlaces, setPopularPlaces] = useState<TrendingPlace[]>([]);
 
@@ -85,7 +86,7 @@ export default function HomeDiscoveryHub() {
     event.preventDefault();
     const normalized = query.trim().slice(0, 80);
     if (normalized) void trackKeywordSearch(normalized, "search");
-    window.location.assign(exploreHref("전체", region, normalized));
+    window.location.assign(exploreHref("전체", region, normalized, district));
   };
 
   return (
@@ -115,19 +116,21 @@ export default function HomeDiscoveryHub() {
             </form>
 
             <div className="kp-home-region-picker">
-              <strong>어디에서 찾을까요?</strong>
-              <div>
-                {regions.map((item) => (
-                  <button
-                    aria-pressed={region === item}
-                    className={region === item ? "is-active" : ""}
-                    key={item}
-                    onClick={() => setRegion(item)}
-                    type="button"
-                  >
-                    {item}
-                  </button>
-                ))}
+              <strong>시·도와 시·군·구로 찾기</strong>
+              <div className="kp-home-region-selects">
+                <label>
+                  <span>시·도</span>
+                  <select value={region} onChange={(event) => { setRegion(event.target.value); setDistrict("전체"); }}>
+                    {koreaRegions.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>시·군·구</span>
+                  <select disabled={region === "전국"} value={district} onChange={(event) => setDistrict(event.target.value)}>
+                    <option value="전체">{region === "전국" ? "시·도를 먼저 선택" : `${region} 전체`}</option>
+                    {(koreaRegionDistricts[region] ?? []).map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
               </div>
             </div>
           </div>
@@ -136,7 +139,7 @@ export default function HomeDiscoveryHub() {
         <div className="kp-home-shortcuts" aria-label="주요 장소 카테고리">
           {shortcuts.map((shortcut) => (
             <a
-              href={shortcut.href ?? exploreHref(shortcut.category ?? "전체", region)}
+              href={shortcut.href ?? exploreHref(shortcut.category ?? "전체", region, "", district)}
               key={shortcut.label}
             >
               <span className={`is-${shortcut.tone}`} aria-hidden="true">{shortcut.icon}</span>
@@ -152,7 +155,7 @@ export default function HomeDiscoveryHub() {
           </div>
           <nav aria-label="상황별 빠른 장소 찾기">
             {themes.map((theme) => (
-              <a href={exploreHref(theme.category, region, theme.query)} key={theme.label}>
+              <a href={exploreHref(theme.category, region, theme.query, district)} key={theme.label}>
                 {theme.label}
               </a>
             ))}
@@ -167,7 +170,7 @@ export default function HomeDiscoveryHub() {
             </div>
             <div className="kp-home-popular-grid">
               {popularPlaces.map((place, index) => (
-                <a href={exploreHref(place.category, region, place.title)} key={place.id}>
+                <a href={exploreHref(place.category, region, place.title, district)} key={place.id}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <small>{place.location} · {place.category}</small>
                   <strong>{place.title}</strong>

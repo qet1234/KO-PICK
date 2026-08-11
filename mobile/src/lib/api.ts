@@ -68,6 +68,8 @@ export type PlaceQuery = {
   query?: string;
 };
 
+export type TourSubregion = { code: string; name: string };
+
 export type RecommendationQuery = {
   region: string;
   relationship: '개인' | '커플' | '친구' | '가족';
@@ -203,6 +205,11 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     });
   }
   return result;
+}
+
+export async function fetchTourSubregions(region: string, signal?: AbortSignal) {
+  const params = new URLSearchParams({ mode: 'subregions', region });
+  return fetchKoPick<{ subregions: TourSubregion[] }>(`/api/tour/places?${params.toString()}`, signal);
 }
 
 export async function fetchNaverDiningPlaces(query: {
