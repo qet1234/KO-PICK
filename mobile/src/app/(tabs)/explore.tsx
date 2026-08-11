@@ -14,7 +14,8 @@ import { reportMobilePlace, trackMobileOperation } from '@/lib/operations';
 
 const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
 const categories = ['전체', '맛집', '카페', '관광지', '축제'] as const;
-const fastPageSize = 24;
+const defaultPageSize = 24;
+const restaurantPageSize = 50;
 type TourPlacesResult = Awaited<ReturnType<typeof fetchTourPlaces>>;
 type SortMode = 'recommended' | 'name';
 type ViewMode = 'all' | 'map' | 'list';
@@ -134,8 +135,11 @@ export default function ExploreScreen() {
     setLoading(true);
     setError('');
     try {
+      const pageSize = nextCategory === '맛집' && !nextOpenNow
+        ? restaurantPageSize
+        : nextOpenNow ? 12 : defaultPageSize;
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
