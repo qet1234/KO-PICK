@@ -24,6 +24,7 @@ export type TourPlace = {
   openingHoursText: string | null;
   restDayText: string | null;
   breakTimeText: string | null;
+  source?: 'TOUR_API' | 'NAVER_LOCAL';
 };
 
 export type NaverDiningPlace = {
@@ -63,6 +64,7 @@ export type PlaceQuery = {
   page?: number;
   pageSize?: number;
   sigunguCode?: string;
+  district?: string;
   detailType?: string;
   openNow?: boolean;
   query?: string;
@@ -183,6 +185,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     region: query.region,
   });
   if (query.sigunguCode) params.set('sigunguCode', query.sigunguCode);
+  if (query.district && query.district !== '전체') params.set('district', query.district);
   if (query.detailType && query.detailType !== '전체') {
     params.set('detailType', query.detailType);
   }
@@ -198,6 +201,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
       totalCount: number;
       totalPages: number;
     };
+    sources?: ('TOUR_API' | 'NAVER_LOCAL')[];
   }>(`/api/tour/places?${params.toString()}`, signal);
   if (result.places.length === 0) {
     void trackMobileOperation({

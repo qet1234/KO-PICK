@@ -51,6 +51,7 @@ interface Place {
   openingHoursText?: string | null;
   restDayText?: string | null;
   breakTimeText?: string | null;
+  source?: "TOUR_API" | "NAVER_LOCAL";
 }
 
 interface SubregionOption {
@@ -389,6 +390,7 @@ export default function CategoryExplorePage({
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [sources, setSources] = useState<Array<"TOUR_API" | "NAVER_LOCAL">>(["TOUR_API"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
@@ -503,6 +505,7 @@ export default function CategoryExplorePage({
         });
 
         if (sigunguCode) params.set("sigunguCode", sigunguCode);
+        if (selectedSubregion !== "전체") params.set("district", selectedSubregion);
         if (selectedCategory === "음식") {
           selectedFoodDetails.forEach((detail) => {
             params.append("detailType", detail);
@@ -543,12 +546,18 @@ export default function CategoryExplorePage({
           setTotalPages(
             Math.max(1, Number(payload.pagination?.totalPages ?? 1))
           );
+          setSources(
+            Array.isArray(payload.sources) && payload.sources.length > 0
+              ? payload.sources
+              : ["TOUR_API"]
+          );
         }
       } catch (loadError) {
         if (!cancelled) {
           setPlaces([]);
           setTotalCount(0);
           setTotalPages(1);
+          setSources(["TOUR_API"]);
           setError(
             loadError instanceof Error
               ? loadError.message
@@ -898,7 +907,7 @@ export default function CategoryExplorePage({
                 )}
                 <button className="kp-explore-search-submit" type="submit">검색</button>
               </div>
-              <small>공공 관광 데이터에서 조건과 일치하는 장소를 찾습니다.</small>
+              <small>공공 관광 데이터와 네이버 지역검색에서 조건과 일치하는 장소를 찾습니다.</small>
             </form>
 
             <div className="kp-explore-presets" aria-label="목적별 빠른 장소 찾기">
@@ -1207,7 +1216,7 @@ export default function CategoryExplorePage({
                       name={place.name}
                       address={place.address}
                       category={place.category}
-                      source="tour"
+                      source={place.source === "NAVER_LOCAL" ? "naver" : "tour"}
                       className="kp-explore-naver-booking-link"
                       onClick={() => trackOperationEvent({ category: place.category, eventType: "booking_open", feature: "reservations", placeId: place.id, placeName: place.name, route: "/explore" })}
                     />
@@ -1256,7 +1265,12 @@ export default function CategoryExplorePage({
 
           <footer className="kp-explore-source">
             <strong>데이터 출처</strong>
-            <span>장소 정보·이미지: 한국관광공사 TourAPI</span>
+            <span>
+              장소 정보: {sources.includes("NAVER_LOCAL")
+                ? "네이버 지역검색 · 한국관광공사 TourAPI"
+                : "한국관광공사 TourAPI"}
+            </span>
+            <span>이미지: 한국관광공사 TourAPI</span>
             <span>지도: NAVER Maps</span>
             <small>
               다른 서비스의 별점·리뷰·사진은 복사하지 않습니다.

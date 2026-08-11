@@ -79,6 +79,7 @@ export default function ExploreScreen() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [sources, setSources] = useState<('TOUR_API' | 'NAVER_LOCAL')[]>(['TOUR_API']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openNow, setOpenNow] = useState(false);
@@ -102,6 +103,7 @@ export default function ExploreScreen() {
     setPage(result.pagination.pageNo);
     setTotalCount(result.pagination.totalCount);
     setTotalPages(result.pagination.totalPages);
+    setSources(result.sources?.length ? result.sources : ['TOUR_API']);
     if (nextPage > 1) scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
@@ -114,13 +116,14 @@ export default function ExploreScreen() {
     nextQuery = searchQuery,
     nextSigunguCode = district === '전체' ? '' : subregions.find((item) => item.name === district)?.code ?? '',
     nextLocality = locality,
+    nextDistrict = district,
   ) => {
     requestControllerRef.current?.abort();
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     const normalizedQuery = nextQuery.trim();
     const normalizedLocality = nextLocality.trim();
-    const cacheKey = `${nextRegion}:${nextSigunguCode}:${normalizedLocality}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
+    const cacheKey = `${nextRegion}:${nextSigunguCode}:${nextDistrict}:${normalizedLocality}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -139,7 +142,7 @@ export default function ExploreScreen() {
         ? restaurantPageSize
         : nextOpenNow ? 12 : defaultPageSize;
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, district: nextDistrict, locality: normalizedLocality },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -153,6 +156,7 @@ export default function ExploreScreen() {
       setPage(1);
       setTotalCount(0);
       setTotalPages(1);
+      setSources(['TOUR_API']);
       setError(nextError instanceof Error ? nextError.message : '장소를 불러오지 못했습니다.');
     } finally {
       if (requestIdRef.current === requestId) setLoading(false);
@@ -231,13 +235,13 @@ export default function ExploreScreen() {
         setDistrict(matched?.name ?? '전체');
         setLocalityInput(matched ? requestedLocality : '');
         setLocality(matched ? requestedLocality : '');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '', matched?.name ?? '전체');
       }).catch(() => {
         setSubregions([]);
         setDistrict('전체');
         setLocalityInput('');
         setLocality('');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '');
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '', '전체');
       });
     });
     // Load URL parameters once when this tab opens.
@@ -273,22 +277,22 @@ export default function ExploreScreen() {
           setLocalityInput('');
           setLocality('');
           if (value === '전국') {
-            void load(value, category, 1, false, openNow, searchQuery, '', '');
+            void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
             return;
           }
           void fetchTourSubregions(value).then((result) => {
             setSubregions(result.subregions);
-            void load(value, category, 1, false, openNow, searchQuery, '', '');
-          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, '', ''));
+            void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
+          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, '', '', '전체'));
         }} />
         {region !== '전국' ? <ChoiceChips label="시·군·구" values={['전체', ...subregions.map((item) => item.name)]} selected={district} onSelect={(value) => {
           setDistrict(value);
           setLocalityInput('');
           setLocality('');
           const code = value === '전체' ? '' : subregions.find((item) => item.name === value)?.code ?? '';
-          void load(region, category, 1, false, openNow, searchQuery, code, '');
+          void load(region, category, 1, false, openNow, searchQuery, code, '', value);
         }} /> : null}
-        {district !== '전체' ? <View style={styles.localityFilter}><Text style={styles.localityLabel}>읍·면·동</Text><View style={styles.localityRow}><TextInput accessibilityLabel="읍면동 검색" onChangeText={(value) => setLocalityInput(value.slice(0, 40))} onSubmitEditing={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next); }} placeholder="예: 역삼동, 애월읍" placeholderTextColor="#989892" style={styles.localityInput} value={localityInput} /><MotionPressable onPress={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next); }} style={styles.localityButton}><Text style={styles.localityButtonText}>적용</Text></MotionPressable></View></View> : null}
+        {district !== '전체' ? <View style={styles.localityFilter}><Text style={styles.localityLabel}>읍·면·동</Text><View style={styles.localityRow}><TextInput accessibilityLabel="읍면동 검색" onChangeText={(value) => setLocalityInput(value.slice(0, 40))} onSubmitEditing={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next, district); }} placeholder="예: 역삼동, 애월읍" placeholderTextColor="#989892" style={styles.localityInput} value={localityInput} /><MotionPressable onPress={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next, district); }} style={styles.localityButton}><Text style={styles.localityButtonText}>적용</Text></MotionPressable></View></View> : null}
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
           const nextCategory = value as PlaceQuery['category'];
           setCategory(nextCategory);
@@ -325,7 +329,7 @@ export default function ExploreScreen() {
         <Text style={styles.selectedMeta}>{selected.category} · {selected.address}</Text><RouteMapChooser place={selected} /></View> : null}
       {viewMode !== 'map' && places.length > 0 ? <View style={styles.list}>
         <View style={styles.listHeading}><Text style={styles.listTitle}>장소 {places.length.toLocaleString('ko-KR')}곳</Text><Text style={styles.totalCount}>전체 {totalCount.toLocaleString('ko-KR')}곳</Text></View>
-        <Text style={styles.source}>출처: 한국관광공사 TourAPI · 지도: 네이버 지도</Text>
+        <Text style={styles.source}>출처: {sources.includes('NAVER_LOCAL') ? '네이버 지역검색 · 한국관광공사 TourAPI' : '한국관광공사 TourAPI'} · 지도: 네이버 지도</Text>
         {totalPages > 1 ? <View style={styles.pagination}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
           <View style={styles.pageStatus}><Text style={styles.pageCurrent}>{page.toLocaleString('ko-KR')}</Text><Text style={styles.pageDivider}> / </Text><Text style={styles.pageTotal}>{totalPages.toLocaleString('ko-KR')}</Text></View>

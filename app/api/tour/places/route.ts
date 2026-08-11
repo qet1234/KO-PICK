@@ -4,6 +4,35 @@ import { verifiedTourImageFromList } from "@/utils/tourapi-image";
 
 const TOUR_API_BASE = "https://apis.data.go.kr/B551011/KorService2";
 const PAGE_SIZE_MAX = 100;
+const NAVER_LOCAL_SEARCH_URL = "https://openapi.naver.com/v1/search/local.json";
+const NAVER_RESTAURANT_MAX_SEARCHES = 12;
+const NAVER_RESTAURANT_BATCH_SIZE = 4;
+
+const naverFoodDiscoveryTerms = [
+  "맛집",
+  "한식",
+  "고기 구이",
+  "일식",
+  "중식",
+  "양식",
+  "분식",
+  "해산물",
+] as const;
+
+const naverFoodDetailTerms: Record<string, readonly string[]> = {
+  한식: ["한식", "백반", "국밥", "한정식"],
+  양식: ["양식", "파스타", "피자", "스테이크"],
+  일식: ["일식", "초밥", "돈카츠", "라멘"],
+  중식: ["중식", "짜장 짬뽕", "마라탕", "양꼬치"],
+  세계음식: ["아시아 음식", "베트남 음식", "태국 음식", "인도 음식"],
+  해산물: ["해산물", "횟집", "조개구이", "생선구이"],
+  간편식: ["분식", "김밥", "떡볶이", "햄버거"],
+  건강식: ["건강식", "비건", "샐러드", "포케"],
+  주점: ["주점", "이자카야", "포차", "호프 맥주"],
+};
+
+const naverFoodCategoryPattern =
+  /음식점|한식|중식|일식|양식|분식|뷔페|카페|베이커리|술집|요리/;
 
 const regionCodes: Record<string, string> = {
   서울: "1",
@@ -135,6 +164,15 @@ interface TourApiPayload {
   };
 }
 
+interface NaverLocalItem {
+  title?: string;
+  category?: string;
+  address?: string;
+  roadAddress?: string;
+  mapx?: string;
+  mapy?: string;
+}
+
 function asItems(payload: TourApiPayload) {
   const rawItems = payload.response?.body?.items?.item;
   return Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
@@ -248,6 +286,146 @@ function getCity(address: string, region: string) {
   const parts = address.trim().split(/\s+/);
   if (!parts.length) return null;
   return parts[0] === region ? parts[1] ?? null : parts[1] ?? null;
+}
+
+function stripNaverHtml(value = "") {
+  return value
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+function naverCoordinates(item: NaverLocalItem) {
+  const rawLongitude = Number(item.mapx);
+  const rawLatitude = Number(item.mapy);
+  if (!Number.isFinite(rawLongitude) || !Number.isFinite(rawLatitude)) return null;
+
+  const longitude = rawLongitude > 1_000_000 ? rawLongitude / 10_000_000 : rawLongitude;
+  const latitude = rawLatitude > 1_000_000 ? rawLatitude / 10_000_000 : rawLatitude;
+  if (longitude < 124 || longitude > 132 || latitude < 32 || latitude > 40) return null;
+  return { latitude, longitude };
+}
+
+function normalizedPlaceKey(name: unknown, address: unknown) {
+  return `${String(name ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase()}|${String(address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase()}`;
+}
+
+async function requestNaverRestaurants(
+  query: string,
+  clientId: string,
+  clientSecret: string,
+) {
+  const url = new URL(NAVER_LOCAL_SEARCH_URL);
+  url.searchParams.set("query", query);
+  url.searchParams.set("display", "5");
+  url.searchParams.set("sort", "random");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6_000);
+  try {
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "X-Naver-Client-Id": clientId,
+        "X-Naver-Client-Secret": clientSecret,
+      },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`NAVER_LOCAL_${response.status}`);
+    const payload = await response.json() as { items?: NaverLocalItem[] };
+    return payload.items ?? [];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function loadNaverRestaurants({
+  region,
+  district,
+  locality,
+  searchQuery,
+  detailTypes,
+  limit,
+}: {
+  region: string;
+  district: string;
+  locality: string;
+  searchQuery: string;
+  detailTypes: string[];
+  limit: number;
+}) {
+  const clientId = process.env.NAVER_SEARCH_CLIENT_ID?.trim() || process.env.NAVER_CLIENT_ID?.trim();
+  const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET?.trim() || process.env.NAVER_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return [];
+
+  const location = [
+    region === "전국" ? "" : region,
+    district === "전체" ? "" : district,
+    locality,
+  ].filter(Boolean).join(" ");
+  if (!location) return [];
+
+  const detailTerms = detailTypes.flatMap((detail) => naverFoodDetailTerms[detail] ?? [detail]);
+  const foodTerms = searchQuery
+    ? [searchQuery, `${searchQuery} 맛집`]
+    : detailTerms.length > 0
+      ? detailTerms
+      : [...naverFoodDiscoveryTerms];
+  const queries = Array.from(new Set(
+    foodTerms.map((term) => `${location} ${term}`.replace(/\s+/g, " ").trim()),
+  )).slice(0, NAVER_RESTAURANT_MAX_SEARCHES);
+  const found = new Map<string, NaverLocalItem>();
+
+  for (let offset = 0; offset < queries.length && found.size < limit; offset += NAVER_RESTAURANT_BATCH_SIZE) {
+    const batch = await Promise.allSettled(
+      queries.slice(offset, offset + NAVER_RESTAURANT_BATCH_SIZE)
+        .map((query) => requestNaverRestaurants(query, clientId, clientSecret)),
+    );
+    for (const result of batch) {
+      if (result.status !== "fulfilled") continue;
+      for (const item of result.value) {
+        const name = stripNaverHtml(item.title);
+        const address = stripNaverHtml(item.roadAddress) || stripNaverHtml(item.address);
+        const point = naverCoordinates(item);
+        const category = stripNaverHtml(item.category);
+        if (!name || !address || !point || !naverFoodCategoryPattern.test(category)) continue;
+        if (locality && !address.normalize("NFKC").replace(/\s+/g, "").includes(locality.normalize("NFKC").replace(/\s+/g, ""))) continue;
+        found.set(normalizedPlaceKey(name, address), item);
+        if (found.size >= limit) break;
+      }
+    }
+  }
+
+  return Array.from(found.values()).slice(0, limit).map((item, index) => {
+    const point = naverCoordinates(item)!;
+    const address = stripNaverHtml(item.roadAddress) || stripNaverHtml(item.address);
+    return {
+      id: `naver-local-${index}-${item.mapx}-${item.mapy}`,
+      contentTypeId: "39",
+      name: stripNaverHtml(item.title),
+      region,
+      city: district === "전체" ? getCity(address, region) : district,
+      category: stripNaverHtml(item.category) || "음식",
+      address,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      imageUrl: null,
+      imageThumbnailUrl: null,
+      imageCopyrightCode: null,
+      imageLicenseLabel: null,
+      imageAttribution: null,
+      imageModificationAllowed: false,
+      imageLicenseUrl: null,
+      imageSourceUrl: null,
+      openingState: "unknown" as const,
+      openingHoursText: null,
+      restDayText: null,
+      breakTimeText: null,
+      source: "NAVER_LOCAL",
+    };
+  });
 }
 
 async function requestTourApi(path: string, params: URLSearchParams, revalidate = 3600) {
@@ -461,6 +639,11 @@ export async function GET(request: NextRequest) {
     const requestedCategory = searchParams.get("category") ?? "전체";
     const searchQuery = (searchParams.get("query") ?? "").trim().slice(0, 80);
     const locality = (searchParams.get("locality") ?? "").trim().slice(0, 40);
+    const district = (
+      searchParams.get("district") ??
+      searchParams.get("clientDistrict") ??
+      "전체"
+    ).trim().slice(0, 30) || "전체";
     const categoryAliases: Record<string, string> = {
       맛집: "음식",
       여행지: "관광지",
@@ -638,6 +821,7 @@ export async function GET(request: NextRequest) {
         imageModificationAllowed: image?.modificationAllowed ?? false,
         imageLicenseUrl: image?.licenseUrl ?? null,
         imageSourceUrl: image?.sourceUrl ?? null,
+        source: "TOUR_API",
       };
     });
 
@@ -658,16 +842,44 @@ export async function GET(request: NextRequest) {
       ? placesWithHours.filter((place) =>
           String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
       : placesWithHours;
-    const places = openNowOnly
+    let places = openNowOnly
       ? localityPlaces.filter((place) => place.openingState === "open")
       : localityPlaces;
 
+    const shouldAddNaverRestaurants =
+      !openNowOnly &&
+      page === 1 &&
+      !useLocation &&
+      (category === "음식" || (category === "전체" && Boolean(localityKey)));
+    if (shouldAddNaverRestaurants) {
+      try {
+        const naverRestaurants = await loadNaverRestaurants({
+          region,
+          district,
+          locality,
+          searchQuery,
+          detailTypes: selectedDetailTypes,
+          limit: pageSize,
+        });
+        const seen = new Set<string>();
+        places = [...naverRestaurants, ...places].filter((place) => {
+          const key = normalizedPlaceKey(place.name, place.address);
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).slice(0, pageSize);
+      } catch (naverError) {
+        console.warn("네이버 지역검색 음식점 보강 실패:", naverError);
+      }
+    }
+
     const bodies = payloads.map((payload) => payload.response?.body);
-    const totalCount = openNowOnly
+    const upstreamTotalCount = openNowOnly
       ? places.length
       : keywordSearch || localityKey
         ? places.length
         : bodies.reduce((sum, body) => sum + Number(body?.totalCount ?? 0), 0);
+    const totalCount = Math.max(upstreamTotalCount, places.length);
     const totalPages = openNowOnly || keywordSearch || Boolean(localityKey)
       ? 1
       : Math.max(
@@ -693,6 +905,7 @@ export async function GET(request: NextRequest) {
       openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
       query: searchQuery || null,
       locality: locality || null,
+      sources: Array.from(new Set(places.map((place) => place.source))),
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);
