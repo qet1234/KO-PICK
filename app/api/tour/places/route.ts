@@ -478,6 +478,7 @@ export async function GET(request: NextRequest) {
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
     const includeImages = searchParams.get("includeImages") !== "false";
     const openNowOnly = searchParams.get("openNow") === "true";
+    const includeHours = openNowOnly || searchParams.get("includeHours") === "true";
     const categorySources = Array.from(
       new Map(
         detailTypes
@@ -641,26 +642,29 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const placesWithHours = openNowOnly
-      ? await Promise.all(basePlaces.map(async (place) => ({
+    const localityKey = locality.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+    const localityBasePlaces = localityKey
+      ? basePlaces.filter((place) =>
+          String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
+      : basePlaces;
+    const hourCandidates = includeHours && (keywordSearch || Boolean(localityKey))
+      ? localityBasePlaces.slice(0, pageSize)
+      : localityBasePlaces;
+    const placesWithHours = includeHours
+      ? await Promise.all(hourCandidates.map(async (place) => ({
           ...place,
           ...(await loadOpeningStatus(place.id, place.contentTypeId, commonParams)),
         })))
-      : basePlaces.map((place) => ({
+      : hourCandidates.map((place) => ({
           ...place,
           openingState: "unknown" as const,
           openingHoursText: null,
           restDayText: null,
           breakTimeText: null,
         }));
-    const localityKey = locality.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
-    const localityPlaces = localityKey
-      ? placesWithHours.filter((place) =>
-          String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
-      : placesWithHours;
     const places = openNowOnly
-      ? localityPlaces.filter((place) => place.openingState === "open")
-      : localityPlaces;
+      ? placesWithHours.filter((place) => place.openingState === "open")
+      : placesWithHours;
 
     const bodies = payloads.map((payload) => payload.response?.body);
     const totalCount = openNowOnly
@@ -690,7 +694,8 @@ export async function GET(request: NextRequest) {
       },
       detailTypes,
       openNowOnly,
-      openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
+      includeHours,
+      openingHoursCoverage: includeHours ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
       query: searchQuery || null,
       locality: locality || null,
     });

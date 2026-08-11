@@ -75,8 +75,19 @@ export default function HomeScreen() {
   const [homeLocality, setHomeLocality] = useState('');
   const [homeQuery, setHomeQuery] = useState('');
 
-  const explore = (category: string, query = '', region = homeRegion, district = homeDistrict, locality = homeLocality) => {
-    router.push({ pathname: '/(tabs)/explore', params: { category, district, locality, region, query } });
+  const explore = (
+    category: string,
+    query = '',
+    region = homeRegion,
+    district = homeDistrict,
+    locality = homeLocality,
+    detailType = '',
+    includeHours = false,
+  ) => {
+    router.push({
+      pathname: '/(tabs)/explore',
+      params: { category, detailType, district, includeHours: includeHours ? 'true' : 'false', locality, region, query },
+    });
   };
 
   const searchRestaurants = () => {
@@ -128,10 +139,11 @@ export default function HomeScreen() {
           <Text style={styles.eyebrow}>QUICK PICKS</Text>
           <Text style={styles.quickPicksTitle}>상황별로 빠르게 찾기</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPicksRow}>
-            <MotionPressable onPress={() => explore('카페', '데이트 카페')} style={styles.quickPick}><Text style={styles.quickPickText}>데이트 카페</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('관광지', '가족 나들이')} style={styles.quickPick}><Text style={styles.quickPickText}>가족 나들이</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('맛집', '혼밥')} style={styles.quickPick}><Text style={styles.quickPickText}>혼밥</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('축제', '축제')} style={styles.quickPick}><Text style={styles.quickPickText}>이번 주 축제</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('카페', '', homeRegion, homeDistrict, homeLocality, '감성카페', true)} style={styles.quickPick}><Text style={styles.quickPickText}>데이트 카페</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('관광지', '', homeRegion, homeDistrict, homeLocality, '공원', true)} style={styles.quickPick}><Text style={styles.quickPickText}>가족 나들이</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('맛집', '', homeRegion, homeDistrict, homeLocality, '간편식', true)} style={styles.quickPick}><Text style={styles.quickPickText}>혼밥</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('축제', '', homeRegion, homeDistrict, homeLocality, '', true)} style={styles.quickPick}><Text style={styles.quickPickText}>이번 주 축제</Text></MotionPressable>
+            <MotionPressable onPress={() => explore('관광지', '', homeRegion, homeDistrict, homeLocality, '미술관·전시관', true)} style={styles.quickPick}><Text style={styles.quickPickText}>비 오는 날</Text></MotionPressable>
           </ScrollView>
         </View>
 

@@ -27,6 +27,7 @@ interface ExplorePageProps {
     region?: string | string[];
     district?: string | string[];
     locality?: string | string[];
+    includeHours?: string | string[];
   }>;
 }
 
@@ -55,6 +56,7 @@ export default async function ExplorePage({
       initialDetail={firstValue(params.detail) ?? "전체"}
       initialDistrict={firstValue(params.district) ?? "전체"}
       initialLocality={firstValue(params.locality) ?? ""}
+      initialIncludeHours={firstValue(params.includeHours) === "true"}
       initialQuery={firstValue(params.query) ?? ""}
       initialRegion={firstValue(params.region) ?? "전국"}
       journey={firstValue(params.journey) ?? ""}

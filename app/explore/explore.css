@@ -638,6 +638,10 @@ select {
   font-weight: 900;
 }
 
+.kp-explore-card-copy .kp-explore-open-badge.is-closed {
+  color: #b4433f;
+}
+
 .kp-explore-card-copy .kp-explore-hours-text {
   margin-top: 4px;
   display: -webkit-box;

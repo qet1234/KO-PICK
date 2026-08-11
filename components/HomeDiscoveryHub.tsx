@@ -35,18 +35,28 @@ const shortcuts: Array<{
 ] as const;
 
 const themes = [
-  { label: "데이트 카페", category: "카페", query: "데이트 카페" },
-  { label: "가족 나들이", category: "관광지", query: "가족 나들이" },
-  { label: "혼밥", category: "음식", query: "혼밥" },
-  { label: "이번 주 축제", category: "축제", query: "축제" },
-  { label: "비 오는 날", category: "카페", query: "실내" },
+  { label: "데이트 카페", category: "카페", detail: "감성카페" },
+  { label: "가족 나들이", category: "관광지", detail: "공원" },
+  { label: "혼밥", category: "음식", detail: "간편식" },
+  { label: "이번 주 축제", category: "축제" },
+  { label: "비 오는 날", category: "관광지", detail: "미술관·전시관" },
 ];
 
-function exploreHref(category: string, region: string, query = "", district = "전체", locality = "") {
+function exploreHref(
+  category: string,
+  region: string,
+  query = "",
+  district = "전체",
+  locality = "",
+  detail = "",
+  includeHours = false,
+) {
   const params = new URLSearchParams({ category, region });
   if (query) params.set("query", query);
   if (region !== "전국" && district !== "전체") params.set("district", district);
   if (locality) params.set("locality", locality);
+  if (detail) params.set("detail", detail);
+  if (includeHours) params.set("includeHours", "true");
   return `/explore?${params.toString()}`;
 }
 
@@ -203,7 +213,7 @@ export default function HomeDiscoveryHub() {
           </div>
           <nav aria-label="상황별 빠른 장소 찾기">
             {themes.map((theme) => (
-              <a href={exploreHref(theme.category, region, theme.query, district, locality)} key={theme.label}>
+              <a href={exploreHref(theme.category, region, "", district, locality, theme.detail, true)} key={theme.label}>
                 {theme.label}
               </a>
             ))}
