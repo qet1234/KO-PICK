@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { MotionPressable } from '@/components/motion-pressable';
 import { appConfig } from '@/lib/config';
@@ -171,6 +171,9 @@ export function LiveWeatherCard() {
             ))}
           </ScrollView>
           <View style={styles.pick}><Text style={styles.pickLabel}>WEATHER PICK</Text><Text style={styles.pickText}>{weather.recommendation}</Text></View>
+          <MotionPressable accessibilityRole="link" onPress={() => void Linking.openURL('https://open-meteo.com/en/licence')}>
+            <Text style={styles.attribution}>Weather data by Open-Meteo.com · CC BY 4.0</Text>
+          </MotionPressable>
         </>
       ) : null}
 
@@ -216,6 +219,7 @@ const styles = StyleSheet.create({
   cardSunny: { borderColor: '#f0dba6', backgroundColor: '#fff8dc' },
   cardCloudy: { borderColor: '#cfd9e4', backgroundColor: '#e8eef4' },
   cardRainy: { borderColor: '#a9bbcf', backgroundColor: '#cfddea' },
+  attribution: { marginTop: 12, color: '#536274', fontSize: 11, fontWeight: '700', textDecorationLine: 'underline' },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   headerCopy: { flex: 1 }, eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   title: { marginTop: 7, color: '#101010', fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -1.1 },

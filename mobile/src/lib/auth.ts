@@ -91,7 +91,7 @@ export async function completeMobileAuthUrl(
 export async function recordLegalConsent(provider: MobileAuthProvider) {
   const { error } = await supabase.rpc('record_user_legal_consents', {
     p_privacy_version: PRIVACY_VERSION,
-    p_source: `mobile_${provider}`,
+    p_source: `mobile_${provider}_age14`,
     p_terms_version: TERMS_VERSION,
   });
   if (error) {

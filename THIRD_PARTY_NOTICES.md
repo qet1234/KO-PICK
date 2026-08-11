@@ -35,6 +35,25 @@ Exact Maven artifacts and versions are resolved from `backend/pom.xml`.
 Source code for LGPL-covered components remains available from their upstream
 projects, and 오늘어디 does not modify those libraries.
 
+The legacy Spring backend is retained for recovery reference and is not part
+of the current Vercel/Supabase production runtime.
+
+## Mobile production dependencies
+
+| Package | License |
+| --- | --- |
+| Expo and Expo Router | MIT |
+| React Native | MIT |
+| React Native Async Storage | MIT |
+| React Native Screens | MIT |
+| React Native Safe Area Context | MIT |
+| React Native Naver Map (`@mj-studio/react-native-naver-map`) | MIT |
+| Supabase JavaScript Client | MIT |
+
+Exact versions and transitive packages are recorded in `mobile/package-lock.json`.
+The NAVER Maps SDK used through the open-source wrapper remains subject to
+NAVER's platform terms and branding requirements.
+
 ## Public data and media
 
 Place data and verified representative images are supplied by the Korea
@@ -46,6 +65,11 @@ effects.
 
 - TourAPI dataset: https://www.data.go.kr/data/15101578/openapi.do
 - Korea Open Government License terms: https://www.kogl.or.kr/info/license.do
+
+Weather data is provided by Open-Meteo under CC BY 4.0 and is attributed next
+to each weather display.
+
+- Open-Meteo licence: https://open-meteo.com/en/licence
 
 ## Common license text
 

@@ -24,7 +24,7 @@ function ConsentRow({
   checked: boolean;
   label: string;
   onChange: () => void;
-  onOpen: () => void;
+  onOpen?: () => void;
 }) {
   return (
     <View style={styles.consentRow}>
@@ -32,9 +32,9 @@ function ConsentRow({
         <Text style={styles.checkmark}>{checked ? '✓' : ''}</Text>
       </MotionPressable>
       <MotionPressable onPress={onChange} style={styles.consentCopy}>
-        <Text style={styles.consentText}>[필수] {label}에 동의합니다.</Text>
+        <Text style={styles.consentText}>[필수] {label}</Text>
       </MotionPressable>
-      <MotionPressable onPress={onOpen}><Text style={styles.openText}>보기</Text></MotionPressable>
+      {onOpen ? <MotionPressable onPress={onOpen}><Text style={styles.openText}>보기</Text></MotionPressable> : null}
     </View>
   );
 }
@@ -42,13 +42,14 @@ function ConsentRow({
 export default function LoginScreen() {
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [active, setActive] = useState<MobileAuthProvider | null>(null);
   const [message, setMessage] = useState('');
-  const ready = terms && privacy && !active;
+  const ready = terms && privacy && ageConfirmed && !active;
 
   const login = async (provider: MobileAuthProvider) => {
-    if (!terms || !privacy || active) {
-      setMessage('이용약관과 개인정보 수집·이용에 각각 동의해 주세요.');
+    if (!terms || !privacy || !ageConfirmed || active) {
+      setMessage('필수 동의와 만 14세 이상 확인을 완료해 주세요.');
       return;
     }
     setActive(provider);
@@ -83,15 +84,20 @@ export default function LoginScreen() {
         <View style={styles.card}>
           <ConsentRow
             checked={terms}
-            label="이용약관"
+            label="이용약관에 동의합니다."
             onChange={() => setTerms((value) => !value)}
             onOpen={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}
           />
           <ConsentRow
             checked={privacy}
-            label="개인정보 수집·이용"
+            label="개인정보 수집·이용에 동의합니다."
             onChange={() => setPrivacy((value) => !value)}
             onOpen={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}
+          />
+          <ConsentRow
+            checked={ageConfirmed}
+            label="만 14세 이상입니다."
+            onChange={() => setAgeConfirmed((value) => !value)}
           />
 
           <Text style={styles.quick}>5초 만에 빠른 회원가입</Text>

@@ -13,17 +13,18 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const allRequiredAccepted = termsAccepted && privacyAccepted;
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const allRequiredAccepted = termsAccepted && privacyAccepted && ageConfirmed;
 
   const prepareRequiredConsent = async () => {
     if (!allRequiredAccepted) {
-      throw new Error("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
+      throw new Error("필수 동의와 만 14세 이상 확인을 완료해 주세요.");
     }
 
     const response = await fetch("/api/auth/consent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ termsAccepted, privacyAccepted }),
+      body: JSON.stringify({ ageConfirmed, termsAccepted, privacyAccepted }),
       cache: "no-store",
     });
     const data = await response.json().catch(() => null) as { error?: string } | null;
@@ -37,7 +38,7 @@ export default function LoginPage() {
   ) => {
     if (loading) return;
     if (!allRequiredAccepted) {
-      setMessage("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
+      setMessage("필수 동의와 만 14세 이상 확인을 완료해 주세요.");
       return;
     }
 
@@ -78,7 +79,7 @@ export default function LoginPage() {
   const handleNaverLogin = async () => {
     if (loading) return;
     if (!allRequiredAccepted) {
-      setMessage("이용약관과 개인정보 수집·이용에 각각 동의해 주세요.");
+      setMessage("필수 동의와 만 14세 이상 확인을 완료해 주세요.");
       return;
     }
 
@@ -164,6 +165,15 @@ export default function LoginPage() {
             <span>
               <strong>[필수]</strong> <a href="/terms" target="_blank">이용약관</a>에 동의합니다.
             </span>
+          </label>
+
+          <label className="login-consent">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(event) => setAgeConfirmed(event.target.checked)}
+            />
+            <span><strong>[필수]</strong> 만 14세 이상입니다.</span>
           </label>
 
           <label className="login-consent">

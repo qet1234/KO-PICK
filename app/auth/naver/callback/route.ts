@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
 
     const { error: consentError } = await supabase.rpc("record_user_legal_consents", {
       p_privacy_version: PRIVACY_VERSION,
-      p_source: "naver",
+      p_source: "naver_age14",
       p_terms_version: TERMS_VERSION,
     });
     if (consentError) {

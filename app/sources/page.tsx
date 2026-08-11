@@ -22,6 +22,7 @@ export default function SourcesPage() {
             <ul>
               <li>제공기관: 한국관광공사</li>
               <li>공공데이터: 국문 관광정보 서비스 TourAPI 4.0</li>
+              <li>출시 운영 전 공공데이터포털의 활용 신청·운영계정 승인을 유지하고 호출량과 이용조건을 준수합니다.</li>
               <li>오늘어디 추천 점수는 TourAPI 장소에 이용자가 선택한 조건을 적용한 자체 정렬 결과입니다.</li>
               <li>원천 데이터의 최신성·정확성은 제공기관 갱신 시점에 따라 달라질 수 있습니다.</li>
             </ul>
@@ -51,6 +52,7 @@ export default function SourcesPage() {
             <ul>
               <li>날씨 데이터 라이선스: Creative Commons Attribution 4.0 International (CC BY 4.0)</li>
               <li>현재 비상업 무료 운영 범위에서는 Open-Meteo free/open-access endpoint를 사용하며, 향후 상업화 전에는 해당 시점의 이용 플랜을 다시 검토합니다.</li>
+              <li>웹과 앱의 날씨 표시 화면에 “Weather data by Open-Meteo.com” 링크를 함께 표시합니다.</li>
               <li>예보는 실제 관측 및 현장 상황과 다를 수 있으므로 중요한 일정은 공식 기상정보를 함께 확인해 주세요.</li>
               <li>오늘어디가 날씨 데이터를 수정하는 경우 추천용 반올림·분류·문구 변환 범위로 한정합니다.</li>
             </ul>
@@ -71,11 +73,11 @@ export default function SourcesPage() {
           </section>
           <section>
             <h2>오픈소스</h2>
-            <p>Next.js, React, Supabase 클라이언트 등 오픈소스는 각 라이선스에 따라 사용합니다. 배포물의 상세 고지는 저장소의 <a href="https://github.com/qet1234/KO-PICK/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">THIRD_PARTY_NOTICES</a>에서 확인할 수 있습니다.</p>
+            <p>Next.js, React, Expo, React Native, Supabase 클라이언트 등 오픈소스는 각 라이선스에 따라 사용합니다. 배포물의 상세 고지는 저장소의 <a href="https://github.com/qet1234/KO-PICK/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noreferrer">THIRD_PARTY_NOTICES</a>에서 확인할 수 있습니다.</p>
           </section>
           <section>
             <h2>권리 침해 신고</h2>
-            <p>권리자 이름, 대상 URL, 권리 근거, 요청사항을 고객지원에 보내면 확인 후 노출 중단·수정 등 필요한 조치를 진행합니다.</p>
+            <p>권리자 이름, 대상 URL, 권리 근거와 요청사항을 고객지원에 보내면 접수 사실을 확인하고, 필요한 범위에서 임시 비공개·삭제·수정 및 원천 제공기관 확인 절차를 진행합니다. 신고 과정에서 불필요한 주민등록번호나 신분증 전체 사본을 보내지 마세요.</p>
             <div className="legal-actions"><a href="/support?category=copyright">권리 침해 신고</a></div>
           </section>
         </div>

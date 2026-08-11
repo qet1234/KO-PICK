@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
   const { error: consentError } = await supabase.rpc("record_user_legal_consents", {
     p_privacy_version: PRIVACY_VERSION,
-    p_source: data.user.app_metadata.provider || "social",
+    p_source: `${data.user.app_metadata.provider || "social"}_age14`,
     p_terms_version: TERMS_VERSION,
   });
   if (consentError) {

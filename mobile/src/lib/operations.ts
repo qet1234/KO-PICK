@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
+import { getAnalyticsConsent } from '@/lib/privacy-preferences';
 
 const VISITOR_KEY = 'kopick:operations-visitor:v1';
 
@@ -28,8 +29,13 @@ async function visitorId() {
   return created;
 }
 
+export async function getMobileOperationVisitorId() {
+  return AsyncStorage.getItem(VISITOR_KEY);
+}
+
 export async function trackMobileOperation(event: MobileOperationEvent) {
   try {
+    if (await getAnalyticsConsent() !== 'granted') return;
     await fetch(new URL('/api/operations/events', appConfig.webUrl).toString(), {
       body: JSON.stringify({
         ...event,

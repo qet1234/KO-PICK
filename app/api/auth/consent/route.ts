@@ -10,13 +10,14 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null) as {
+      ageConfirmed?: boolean;
       privacyAccepted?: boolean;
       termsAccepted?: boolean;
     } | null;
 
-    if (body?.termsAccepted !== true || body.privacyAccepted !== true) {
+    if (body?.termsAccepted !== true || body.privacyAccepted !== true || body.ageConfirmed !== true) {
       return NextResponse.json(
-        { error: "이용약관과 개인정보 수집·이용에 각각 동의해 주세요." },
+        { error: "필수 동의와 만 14세 이상 확인을 완료해 주세요." },
         { status: 400 },
       );
     }
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     response.headers.set("Cache-Control", "private, no-store");
     response.cookies.set(
       LEGAL_CONSENT_COOKIE,
-      createLegalConsentCookie(),
+      createLegalConsentCookie(true),
       legalConsentCookieOptions,
     );
     return response;

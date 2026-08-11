@@ -7,6 +7,7 @@ export const LEGAL_CONSENT_COOKIE = "kopick_legal_consent";
 const MAX_AGE_SECONDS = 60 * 15;
 
 type ConsentPayload = {
+  ageConfirmed: boolean;
   issuedAt: number;
   privacyVersion: string;
   termsVersion: string;
@@ -21,8 +22,9 @@ function signature(payload: string) {
   return createHmac("sha256", signingKey()).update(payload).digest("base64url");
 }
 
-export function createLegalConsentCookie() {
+export function createLegalConsentCookie(ageConfirmed: boolean) {
   const payload = Buffer.from(JSON.stringify({
+    ageConfirmed,
     issuedAt: Date.now(),
     privacyVersion: PRIVACY_VERSION,
     termsVersion: TERMS_VERSION,
@@ -45,6 +47,7 @@ export function verifyLegalConsentCookie(value: string | undefined) {
     const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as ConsentPayload;
     return parsed.termsVersion === TERMS_VERSION &&
       parsed.privacyVersion === PRIVACY_VERSION &&
+      parsed.ageConfirmed === true &&
       Number.isFinite(parsed.issuedAt) &&
       parsed.issuedAt <= Date.now() + 30_000 &&
       parsed.issuedAt >= Date.now() - MAX_AGE_SECONDS * 1000;

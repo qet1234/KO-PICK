@@ -138,7 +138,10 @@ export type AccountDeletionResult = {
   appleRevocation: 'not_applicable' | 'revoked' | 'manual_required';
 };
 
-export async function deleteAccount(appleAuthorizationCode?: string) {
+export async function deleteAccount(options?: {
+  appleAuthorizationCode?: string;
+  visitorId?: string | null;
+}) {
   if (!appConfig.isSupabaseConfigured) {
     throw new Error('Supabase 앱 환경변수가 설정되지 않았습니다.');
   }
@@ -158,7 +161,10 @@ export async function deleteAccount(appleAuthorizationCode?: string) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ appleAuthorizationCode }),
+      body: JSON.stringify({
+        appleAuthorizationCode: options?.appleAuthorizationCode,
+        visitorId: options?.visitorId,
+      }),
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => null) as (AccountDeletionResult & { error?: string }) | null;

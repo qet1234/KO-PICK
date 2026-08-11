@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { ServiceStatusGate } from '@/components/service-status-gate';
+import { PrivacyConsentGate } from '@/components/privacy-consent-gate';
 import { SessionProvider } from '@/context/session-context';
 import { useSupabaseSessionRefresh } from '@/hooks/use-supabase-session-refresh';
 import { trackMobileOperation } from '@/lib/operations';
@@ -46,6 +47,7 @@ export default function RootLayout() {
       <ServiceStatusGate>
         <Stack screenOptions={{ headerShown: false }} />
       </ServiceStatusGate>
+      <PrivacyConsentGate />
       <StatusBar style="dark" />
     </SessionProvider>
   );
