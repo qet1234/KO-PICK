@@ -27,6 +27,9 @@ type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
 type SortMode = "recommended" | "name";
 type ViewMode = "split" | "list" | "map";
 
+const DEFAULT_RESULTS_PER_PAGE = 24;
+const FOOD_RESULTS_PER_PAGE = 50;
+
 interface Place {
   id: number | string;
   name: string;
@@ -490,7 +493,11 @@ export default function CategoryExplorePage({
 
         const params = new URLSearchParams({
           page: String(page),
-          pageSize: "12",
+          pageSize: String(
+            selectedCategory === "음식"
+              ? FOOD_RESULTS_PER_PAGE
+              : DEFAULT_RESULTS_PER_PAGE
+          ),
           region: selectedRegion,
           category: selectedCategory,
         });
