@@ -85,6 +85,33 @@ select {
   gap: 8px;
 }
 
+.kp-explore-view-toggle {
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--explore-line);
+  border-radius: 999px;
+  background: #f2f2ee;
+}
+
+.kp-explore-view-toggle button {
+  min-height: 29px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  color: #777771;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kp-explore-view-toggle button.is-active {
+  color: #fff;
+  background: var(--explore-black);
+}
+
 .kp-explore-header-actions .kp-explore-home-link {
   margin-left: 0;
 }
@@ -123,6 +150,29 @@ select {
   overflow: hidden;
 }
 
+.kp-explore-workspace.is-list-view {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.kp-explore-workspace.is-list-view .kp-explore-panel {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  border-right: 0;
+}
+
+.kp-explore-workspace.is-list-view .kp-explore-card-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kp-explore-workspace.is-list-view .kp-explore-map-shell,
+.kp-explore-workspace.is-map-view .kp-explore-panel {
+  display: none;
+}
+
+.kp-explore-workspace.is-map-view {
+  grid-template-columns: 1fr;
+}
+
 .kp-explore-panel {
   padding: 28px 25px 40px;
   overflow-y: auto;
@@ -149,6 +199,119 @@ select {
   color: var(--explore-muted);
   font-size: 12px;
   line-height: 1.6;
+}
+
+.kp-explore-search {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid #d8d8d1;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(17, 17, 17, 0.06);
+}
+
+.kp-explore-search > label {
+  display: block;
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.kp-explore-search > div {
+  min-height: 48px;
+  margin-top: 8px;
+  padding-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1.5px solid #cfcfc8;
+  border-radius: 13px;
+  background: #fafaf7;
+}
+
+.kp-explore-search > div:focus-within {
+  border-color: var(--explore-red);
+  box-shadow: 0 0 0 4px rgba(255, 59, 54, 0.1);
+}
+
+.kp-explore-search > div > span {
+  color: var(--explore-red);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.kp-explore-search input {
+  min-width: 0;
+  height: 44px;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.kp-explore-search button {
+  border: 0;
+  cursor: pointer;
+}
+
+.kp-explore-search-clear {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #777771;
+  background: #e9e9e4;
+  font-size: 17px;
+}
+
+.kp-explore-search-submit {
+  min-width: 59px;
+  align-self: stretch;
+  border-radius: 11px!important;
+  color: #fff;
+  background: var(--explore-red);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.kp-explore-search > small {
+  margin-top: 8px;
+  display: block;
+  color: var(--explore-muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.kp-explore-presets {
+  margin-top: 15px;
+}
+
+.kp-explore-presets > strong {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.kp-explore-presets > div {
+  margin-top: 8px;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
+}
+
+.kp-explore-presets button {
+  min-height: 34px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 59, 54, 0.24);
+  border-radius: 999px;
+  color: #8d2a26;
+  background: #fff5f3;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .kp-explore-category-buttons {
@@ -255,6 +418,49 @@ select {
   content: "";
 }
 
+.kp-explore-result-controls {
+  margin: -10px 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kp-explore-result-controls > div {
+  display: grid;
+  gap: 2px;
+}
+
+.kp-explore-result-controls small {
+  color: var(--explore-red);
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+
+.kp-explore-result-controls strong {
+  font-size: 12px;
+}
+
+.kp-explore-result-controls label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.kp-explore-result-controls select {
+  min-height: 36px;
+  padding: 0 28px 0 11px;
+  border: 1px solid var(--explore-line);
+  border-radius: 999px;
+  outline: 0;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
 .kp-explore-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -269,6 +475,23 @@ select {
   border-radius: 17px;
   background: #fff;
   transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.kp-explore-card-rank {
+  min-width: 32px;
+  height: 24px;
+  padding: 0 8px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(17, 17, 17, .82);
+  font-size: 9px;
+  font-weight: 950;
 }
 
 .kp-explore-save-button {
@@ -713,6 +936,18 @@ select {
     overflow: visible;
   }
 
+  .kp-explore-workspace.is-list-view .kp-explore-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kp-explore-workspace.is-map-view {
+    height: calc(100vh - 66px);
+  }
+
+  .kp-explore-workspace.is-map-view .kp-explore-map-shell {
+    height: 100%;
+  }
+
   .kp-explore-map-shell {
     height: 46vh;
     min-height: 360px;
@@ -730,7 +965,16 @@ select {
     padding: 0 14px;
   }
 
-  .kp-explore-header > div {
+  .kp-explore-header > div:not(.kp-explore-header-actions) {
+    display: none;
+  }
+
+  .kp-explore-header-actions .kp-explore-saved-link,
+  .kp-explore-header-actions .kp-explore-home-link {
+    display: none;
+  }
+
+  .kp-explore-view-toggle button:first-child {
     display: none;
   }
 
@@ -739,6 +983,10 @@ select {
   }
 
   .kp-explore-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kp-explore-workspace.is-list-view .kp-explore-card-grid {
     grid-template-columns: 1fr;
   }
 
@@ -753,6 +1001,18 @@ select {
   .kp-explore-map-label {
     top: 10px;
     left: 10px;
+  }
+
+  .kp-explore-search {
+    padding: 12px;
+  }
+
+  .kp-explore-search > div {
+    padding-left: 9px;
+  }
+
+  .kp-explore-search-submit {
+    min-width: 52px;
   }
 }
 

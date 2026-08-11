@@ -24,6 +24,8 @@ import {
 } from "@/utils/naver-maps";
 
 type CategoryValue = "전체" | "음식" | "카페" | "축제" | "관광지";
+type SortMode = "recommended" | "name";
+type ViewMode = "split" | "list" | "map";
 
 interface Place {
   id: number | string;
@@ -85,6 +87,19 @@ const categoryOptions: Array<{
   { value: "카페", label: "카페" },
   { value: "축제", label: "축제" },
   { value: "관광지", label: "관광지" },
+];
+
+const discoveryPresets: Array<{
+  label: string;
+  category: CategoryValue;
+  detail?: string;
+}> = [
+  { label: "전체 장소", category: "전체" },
+  { label: "데이트 카페", category: "카페", detail: "감성카페" },
+  { label: "혼밥", category: "음식", detail: "간편식" },
+  { label: "가족 나들이", category: "관광지", detail: "공원" },
+  { label: "친구와 놀거리", category: "관광지", detail: "테마파크" },
+  { label: "이번 주 축제", category: "축제" },
 ];
 
 const categoryDetails: Record<Exclude<CategoryValue, "전체">, string[]> = {
@@ -361,6 +376,10 @@ export default function CategoryExplorePage({
   const [error, setError] = useState("");
   const [mapReady, setMapReady] = useState(false);
   const [openNowOnly, setOpenNowOnly] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortMode, setSortMode] = useState<SortMode>("recommended");
+  const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
   const [mapError, setMapError] = useState(() =>
     process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
@@ -470,6 +489,7 @@ export default function CategoryExplorePage({
           params.set("detailType", selectedDetail);
         }
         if (openNowOnly) params.set("openNow", "true");
+        if (searchQuery) params.set("query", searchQuery);
 
         const response = await fetch(
           `${tourPlacesApiUrl}?` + params.toString()
@@ -530,7 +550,15 @@ export default function CategoryExplorePage({
     selectedRegion,
     selectedSubregion,
     subregions,
+    searchQuery,
   ]);
+
+  const sortedPlaces = useMemo(() => {
+    if (sortMode === "recommended") return places;
+    return [...places].sort((first, second) =>
+      first.name.localeCompare(second.name, "ko-KR")
+    );
+  }, [places, sortMode]);
 
   useEffect(() => {
     const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
@@ -691,6 +719,19 @@ export default function CategoryExplorePage({
     moveToRegion(regionName);
   };
 
+  const applyPreset = (preset: (typeof discoveryPresets)[number]) => {
+    setSelectedCategory(preset.category);
+    setSelectedFoodDetails(
+      preset.category === "음식" && preset.detail ? [preset.detail] : []
+    );
+    setSelectedDetail(
+      preset.category !== "전체" && preset.category !== "음식" && preset.detail
+        ? preset.detail
+        : "전체"
+    );
+    setPage(1);
+  };
+
   const focusPlace = (place: Place) => {
     void trackPlaceActivity(place, "detail");
     trackOperationEvent({
@@ -755,12 +796,24 @@ export default function CategoryExplorePage({
         </div>
 
         <div className="kp-explore-header-actions">
+          <div className="kp-explore-view-toggle" aria-label="장소 찾기 보기 방식">
+            {(["split", "list", "map"] as ViewMode[]).map((mode) => (
+              <button
+                className={viewMode === mode ? "is-active" : ""}
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                type="button"
+              >
+                {mode === "split" ? "지도+목록" : mode === "list" ? "목록" : "지도"}
+              </button>
+            ))}
+          </div>
           <a href="/saved" className="kp-explore-saved-link">♡ 저장한 장소</a>
           <a href="/" className="kp-explore-home-link">홈으로</a>
         </div>
       </header>
 
-      <div className="kp-explore-workspace">
+      <div className={`kp-explore-workspace is-${viewMode}-view`}>
         <aside className="kp-explore-panel">
           <section className="kp-explore-filter-section">
             <p className="kp-explore-eyebrow">{journeyLabel ? "RELATIONSHIP PLACE MAP" : "PLACE CATEGORY"}</p>
@@ -771,10 +824,59 @@ export default function CategoryExplorePage({
                 : "카테고리와 지역을 선택하면 장소 목록과 지도가 함께 변경됩니다."}
             </p>
 
+            <form
+              className="kp-explore-search"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setSearchQuery(searchInput.trim());
+                setPage(1);
+              }}
+              role="search"
+            >
+              <label htmlFor="place-search-query">장소명·지역·음식 검색</label>
+              <div>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  id="place-search-query"
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="예: 성수동 파스타, 제주 오션뷰 카페"
+                  type="search"
+                  value={searchInput}
+                />
+                {searchInput && (
+                  <button
+                    aria-label="검색어 지우기"
+                    className="kp-explore-search-clear"
+                    onClick={() => {
+                      setSearchInput("");
+                      if (searchQuery) {
+                        setSearchQuery("");
+                        setPage(1);
+                      }
+                    }}
+                    type="button"
+                  >
+                    ×
+                  </button>
+                )}
+                <button className="kp-explore-search-submit" type="submit">검색</button>
+              </div>
+              <small>공공 관광 데이터에서 조건과 일치하는 장소를 찾습니다.</small>
+            </form>
+
+            <div className="kp-explore-presets" aria-label="목적별 빠른 장소 찾기">
+              <strong>빠른 선택</strong>
+              <div>
+                {discoveryPresets.map((preset) => (
+                  <button key={preset.label} onClick={() => applyPreset(preset)} type="button">
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="kp-explore-category-buttons">
-              {categoryOptions
-                .filter((option) => option.value === initialCategory)
-                .map((option) => (
+              {categoryOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -950,10 +1052,25 @@ export default function CategoryExplorePage({
                 {!journeyLabel && selectedDetailSummary
                   ? " · " + selectedDetailSummary
                   : ""}
+                {searchQuery ? ` · “${searchQuery}”` : ""}
                 {" 추천 장소 "}
                 {(openNowOnly ? places.length : totalCount).toLocaleString("ko-KR")}곳
               </strong>
             )}
+          </div>
+
+          <div className="kp-explore-result-controls">
+            <div>
+              <small>RESULTS</small>
+              <strong>{loading ? "장소 확인 중" : `현재 ${places.length.toLocaleString("ko-KR")}곳 표시`}</strong>
+            </div>
+            <label>
+              <span>정렬</span>
+              <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
+                <option value="recommended">추천순</option>
+                <option value="name">이름순</option>
+              </select>
+            </label>
           </div>
 
           {!loading && !error && places.length === 0 && (
@@ -966,8 +1083,9 @@ export default function CategoryExplorePage({
 
           {!loading && !error && places.length > 0 && (
             <div className="kp-explore-card-grid">
-              {places.map((place) => (
+              {sortedPlaces.map((place, index) => (
                 <article className="kp-explore-place-card" key={place.id}>
+                  <span className="kp-explore-card-rank">{String(index + 1).padStart(2, "0")}</span>
                   <button
                     type="button"
                     className={`kp-explore-save-button${savedKeys.has(libraryPlaceKey(toLibraryPlace(place))) ? " is-saved" : ""}`}

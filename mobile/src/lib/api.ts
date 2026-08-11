@@ -65,6 +65,7 @@ export type PlaceQuery = {
   sigunguCode?: string;
   detailType?: string;
   openNow?: boolean;
+  query?: string;
 };
 
 export type RecommendationQuery = {
@@ -183,6 +184,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     params.set('detailType', query.detailType);
   }
   if (query.openNow) params.set('openNow', 'true');
+  if (query.query?.trim()) params.set('query', query.query.trim());
 
   const result = await fetchKoPick<{
     places: TourPlace[];
@@ -197,7 +199,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     void trackMobileOperation({
       eventType: 'search_no_results',
       feature: 'place_search',
-      route: `/api/tour/places?region=${encodeURIComponent(query.region)}&category=${encodeURIComponent(query.category)}`,
+      route: `/api/tour/places?region=${encodeURIComponent(query.region)}&category=${encodeURIComponent(query.category)}${query.query ? `&query=${encodeURIComponent(query.query)}` : ''}`,
     });
   }
   return result;

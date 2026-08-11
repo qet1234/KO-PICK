@@ -209,15 +209,37 @@ function getQuerySources(category: string, detailType: string): QuerySource[] {
 }
 
 function uniqueItems(items: TourApiItem[]) {
-  const seen = new Set<string>();
+  const seenContentIds = new Set<string>();
+  const seenPlaces = new Set<string>();
 
   return items.filter((item) => {
-    const key =
-      item.contentid ??
-      [item.title, item.mapx, item.mapy].filter(Boolean).join("|");
+    const contentId = String(item.contentid ?? "").trim();
+    const title = String(item.title ?? "")
+      .normalize("NFKC")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+    const address = [item.addr1, item.addr2]
+      .filter(Boolean)
+      .join(" ")
+      .normalize("NFKC")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+    const coordinates = [item.mapx, item.mapy]
+      .map((value) => String(value ?? "").trim())
+      .filter(Boolean)
+      .join("|");
+    const placeKey = title && (address || coordinates)
+      ? `${title}|${address || coordinates}`
+      : "";
 
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
+    if (
+      (!contentId && !placeKey) ||
+      (contentId && seenContentIds.has(contentId)) ||
+      (placeKey && seenPlaces.has(placeKey))
+    ) return false;
+
+    if (contentId) seenContentIds.add(contentId);
+    if (placeKey) seenPlaces.add(placeKey);
     return true;
   });
 }
@@ -437,6 +459,7 @@ export async function GET(request: NextRequest) {
       PAGE_SIZE_MAX
     );
     const requestedCategory = searchParams.get("category") ?? "전체";
+    const searchQuery = (searchParams.get("query") ?? "").trim().slice(0, 80);
     const categoryAliases: Record<string, string> = {
       맛집: "음식",
       여행지: "관광지",
@@ -454,13 +477,23 @@ export async function GET(request: NextRequest) {
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
     const includeImages = searchParams.get("includeImages") !== "false";
     const openNowOnly = searchParams.get("openNow") === "true";
-    const sources = Array.from(
+    const categorySources = Array.from(
       new Map(
         detailTypes
           .flatMap((detailType) => getQuerySources(category, detailType))
           .map((source) => [JSON.stringify(source), source])
       ).values()
     );
+    const sources = searchQuery
+      ? Array.from(
+          new Map(
+            categorySources.map((source) => {
+              const querySource = { ...source, keyword: searchQuery };
+              return [JSON.stringify(querySource), querySource] as const;
+            })
+          ).values()
+        )
+      : categorySources;
 
     if (!sources.length) {
       return NextResponse.json(
@@ -652,6 +685,7 @@ export async function GET(request: NextRequest) {
       detailTypes,
       openNowOnly,
       openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
+      query: searchQuery || null,
     });
   } catch (error) {
     console.error("TourAPI 요청 오류:", error);
