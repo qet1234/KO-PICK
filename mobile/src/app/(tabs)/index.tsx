@@ -75,19 +75,8 @@ export default function HomeScreen() {
   const [homeLocality, setHomeLocality] = useState('');
   const [homeQuery, setHomeQuery] = useState('');
 
-  const explore = (
-    category: string,
-    query = '',
-    region = homeRegion,
-    district = homeDistrict,
-    locality = homeLocality,
-    detailType = '',
-    includeHours = false,
-  ) => {
-    router.push({
-      pathname: '/(tabs)/explore',
-      params: { category, detailType, district, includeHours: includeHours ? 'true' : 'false', locality, region, query },
-    });
+  const explore = (category: string, query = '', region = homeRegion, district = homeDistrict, locality = homeLocality) => {
+    router.push({ pathname: '/(tabs)/explore', params: { category, district, locality, region, query } });
   };
 
   const searchRestaurants = () => {
@@ -133,18 +122,6 @@ export default function HomeScreen() {
           {homeShortcuts.map((item) => <MotionPressable key={item.label} accessibilityRole="button" onPress={() => explore(item.category)} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: item.background }]}><Text style={[styles.homeShortcutIconText, { color: item.color }]}>{item.icon}</Text></View><Text style={styles.homeShortcutLabel}>{item.label}</Text></MotionPressable>)}
           <MotionPressable accessibilityRole="button" onPress={() => void Linking.openURL(`${appConfig.webUrl}/recommend`)} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: '#e2ecff' }]}><Text style={[styles.homeShortcutIconText, { color: '#3157c8' }]}>코</Text></View><Text style={styles.homeShortcutLabel}>코스 설정</Text></MotionPressable>
           <MotionPressable accessibilityRole="button" onPress={() => router.push('/(tabs)/office')} style={styles.homeShortcut}><View style={[styles.homeShortcutIcon, { backgroundColor: '#eaffaa' }]}><Text style={[styles.homeShortcutIconText, { color: '#334600' }]}>회</Text></View><Text style={styles.homeShortcutLabel}>직장인 식사</Text></MotionPressable>
-        </View>
-
-        <View style={styles.quickPicks}>
-          <Text style={styles.eyebrow}>QUICK PICKS</Text>
-          <Text style={styles.quickPicksTitle}>상황별로 빠르게 찾기</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickPicksRow}>
-            <MotionPressable onPress={() => explore('카페', '', homeRegion, homeDistrict, homeLocality, '감성카페', true)} style={styles.quickPick}><Text style={styles.quickPickText}>데이트 카페</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('관광지', '', homeRegion, homeDistrict, homeLocality, '공원', true)} style={styles.quickPick}><Text style={styles.quickPickText}>가족 나들이</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('맛집', '', homeRegion, homeDistrict, homeLocality, '간편식', true)} style={styles.quickPick}><Text style={styles.quickPickText}>혼밥</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('축제', '', homeRegion, homeDistrict, homeLocality, '', true)} style={styles.quickPick}><Text style={styles.quickPickText}>이번 주 축제</Text></MotionPressable>
-            <MotionPressable onPress={() => explore('관광지', '', homeRegion, homeDistrict, homeLocality, '미술관·전시관', true)} style={styles.quickPick}><Text style={styles.quickPickText}>비 오는 날</Text></MotionPressable>
-          </ScrollView>
         </View>
 
         <View style={styles.heroFrame}>
@@ -210,7 +187,6 @@ const styles = StyleSheet.create({
   discoverySearchCard: { marginTop: 23, padding: 14, borderRadius: 19, backgroundColor: '#ffffff' }, discoverySearchLabel: { color: '#101010', fontSize: 11, fontWeight: '900' }, discoverySearchRow: { minHeight: 52, marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 7 }, discoverySearchInput: { flex: 1, minHeight: 52, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '700' }, discoverySearchButton: { minWidth: 61, minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010' }, discoverySearchButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
   discoveryRegionLabel: { marginTop: 16, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryDistrictLabel: { marginTop: 12, color: '#101010', fontSize: 10, fontWeight: '900' }, discoveryRegionRow: { gap: 6, paddingTop: 9, paddingBottom: 2 }, discoveryRegionButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 12 }, discoveryRegionButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, discoveryRegionText: { color: '#5f5f5a', fontSize: 10, fontWeight: '900' }, discoveryRegionTextActive: { color: '#ffffff' }, discoveryLocalityInput: { minHeight: 44, marginTop: 8, borderWidth: 1, borderColor: '#d6d6d0', borderRadius: 12, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 11, fontWeight: '800' },
   homeShortcuts: { marginTop: -12, marginHorizontal: 10, paddingTop: 27, paddingBottom: 16, flexDirection: 'row', flexWrap: 'wrap', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, backgroundColor: '#ffffff', shadowColor: '#111111', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.08, shadowRadius: 15, elevation: 3 }, homeShortcut: { width: '33.333%', minHeight: 85, alignItems: 'center', justifyContent: 'center', gap: 7 }, homeShortcutIcon: { width: 49, height: 49, alignItems: 'center', justifyContent: 'center', borderRadius: 17 }, homeShortcutIconText: { fontSize: 14, fontWeight: '900' }, homeShortcutLabel: { color: '#101010', fontSize: 10, fontWeight: '900' },
-  quickPicks: { marginTop: 34 }, quickPicksTitle: { marginTop: 6, color: '#101010', fontSize: 20, fontWeight: '900' }, quickPicksRow: { gap: 7, paddingTop: 12, paddingBottom: 3 }, quickPick: { minHeight: 39, justifyContent: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 15 }, quickPickText: { color: '#101010', fontSize: 10, fontWeight: '900' },
   heroFrame: { padding: 10, borderWidth: 1, borderColor: '#deded8', borderRadius: 28, backgroundColor: '#ffffff', shadowColor: '#1f1914', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.13, shadowRadius: 22, elevation: 7 },
   journeyPanel: { marginTop: 12, padding: 20, borderWidth: 1, borderColor: '#deded8', borderRadius: 19, backgroundColor: '#f8f8f5' },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },

@@ -196,46 +196,11 @@
 .kp-home-shortcuts .is-blue { background: #e2ecff; color: #3157c8; }
 .kp-home-shortcuts .is-lime { background: #eaffaa; color: #334600; }
 
-.kp-home-theme-row {
-  padding: 38px 0 12px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.kp-home-theme-row > div {
-  display: grid;
-  gap: 5px;
-}
-
-.kp-home-theme-row small,
 .kp-home-popular-heading small {
   color: #ff3b36;
   font-size: 8px;
   font-weight: 950;
   letter-spacing: .15em;
-}
-
-.kp-home-theme-row > div > strong { font-size: 19px; }
-
-.kp-home-theme-row nav {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-}
-
-.kp-home-theme-row nav a {
-  min-height: 38px;
-  padding: 0 15px;
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  border: 1px solid #d8d8d2;
-  border-radius: 999px;
-  background: #fff;
-  font-size: 10px;
-  font-weight: 900;
 }
 
 .kp-home-popular { padding: 36px 0 26px; }
@@ -309,8 +274,6 @@
   .kp-home-search-card form button { min-width: 59px; }
   .kp-home-shortcuts { width: calc(100% - 20px); margin-top: -24px; padding: 18px 12px; gap: 17px 6px; }
   .kp-home-shortcuts a > span { width: 48px; height: 48px; border-radius: 16px; }
-  .kp-home-theme-row { align-items: flex-start; flex-direction: column; }
-  .kp-home-theme-row nav { width: 100%; padding-bottom: 4px; }
   .kp-home-popular-grid { display: flex; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x mandatory; }
   .kp-home-popular-grid > a { min-width: 78%; scroll-snap-align: start; }
 }

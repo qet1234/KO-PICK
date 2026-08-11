@@ -478,7 +478,6 @@ export async function GET(request: NextRequest) {
     const sigunguCode = searchParams.get("sigunguCode") ?? "";
     const includeImages = searchParams.get("includeImages") !== "false";
     const openNowOnly = searchParams.get("openNow") === "true";
-    const includeHours = openNowOnly || searchParams.get("includeHours") === "true";
     const categorySources = Array.from(
       new Map(
         detailTypes
@@ -514,17 +513,19 @@ export async function GET(request: NextRequest) {
       Number.isFinite(latitude) &&
       Number.isFinite(longitude);
 
-    const loadSourcePayloads = async (querySources: QuerySource[]) => {
-      const usesKeywordSearch = querySources.some((source) => source.keyword);
-      const sourceRows = usesKeywordSearch || locality
-        ? PAGE_SIZE_MAX
-        : querySources.length > 1
-          ? Math.max(1, Math.floor(pageSize / querySources.length))
-          : pageSize;
-      const responses = await Promise.all(querySources.map((source) => {
+    const keywordSearch = sources.some((source) => source.keyword);
+    const multiSourceSearch = sources.length > 1;
+    const rowsPerSource = keywordSearch || locality
+      ? PAGE_SIZE_MAX
+      : multiSourceSearch
+        ? Math.max(1, Math.floor(pageSize / sources.length))
+        : pageSize;
+
+    const payloads = await Promise.all(
+      sources.map((source) => {
         const params = new URLSearchParams(commonParams);
-        params.set("pageNo", usesKeywordSearch || locality ? "1" : String(page));
-        params.set("numOfRows", String(sourceRows));
+        params.set("pageNo", keywordSearch || locality ? "1" : String(page));
+        params.set("numOfRows", String(rowsPerSource));
         params.set("arrange", "Q");
 
         if (areaCode) params.set("areaCode", areaCode);
@@ -555,26 +556,12 @@ export async function GET(request: NextRequest) {
         }
 
         return requestTourApi("areaBasedList2", params);
-      }));
-      return { payloads: responses, keywordSearch: usesKeywordSearch, rowsPerSource: sourceRows };
-    };
+      })
+    );
 
-    let sourceResult = await loadSourcePayloads(sources);
-    let rawItems = uniqueItems(sourceResult.payloads.flatMap((payload) => asItems(payload)));
-    let detailFallbackApplied = false;
-    if (!searchQuery && selectedDetailTypes.length > 0 && rawItems.length < pageSize) {
-      const fallbackSources = getQuerySources(category, "전체");
-      const fallbackResult = await loadSourcePayloads(fallbackSources);
-      const fallbackItems = uniqueItems(fallbackResult.payloads.flatMap((payload) => asItems(payload)));
-      if (fallbackItems.length > 0) {
-        rawItems = uniqueItems([...rawItems, ...fallbackItems]);
-        detailFallbackApplied = true;
-      }
-      if (rawItems.length === fallbackItems.length) sourceResult = fallbackResult;
-    }
-    const { payloads, keywordSearch, rowsPerSource } = sourceResult;
+    const rawItems = uniqueItems(payloads.flatMap((payload) => asItems(payload)));
     const categoryItems =
-      category === "음식" && (selectedDetailTypes.length === 0 || detailFallbackApplied)
+      category === "음식" && selectedDetailTypes.length === 0
         ? rawItems.filter((item) => item.cat3 !== cafeCategoryCode)
         : rawItems;
 
@@ -589,7 +576,7 @@ export async function GET(request: NextRequest) {
             ? item.cat3 === cafeCategoryCode
               ? "카페"
               : contentTypeNames[contentTypeId] ?? "기타"
-            : selectedDetailTypes.length === 0 || detailFallbackApplied
+            : selectedDetailTypes.length === 0
               ? category
               : `${category} · ${selectedDetailTypes.join(" · ")}`;
 
@@ -654,29 +641,26 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const localityKey = locality.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
-    const localityBasePlaces = localityKey
-      ? basePlaces.filter((place) =>
-          String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
-      : basePlaces;
-    const hourCandidates = includeHours && (keywordSearch || Boolean(localityKey))
-      ? localityBasePlaces.slice(0, pageSize)
-      : localityBasePlaces;
-    const placesWithHours = includeHours
-      ? await Promise.all(hourCandidates.map(async (place) => ({
+    const placesWithHours = openNowOnly
+      ? await Promise.all(basePlaces.map(async (place) => ({
           ...place,
           ...(await loadOpeningStatus(place.id, place.contentTypeId, commonParams)),
         })))
-      : hourCandidates.map((place) => ({
+      : basePlaces.map((place) => ({
           ...place,
           openingState: "unknown" as const,
           openingHoursText: null,
           restDayText: null,
           breakTimeText: null,
         }));
-    const places = openNowOnly
-      ? placesWithHours.filter((place) => place.openingState === "open")
+    const localityKey = locality.normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+    const localityPlaces = localityKey
+      ? placesWithHours.filter((place) =>
+          String(place.address ?? "").normalize("NFKC").replace(/\s+/g, "").toLowerCase().includes(localityKey))
       : placesWithHours;
+    const places = openNowOnly
+      ? localityPlaces.filter((place) => place.openingState === "open")
+      : localityPlaces;
 
     const bodies = payloads.map((payload) => payload.response?.body);
     const totalCount = openNowOnly
@@ -705,10 +689,8 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
       detailTypes,
-      detailFallbackApplied,
       openNowOnly,
-      includeHours,
-      openingHoursCoverage: includeHours ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
+      openingHoursCoverage: openNowOnly ? placesWithHours.filter((place) => place.openingState !== "unknown").length : 0,
       query: searchQuery || null,
       locality: locality || null,
     });

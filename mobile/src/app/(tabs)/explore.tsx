@@ -23,7 +23,6 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
   place,
   selected,
   saved,
-  showHours,
   onSelect,
   onToggleSaved,
   onReport,
@@ -31,7 +30,6 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
   place: TourPlace;
   selected: boolean;
   saved: boolean;
-  showHours: boolean;
   onSelect: (place: TourPlace) => void;
   onToggleSaved: (place: TourPlace) => void;
   onReport: (place: TourPlace) => void;
@@ -49,9 +47,7 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
         <Text style={styles.cardTitle}>{place.name}</Text>
         <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
         {place.openingState === 'open' ? <Text style={styles.openBadge}>● 현재 영업 중</Text> : null}
-        {showHours && place.openingState === 'closed' ? <Text style={styles.closedBadge}>● 현재 영업 종료</Text> : null}
-        {place.openingHoursText ? <Text numberOfLines={2} style={styles.hoursText}>영업시간 {place.openingHoursText}</Text> : null}
-        {showHours && !place.openingHoursText ? <Text numberOfLines={2} style={styles.hoursText}>영업시간은 방문 전 공식 페이지에서 확인해 주세요.</Text> : null}
+        {place.openingHoursText ? <Text numberOfLines={2} style={styles.hoursText}>{place.openingHoursText}</Text> : null}
       </MotionPressable>
       <MotionPressable accessibilityLabel={`${place.name} ${saved ? '찜 해제' : '찜하기'}`} accessibilityRole="button" onPress={() => onToggleSaved(place)} style={[styles.saveButton, saved && styles.saveButtonActive]}>
         <Text style={[styles.saveIcon, saved && styles.saveIconActive]}>{saved ? '♥' : '♡'}</Text>
@@ -65,7 +61,7 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
 });
 
 export default function ExploreScreen() {
-  const params = useLocalSearchParams<{ region?: string; district?: string; locality?: string; category?: string; query?: string; detailType?: string; includeHours?: string }>();
+  const params = useLocalSearchParams<{ region?: string; district?: string; locality?: string; category?: string; query?: string }>();
   const { width } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
@@ -85,8 +81,6 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openNow, setOpenNow] = useState(false);
-  const [detailType, setDetailType] = useState('');
-  const [includeHours, setIncludeHours] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('recommended');
@@ -119,15 +113,13 @@ export default function ExploreScreen() {
     nextQuery = searchQuery,
     nextSigunguCode = district === '전체' ? '' : subregions.find((item) => item.name === district)?.code ?? '',
     nextLocality = locality,
-    nextDetailType = detailType,
-    nextIncludeHours = includeHours,
   ) => {
     requestControllerRef.current?.abort();
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     const normalizedQuery = nextQuery.trim();
     const normalizedLocality = nextLocality.trim();
-    const cacheKey = `${nextRegion}:${nextSigunguCode}:${normalizedLocality}:${nextCategory}:${nextDetailType}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${nextIncludeHours ? 'hours' : 'no-hours'}:${normalizedQuery}`;
+    const cacheKey = `${nextRegion}:${nextSigunguCode}:${normalizedLocality}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
 
     if (cached) {
@@ -143,7 +135,7 @@ export default function ExploreScreen() {
     setError('');
     try {
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow || nextIncludeHours ? 12 : fastPageSize, detailType: nextDetailType, openNow: nextOpenNow, includeHours: nextIncludeHours, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
+        { region: nextRegion, category: nextCategory, page: nextPage, pageSize: nextOpenNow ? 12 : fastPageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, locality: normalizedLocality },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -223,15 +215,11 @@ export default function ExploreScreen() {
     const nextQuery = String(params.query ?? '').trim().slice(0, 80);
     const requestedDistrict = String(params.district ?? '전체').trim();
     const requestedLocality = String(params.locality ?? '').trim().slice(0, 40);
-    const requestedDetailType = String(params.detailType ?? '').trim().slice(0, 40);
-    const requestedIncludeHours = params.includeHours === 'true';
     queueMicrotask(() => {
       setRegion(nextRegion);
       setCategory(nextCategory);
       setSearchInput(nextQuery);
       setSearchQuery(nextQuery);
-      setDetailType(requestedDetailType);
-      setIncludeHours(requestedIncludeHours);
       void fetchTourSubregions(nextRegion).then((result) => {
         const nextSubregions = nextRegion === '전국' ? [] : result.subregions;
         const matched = nextSubregions.find((item) => item.name === requestedDistrict);
@@ -239,18 +227,18 @@ export default function ExploreScreen() {
         setDistrict(matched?.name ?? '전체');
         setLocalityInput(matched ? requestedLocality : '');
         setLocality(matched ? requestedLocality : '');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '', requestedDetailType, requestedIncludeHours);
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '');
       }).catch(() => {
         setSubregions([]);
         setDistrict('전체');
         setLocalityInput('');
         setLocality('');
-        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '', requestedDetailType, requestedIncludeHours);
+        void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '');
       });
     });
     // Load URL parameters once when this tab opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.category, params.detailType, params.district, params.includeHours, params.locality, params.query, params.region]);
+  }, [params.category, params.district, params.locality, params.query, params.region]);
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
@@ -300,8 +288,7 @@ export default function ExploreScreen() {
         <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
           const nextCategory = value as PlaceQuery['category'];
           setCategory(nextCategory);
-          setDetailType('');
-          void load(region, nextCategory, 1, false, openNow, searchQuery, district === '전체' ? '' : subregions.find((item) => item.name === district)?.code ?? '', locality, '', includeHours);
+          void load(region, nextCategory, 1);
         }} />
         <Text style={styles.instantNote}>{searchQuery ? `“${searchQuery}” 검색 결과에 지역·카테고리를 함께 적용합니다.` : '지역이나 카테고리를 누르면 바로 결과가 바뀝니다.'}</Text>
         <MotionPressable
@@ -341,7 +328,7 @@ export default function ExploreScreen() {
           <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
         </View> : null}
         {sortedPlaces.map((place) => (
-          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} showHours={includeHours || openNow} onSelect={selectPlace} onToggleSaved={toggleSaved} onReport={reportPlace} />
+          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onToggleSaved={toggleSaved} onReport={reportPlace} />
         ))}
         {totalPages > 1 ? <View style={styles.paginationBottom}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
@@ -366,7 +353,7 @@ const styles = StyleSheet.create({
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
   list: { marginTop: 26 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
-  card: { marginTop: 12, position: 'relative', borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { borderRadius: 14 }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 10, color: '#71716d', fontSize: 11, lineHeight: 17 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, closedBadge: { marginBottom: 3, color: '#b4433f', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 10, color: '#71716d', fontSize: 10, lineHeight: 15 }, saveButton: { width: 42, height: 42, position: 'absolute', top: 20, right: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 21, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 23, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
+  card: { marginTop: 12, position: 'relative', borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { borderRadius: 14 }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 10, color: '#71716d', fontSize: 11, lineHeight: 17 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 10, color: '#71716d', fontSize: 10, lineHeight: 15 }, saveButton: { width: 42, height: 42, position: 'absolute', top: 20, right: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 21, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 23, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
   reportButton: { minHeight: 42, marginTop: 8, alignItems: 'center', justifyContent: 'center' }, reportButtonText: { color: '#71716d', fontSize: 11, fontWeight: '800', textDecorationLine: 'underline' },
   pagination: { marginTop: 14, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }, paginationBottom: { marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   pageButton: { minWidth: 82, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 14 }, pageButtonDisabled: { opacity: 0.38 }, pageButtonText: { color: '#101010', fontSize: 12, fontWeight: '900' },

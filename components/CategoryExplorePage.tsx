@@ -336,7 +336,6 @@ interface CategoryExplorePageProps {
   initialDetail?: string;
   initialDistrict?: string;
   initialLocality?: string;
-  initialIncludeHours?: boolean;
   initialQuery?: string;
   initialRegion?: string;
   journeyLabel?: string;
@@ -348,7 +347,6 @@ export default function CategoryExplorePage({
   initialDetail = "전체",
   initialDistrict = "전체",
   initialLocality = "",
-  initialIncludeHours = false,
   initialQuery = "",
   initialRegion = "전국",
   journeyLabel,
@@ -506,7 +504,6 @@ export default function CategoryExplorePage({
           params.set("detailType", selectedDetail);
         }
         if (openNowOnly) params.set("openNow", "true");
-        if (initialIncludeHours) params.set("includeHours", "true");
         if (searchQuery) params.set("query", searchQuery);
         if (selectedLocality) params.set("locality", selectedLocality);
 
@@ -571,7 +568,6 @@ export default function CategoryExplorePage({
     subregions,
     searchQuery,
     selectedLocality,
-    initialIncludeHours,
   ]);
 
   const sortedPlaces = useMemo(() => {
@@ -1168,14 +1164,8 @@ export default function CategoryExplorePage({
                       {place.openingState === "open" && (
                         <span className="kp-explore-open-badge">● 현재 영업 중</span>
                       )}
-                      {initialIncludeHours && place.openingState === "closed" && (
-                        <span className="kp-explore-open-badge is-closed">● 현재 영업 종료</span>
-                      )}
                       {place.openingHoursText && (
-                        <small className="kp-explore-hours-text">영업시간 {place.openingHoursText}</small>
-                      )}
-                      {initialIncludeHours && !place.openingHoursText && (
-                        <small className="kp-explore-hours-text">영업시간은 방문 전 공식 페이지에서 확인해 주세요.</small>
+                        <small className="kp-explore-hours-text">{place.openingHoursText}</small>
                       )}
                       <strong>오늘어디 지도에서 위치 보기</strong>
                     </div>

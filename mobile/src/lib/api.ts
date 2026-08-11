@@ -65,7 +65,6 @@ export type PlaceQuery = {
   sigunguCode?: string;
   detailType?: string;
   openNow?: boolean;
-  includeHours?: boolean;
   query?: string;
   locality?: string;
 };
@@ -188,7 +187,6 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     params.set('detailType', query.detailType);
   }
   if (query.openNow) params.set('openNow', 'true');
-  if (query.includeHours) params.set('includeHours', 'true');
   if (query.query?.trim()) params.set('query', query.query.trim());
   if (query.locality?.trim()) params.set('locality', query.locality.trim());
 
