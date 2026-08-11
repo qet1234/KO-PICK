@@ -36,8 +36,6 @@ type WeatherData = {
   windSpeed: number;
   maxTemperature: number;
   minTemperature: number;
-  indoorRecommended: boolean;
-  recommendation: string;
   hourly: Forecast[];
   daily: DailyForecast[];
 };
@@ -170,7 +168,6 @@ export function LiveWeatherCard() {
               </View>
             ))}
           </ScrollView>
-          <View style={styles.pick}><Text style={styles.pickLabel}>WEATHER PICK</Text><Text style={styles.pickText}>{weather.recommendation}</Text></View>
           <MotionPressable accessibilityRole="link" onPress={() => void Linking.openURL('https://open-meteo.com/en/licence')}>
             <Text style={styles.attribution}>Weather data by Open-Meteo.com · CC BY 4.0</Text>
           </MotionPressable>
@@ -244,7 +241,6 @@ const styles = StyleSheet.create({
   hourCardSelected: { borderColor: '#3478bd', backgroundColor: '#eef6ff' }, hour: { color: '#5c6470', fontSize: 10, fontWeight: '700' }, hourIcon: { marginTop: 7, fontSize: 22 },
   hourTemp: { marginTop: 5, color: '#101010', fontSize: 14, fontWeight: '900' }, rain: { marginTop: 3, color: '#2f6fae', fontSize: 10, fontWeight: '800' },
   dayCard: { minWidth: 110, alignItems: 'center', borderWidth: 1, borderColor: '#e0e0da', borderRadius: 15, backgroundColor: '#ffffff', padding: 12 }, day: { color: '#5c6470', fontSize: 10, fontWeight: '700' }, minTemp: { color: '#71716d' },
-  pick: { marginTop: 18, borderRadius: 15, backgroundColor: '#101010', padding: 14 }, pickLabel: { color: '#ff736d', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, pickText: { marginTop: 4, color: '#ffffff', fontSize: 13, fontWeight: '800', lineHeight: 19 },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(16,16,16,0.52)' },
   pickerSheet: { maxHeight: '72%', borderTopLeftRadius: 26, borderTopRightRadius: 26, backgroundColor: '#f7f7f4', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 26 },
