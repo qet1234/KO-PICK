@@ -19,14 +19,17 @@ concurrency:
 
 jobs:
   build-and-publish:
-    name: Build and publish Android APK
+    name: Build and publish Android APK locally
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     permissions:
       contents: write
     defaults:
       run:
         working-directory: mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_LOCAL_BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/eas-local-artifacts
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -34,7 +37,8 @@ jobs:
       - name: Check for EXPO_TOKEN
         shell: bash
         run: |
-          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+          set -euo pipefail
+          if [ -z "${EXPO_TOKEN:-}" ]; then
             echo "Add EXPO_TOKEN to the repository Actions secrets."
             exit 1
           fi
@@ -46,6 +50,15 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -55,60 +68,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build standalone APK
-        id: eas-build
+      - name: Restore preview environment locally
         shell: bash
         run: |
-          eas build --platform android --profile preview --non-interactive --wait --json > "$RUNNER_TEMP/eas-build.json"
-          node <<'NODE'
-          const fs = require('node:fs');
-          const result = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/eas-build.json', 'utf8'));
-          const build = Array.isArray(result) ? result[0] : result;
-          const artifactUrl = build?.artifacts?.applicationArchiveUrl;
+          set -euo pipefail
+          eas env:pull --environment preview --path .env.local --non-interactive
+          test -s .env.local
+          echo "Preview environment restored for local APK build."
 
-          if (!artifactUrl) {
-            throw new Error('EAS build result did not include an APK artifact URL.');
-          }
-
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `artifact_url=${artifactUrl}\n`);
-          NODE
-
-      - name: Download APK artifact
-        env:
-          ARTIFACT_URL: ${{ steps.eas-build.outputs.artifact_url }}
+      - name: Build standalone APK locally
         shell: bash
         run: |
-          curl --fail --location --retry 3 "$ARTIFACT_URL" --output "$RUNNER_TEMP/koreapick-latest.apk"
+          set -euo pipefail
+          mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
+          rm -f "$RUNNER_TEMP/koreapick-latest.apk"
+          eas build \
+            --platform android \
+            --profile preview \
+            --local \
+            --non-interactive \
+            --freeze-credentials \
+            --output "$RUNNER_TEMP/koreapick-latest.apk"
           test -s "$RUNNER_TEMP/koreapick-latest.apk"
 
-      - name: Update public APK download URL
-        env:
-          ARTIFACT_URL: ${{ steps.eas-build.outputs.artifact_url }}
+      - name: Verify APK package and signature
         shell: bash
         run: |
-          cat > ../app/api/app-download/latest-apk.ts <<EOF
-          // This file is updated automatically after a successful EAS Android preview build.
-          export const latestAndroidApkUrl =
-            "${ARTIFACT_URL}";
-          EOF
-
-          cd ..
-          if git diff --quiet -- app/api/app-download/latest-apk.ts; then
-            echo "APK URL is already current."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add app/api/app-download/latest-apk.ts
-            git commit -m "Update Android APK download URL"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
+          set -euo pipefail
+          apksigner_path="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$apksigner_path"
+          "$apksigner_path" verify --verbose --print-certs "$RUNNER_TEMP/koreapick-latest.apk"
 
       - name: Publish stable download asset
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          set -euo pipefail
           if gh release view android-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload android-latest "$RUNNER_TEMP/koreapick-latest.apk" --clobber --repo "$GITHUB_REPOSITORY"
           else
@@ -118,3 +114,11 @@ jobs:
               --title "오늘어디 Android 최신 버전" \
               --notes "오늘어디 Android 테스트용 최신 APK입니다."
           fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koreapick-latest-apk
+          path: ${{ runner.temp }}/koreapick-latest.apk
+          if-no-files-found: error
+          retention-days: 7
