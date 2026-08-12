@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
+  createNaverErrorRedirect,
   getNaverCallbackUrl,
   NAVER_CLIENT_ID,
   NAVER_STATE_COOKIE,
@@ -10,6 +11,14 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
+  if (!NAVER_CLIENT_ID) {
+    console.error("NAVER_CLIENT_ID is not configured for web login.");
+    return createNaverErrorRedirect(
+      request.url,
+      "네이버 로그인 서버 설정이 완료되지 않았습니다.",
+    );
+  }
+
   const callbackUrl = getNaverCallbackUrl(request.url);
   const state = randomBytes(32).toString("base64url");
   const authorizeUrl = new URL(
