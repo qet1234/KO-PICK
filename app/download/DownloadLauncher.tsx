@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styles from "./download.module.css";
 
 type DownloadStatus =
@@ -51,22 +51,11 @@ export default function DownloadLauncher() {
   const [androidStatus, setAndroidStatus] = useState<DownloadStatus>("checking");
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [clientEnvironment, setClientEnvironment] = useState<ClientEnvironment | null>(null);
-  const hasStarted = useRef(false);
   const devicePlatform = clientEnvironment?.devicePlatform ?? null;
   const isIOSSafari = clientEnvironment?.isIOSSafari ?? false;
   const isInstalled = clientEnvironment?.isInstalled ?? false;
 
-  const startAndroidDownload = useCallback(() => {
-    if (hasStarted.current) return;
-
-    hasStarted.current = true;
-    setAndroidStatus("downloading");
-    window.location.assign(`${DOWNLOAD_ENDPOINT}?platform=android&download=1`);
-  }, []);
-
-  const checkAndroidAvailability = useCallback(async (shouldStart: boolean) => {
-    if (hasStarted.current) return;
-
+  const checkAndroidAvailability = useCallback(async () => {
     try {
       const response = await fetch(
         `${DOWNLOAD_ENDPOINT}?platform=android&status=1`,
@@ -74,11 +63,7 @@ export default function DownloadLauncher() {
       );
 
       if (response.ok) {
-        if (shouldStart) {
-          startAndroidDownload();
-        } else {
-          setAndroidStatus("ready");
-        }
+        setAndroidStatus("ready");
         return;
       }
 
@@ -86,20 +71,16 @@ export default function DownloadLauncher() {
     } catch {
       setAndroidStatus("error");
     }
-  }, [startAndroidDownload]);
+  }, []);
 
   useEffect(() => {
     const environmentFrame = window.requestAnimationFrame(() => {
       setClientEnvironment(getClientEnvironment());
     });
 
-    const checkAndroid = () => {
-      void checkAndroidAvailability(false);
-    };
-
-    checkAndroid();
+    void checkAndroidAvailability();
     const availabilityTimer = window.setInterval(
-      checkAndroid,
+      () => void checkAndroidAvailability(),
       AVAILABILITY_CHECK_INTERVAL_MS,
     );
 
@@ -118,7 +99,7 @@ export default function DownloadLauncher() {
     if (androidStatus === "downloading") {
       return "다운로드를 시작했습니다.";
     }
-    return "상태를 확인하지 못했습니다. 잠시 후 버튼을 다시 눌러 주세요.";
+    return "상태 확인과 관계없이 다운로드 버튼을 눌러 다시 시도할 수 있습니다.";
   };
 
   const iosStatusMessage = () => {
@@ -139,19 +120,13 @@ export default function DownloadLauncher() {
   return (
     <div className={styles.downloadArea} aria-live="polite">
       <div className={styles.downloadOption}>
-        <button
-          type="button"
+        <a
           className={styles.downloadButton}
-          onClick={() => void checkAndroidAvailability(true)}
-          disabled={
-            androidStatus === "checking" ||
-            androidStatus === "downloading"
-          }
+          href={`${DOWNLOAD_ENDPOINT}?platform=android&download=1`}
+          onClick={() => setAndroidStatus("downloading")}
         >
-          {androidStatus === "downloading"
-            ? "다운로드 시작 중…"
-            : "Android APK 다운로드"}
-        </button>
+          Android APK 다운로드
+        </a>
         <p className={styles.status}>{androidStatusMessage()}</p>
       </div>
 
