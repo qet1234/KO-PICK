@@ -10,6 +10,7 @@ export const appServiceFeatureOptions = [
   "네이버 지도",
   "로그인·계정",
   "공유 기능",
+  "보안",
 ] as const;
 
 export const operationalFeatureDefinitions = [
