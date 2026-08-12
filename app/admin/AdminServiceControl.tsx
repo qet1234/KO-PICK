@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
+import AdminSecurityMonitor from "./AdminSecurityMonitor";
 import {
   appServiceFeatureOptions,
   operationalFeatureDefinitions,
@@ -233,6 +234,8 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
             ))}
           </div>
         </fieldset>
+
+        <AdminSecurityMonitor />
 
         <div className="update-control-grid">
           <article>

@@ -1,0 +1,271 @@
+.securityPanel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d8d8d2;
+  border-radius: 14px;
+  background: #101010;
+  color: #fff;
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.heading > div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
+.heading > div:first-child > span {
+  color: #caff2c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.heading h3 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: -.035em;
+}
+
+.heading p {
+  max-width: 720px;
+  margin: 0;
+  color: #a9a9a2;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.overallBadge {
+  min-height: 34px;
+  padding: 0 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  border: 1px solid #353535;
+  border-radius: 999px;
+  background: #1a1a1a;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.overallBadge i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.healthy { color: #7df0a9; }
+.warning { color: #ffd56d; }
+.disabled { color: #c6c6c0; }
+
+.managementRow {
+  margin-top: 16px;
+  padding: 13px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #343434;
+  border-radius: 11px;
+  background: #191919;
+}
+
+.managementRow > div {
+  display: grid;
+  gap: 4px;
+}
+
+.managementRow strong {
+  font-size: 11px;
+}
+
+.managementRow small {
+  color: #92928c;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch span {
+  width: 38px;
+  height: 22px;
+  padding: 3px;
+  display: block;
+  border-radius: 999px;
+  background: #565650;
+  transition: background .2s ease;
+}
+
+.switch span::after {
+  width: 16px;
+  height: 16px;
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+  content: "";
+  transition: transform .2s ease;
+}
+
+.switch input:checked + span {
+  background: #1cb863;
+}
+
+.switch input:checked + span::after {
+  transform: translateX(16px);
+}
+
+.switch input:disabled + span {
+  opacity: .5;
+}
+
+.switch b {
+  min-width: 48px;
+  color: #d8d8d2;
+  font-size: 9px;
+}
+
+.summaryRow {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #92928c;
+  font-size: 9px;
+}
+
+.summaryRow span strong {
+  margin-left: 4px;
+  color: #f2f2ed;
+}
+
+.summaryRow button {
+  min-height: 30px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid #41413d;
+  border-radius: 8px;
+  color: #fff;
+  background: #242424;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.summaryRow button:hover:not(:disabled) {
+  border-color: #caff2c;
+  color: #caff2c;
+}
+
+.summaryRow button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #7f302c;
+  border-radius: 9px;
+  color: #ffaaa6;
+  background: #2b1716;
+  font-size: 10px;
+}
+
+.checkGrid {
+  margin-top: 13px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.checkCard,
+.loadingCard {
+  min-height: 142px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #343434;
+  border-radius: 11px;
+  background: #181818;
+}
+
+.checkCard > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.checkCard > div i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.checkCard.ok > div { color: #7df0a9; }
+.checkCard.warning > div { color: #ffd56d; }
+.checkCard.off > div { color: #a5a59f; }
+
+.checkCard > strong,
+.loadingCard > strong {
+  margin-top: 10px;
+  font-size: 11px;
+}
+
+.checkCard p,
+.loadingCard p {
+  margin: 6px 0 10px;
+  color: #989891;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.checkCard small {
+  margin-top: auto;
+  color: #d8d8d1;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.loadingCard {
+  justify-content: center;
+  color: #d8d8d2;
+}
+
+@media (max-width: 980px) {
+  .checkGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .securityPanel { padding: 15px; }
+  .heading,
+  .managementRow { align-items: stretch; flex-direction: column; }
+  .overallBadge { align-self: flex-start; }
+  .switch { justify-content: space-between; }
+  .summaryRow { align-items: flex-start; flex-wrap: wrap; }
+  .summaryRow button { margin-left: 0; }
+  .checkGrid { grid-template-columns: 1fr; }
+}
