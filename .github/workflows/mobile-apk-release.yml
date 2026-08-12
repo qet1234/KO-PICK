@@ -1,4 +1,4 @@
-name: Mobile APK release
+name: Mobile Android release
 
 on:
   push:
@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build-and-publish:
-    name: Build and publish Android APK locally
+    name: Prebuild and build Android with Gradle
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -58,6 +58,9 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -73,103 +76,125 @@ jobs:
           set -euo pipefail
           eas env:pull --environment preview --path .env.local --non-interactive
           test -s .env.local
-          echo "Preview environment restored for local APK build."
+          echo "Preview environment restored."
 
-      - name: Show Android build environment
+      - name: Prepare native Android project and signing
+        timeout-minutes: 20
         shell: bash
         run: |
           set -euo pipefail
-          echo "Node: $(node --version)"
-          echo "npm: $(npm --version)"
-          echo "Java:"
-          java -version
-          echo "Android SDK: ${ANDROID_HOME:-unset}"
-          echo "Disk:"
-          df -h "$RUNNER_TEMP" .
-          echo "Memory:"
-          free -h
+          set -a
+          source .env.local
+          set +a
 
-      - name: Build standalone APK locally
-        timeout-minutes: 45
+          rm -rf "$RUNNER_TEMP/koreapick-prebuild"
+
+          # Stop EAS before the native Gradle build. This keeps the existing
+          # EAS-managed Android signing key while avoiding `eas build --local`,
+          # which was repeatedly stalling during the native build stage.
+          eas build:inspect \
+            --platform android \
+            --profile preview \
+            --stage pre-build \
+            --output "$RUNNER_TEMP/koreapick-prebuild" \
+            --force \
+            --verbose
+
+          test -f "$RUNNER_TEMP/koreapick-prebuild/android/gradlew"
+          test -f "$RUNNER_TEMP/koreapick-prebuild/android/app/build.gradle"
+          echo "Native Android project is ready for direct Gradle build."
+
+      - name: Build APK and AAB directly with Gradle
+        timeout-minutes: 35
         shell: bash
         run: |
           set -euo pipefail
-          export EAS_LOCAL_BUILD_ARTIFACTS_DIR="$RUNNER_TEMP/eas-local-artifacts"
-          mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
-          rm -f "$RUNNER_TEMP/koreapick-latest.apk" "$RUNNER_TEMP/eas-local-build.log"
+          set -a
+          source .env.local
+          set +a
 
-          heartbeat() {
-            while true; do
-              sleep 60
-              echo "[APK build heartbeat] $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-              df -h "$RUNNER_TEMP" | tail -n 1 || true
-              free -h | sed -n '1,2p' || true
-            done
-          }
-          heartbeat &
-          HEARTBEAT_PID=$!
-          cleanup() {
-            kill "$HEARTBEAT_PID" 2>/dev/null || true
-          }
-          trap cleanup EXIT
+          cd "$RUNNER_TEMP/koreapick-prebuild/android"
+          chmod +x ./gradlew
 
-          set +e
-          timeout --signal=TERM --kill-after=2m 40m \
-            eas build \
-              --platform android \
-              --profile preview \
-              --local \
-              --non-interactive \
-              --freeze-credentials \
-              --output "$RUNNER_TEMP/koreapick-latest.apk" \
-            2>&1 | tee "$RUNNER_TEMP/eas-local-build.log"
-          build_status=${PIPESTATUS[0]}
-          set -e
+          ./gradlew \
+            --no-daemon \
+            --stacktrace \
+            --console=plain \
+            --max-workers=2 \
+            app:assembleRelease \
+            app:bundleRelease
 
-          if [ "$build_status" -ne 0 ]; then
-            echo "Local EAS build failed or timed out with status $build_status."
-            echo "Last 200 log lines:"
-            tail -n 200 "$RUNNER_TEMP/eas-local-build.log" || true
-            echo "Processes:"
-            ps -ef | tail -n 80 || true
-            echo "Disk:"
-            df -h || true
-            echo "Memory:"
-            free -h || true
-            exit "$build_status"
-          fi
+          apk_path="app/build/outputs/apk/release/app-release.apk"
+          aab_path="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$apk_path"
+          test -s "$aab_path"
 
-          test -s "$RUNNER_TEMP/koreapick-latest.apk"
-          ls -lh "$RUNNER_TEMP/koreapick-latest.apk"
+          cp "$apk_path" "$RUNNER_TEMP/koreapick-latest.apk"
+          cp "$aab_path" "$RUNNER_TEMP/koreapick-latest.aab"
+          ls -lh "$RUNNER_TEMP/koreapick-latest.apk" "$RUNNER_TEMP/koreapick-latest.aab"
 
-      - name: Verify APK package and signature
+      - name: Verify APK package and signing certificate
         shell: bash
         run: |
           set -euo pipefail
           apksigner_path="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -n "$apksigner_path"
-          "$apksigner_path" verify --verbose --print-certs "$RUNNER_TEMP/koreapick-latest.apk"
 
-      - name: Publish stable download asset
+          verify_output="$($apksigner_path verify --verbose --print-certs "$RUNNER_TEMP/koreapick-latest.apk")"
+          printf '%s\n' "$verify_output"
+
+          expected="29958c7f312befb449ae8552376ad40498b250e75f4bf11c17c4ad60de78305f"
+          actual="$(printf '%s\n' "$verify_output" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
+
+          if [ -z "$actual" ]; then
+            echo "Could not read APK signing certificate SHA-256 digest."
+            exit 1
+          fi
+
+          if [ "$actual" != "$expected" ]; then
+            echo "APK signing certificate does not match the existing 오늘어디 Android signing key."
+            echo "Expected: $expected"
+            echo "Actual:   $actual"
+            exit 1
+          fi
+
+          echo "APK signing certificate matches the existing app and Android App Links configuration."
+
+      - name: Verify Android App Bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          jarsigner -verify -strict "$RUNNER_TEMP/koreapick-latest.aab"
+          echo "AAB signature verification passed."
+
+      - name: Publish stable Android download assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           if gh release view android-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload android-latest "$RUNNER_TEMP/koreapick-latest.apk" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release upload android-latest \
+              "$RUNNER_TEMP/koreapick-latest.apk" \
+              "$RUNNER_TEMP/koreapick-latest.aab" \
+              --clobber \
+              --repo "$GITHUB_REPOSITORY"
           else
-            gh release create android-latest "$RUNNER_TEMP/koreapick-latest.apk" \
+            gh release create android-latest \
+              "$RUNNER_TEMP/koreapick-latest.apk" \
+              "$RUNNER_TEMP/koreapick-latest.aab" \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "오늘어디 Android 최신 버전" \
-              --notes "오늘어디 Android 테스트용 최신 APK입니다."
+              --notes "APK는 기기 테스트용, AAB는 Google Play 업로드용 최신 Android 빌드입니다."
           fi
 
-      - name: Upload workflow artifact
+      - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: koreapick-latest-apk
-          path: ${{ runner.temp }}/koreapick-latest.apk
+          name: koreapick-latest-android
+          path: |
+            ${{ runner.temp }}/koreapick-latest.apk
+            ${{ runner.temp }}/koreapick-latest.aab
           if-no-files-found: error
           retention-days: 7
