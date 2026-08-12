@@ -4,6 +4,7 @@ import {
   createNaverErrorRedirect,
   getNaverCallbackUrl,
   NAVER_CLIENT_ID,
+  NAVER_CLIENT_ID_IS_USABLE,
   NAVER_STATE_COOKIE,
   readNaverOAuthStates,
 } from "@/utils/naver-auth";
@@ -11,11 +12,11 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  if (!NAVER_CLIENT_ID) {
-    console.error("NAVER_CLIENT_ID is not configured for web login.");
+  if (!NAVER_CLIENT_ID_IS_USABLE) {
+    console.error("NAVER_CLIENT_ID is missing or points to the deleted legacy app.");
     return createNaverErrorRedirect(
       request.url,
-      "네이버 로그인 서버 설정이 완료되지 않았습니다.",
+      "네이버 로그인 앱 설정을 갱신해야 합니다. 관리자에게 문의해 주세요.",
     );
   }
 
