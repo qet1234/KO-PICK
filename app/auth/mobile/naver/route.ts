@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
+  createMobileNaverRedirect,
   getNaverCallbackUrl,
   NAVER_CLIENT_ID,
   NAVER_MOBILE_PLATFORM_COOKIE,
@@ -11,8 +12,17 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  const callbackUrl = getNaverCallbackUrl(request.url);
   const platform = request.nextUrl.searchParams.get("platform");
+  if (!NAVER_CLIENT_ID) {
+    console.error("NAVER_CLIENT_ID is not configured for mobile login.");
+    return createMobileNaverRedirect({
+      requestUrl: request.url,
+      error: "네이버 로그인 서버 설정이 완료되지 않았습니다.",
+      useAppLink: platform === "android",
+    });
+  }
+
+  const callbackUrl = getNaverCallbackUrl(request.url);
   const state = randomBytes(32).toString("base64url");
   const authorizeUrl = new URL("https://nid.naver.com/oauth2.0/authorize");
   authorizeUrl.searchParams.set("response_type", "code");
