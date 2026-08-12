@@ -1,0 +1,67 @@
+name: Mobile release check
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-release-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Align Expo SDK dependencies
+        run: npx expo install --fix --npm
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Expo Doctor
+        run: npm run doctor
+
+      - name: Verify release Expo config
+        env:
+          EAS_BUILD_PROFILE: production
+          EXPO_PUBLIC_SUPABASE_URL: https://release-check.invalid
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: release-check
+          EXPO_PUBLIC_NAVER_MAP_CLIENT_ID: release-check
+          EXPO_PUBLIC_WEB_URL: https://release-check.invalid
+        run: npx expo config --type public > /tmp/expo-public-config.txt
+
+      - name: Commit aligned dependency metadata
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Expo dependencies already aligned."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Align Expo SDK 57 patch dependencies"
+          git push origin HEAD:${{ github.head_ref }}
