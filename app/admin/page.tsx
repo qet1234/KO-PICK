@@ -62,9 +62,14 @@ const emptyOperations: OperationsSummary = {
   noResultQueries: [],
   placeClicks: 0,
   recentErrors: [],
+  searches: 0,
   searchNoResults: 0,
+  searchSuccesses: 0,
+  searchSuccessRate: 0,
   slowApiCount: 0,
   slowApis: [],
+  topPlaces: [],
+  topSearches: [],
 };
 
 function number(value: unknown) {
@@ -107,9 +112,14 @@ function operationsSummary(value: unknown): OperationsSummary {
     noResultQueries: Array.isArray(data.noResultQueries) ? data.noResultQueries as OperationsSummary["noResultQueries"] : [],
     placeClicks: number(data.placeClicks),
     recentErrors: Array.isArray(data.recentErrors) ? data.recentErrors as OperationsSummary["recentErrors"] : [],
+    searches: number(data.searches),
     searchNoResults: number(data.searchNoResults),
+    searchSuccesses: number(data.searchSuccesses),
+    searchSuccessRate: number(data.searchSuccessRate),
     slowApiCount: number(data.slowApiCount),
     slowApis: Array.isArray(data.slowApis) ? data.slowApis as OperationsSummary["slowApis"] : [],
+    topPlaces: Array.isArray(data.topPlaces) ? data.topPlaces as OperationsSummary["topPlaces"] : [],
+    topSearches: Array.isArray(data.topSearches) ? data.topSearches as OperationsSummary["topSearches"] : [],
   };
 }
 
