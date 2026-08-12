@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
+import { latestAndroidApkUrl } from "./latest-apk";
 
-const defaultAndroidApkUrl =
-  "https://github.com/qet1234/KO-PICK/releases/download/android-latest/koreapick-latest.apk";
-
-const androidApkUrl =
-  process.env.NEXT_PUBLIC_ANDROID_APK_URL?.trim() || defaultAndroidApkUrl;
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
 };
@@ -12,7 +8,7 @@ const noStoreHeaders = {
 export const dynamic = "force-dynamic";
 
 function getDownloadUrl(platform: string | null) {
-  return platform === "android" ? androidApkUrl : null;
+  return platform === "android" ? latestAndroidApkUrl : null;
 }
 
 export async function GET(request: Request) {
@@ -33,6 +29,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/download", request.url), 307);
   }
 
+  if (explicitDownload) {
+    return NextResponse.redirect(downloadUrl, 307);
+  }
+
   try {
     const artifactResponse = await fetch(downloadUrl, {
       method: "HEAD",
@@ -47,11 +47,7 @@ export async function GET(request: Request) {
       );
     }
 
-    if (statusOnly) {
-      return NextResponse.json({ ready: true }, { headers: noStoreHeaders });
-    }
-
-    return NextResponse.redirect(downloadUrl, 307);
+    return NextResponse.json({ ready: true }, { headers: noStoreHeaders });
   } catch {
     return NextResponse.json(
       { ready: false },
