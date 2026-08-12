@@ -5,7 +5,7 @@ import { createAdminClient } from "@/utils/admin";
 const VISITOR_COOKIE = "todaywhere_ops_visitor";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EVENT_TYPES = new Set([
-  "search_no_results", "place_card_click", "map_open", "directions_open",
+  "search_success", "search_no_results", "place_card_click", "map_open", "directions_open",
   "booking_open", "app_error", "app_crash", "api_request",
 ]);
 
