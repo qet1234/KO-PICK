@@ -18,9 +18,9 @@ permissions:
 
 jobs:
   build-aab:
-    name: Build production AAB
+    name: Build production AAB locally
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 90
     defaults:
       run:
         working-directory: mobile
@@ -43,6 +43,12 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -58,33 +64,21 @@ jobs:
           npm run lint
           npm run doctor
 
-      - name: Build Google Play production AAB
-        id: eas-build
-        shell: bash
-        run: |
-          eas build --platform android --profile production --non-interactive --wait --json > "$RUNNER_TEMP/eas-production.json"
-          node <<'NODE'
-          const fs = require('node:fs');
-          const result = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/eas-production.json', 'utf8'));
-          const build = Array.isArray(result) ? result[0] : result;
-          const artifactUrl = build?.artifacts?.applicationArchiveUrl;
-          const buildId = build?.id ?? '';
-
-          if (!artifactUrl) {
-            throw new Error('EAS production build did not include an AAB artifact URL.');
-          }
-
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `artifact_url=${artifactUrl}\n`);
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `build_id=${buildId}\n`);
-          NODE
-
-      - name: Download production AAB
+      - name: Build Google Play production AAB locally
         env:
-          ARTIFACT_URL: ${{ steps.eas-build.outputs.artifact_url }}
+          EAS_LOCAL_BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/eas-local-artifacts
         shell: bash
         run: |
-          curl --fail --location --retry 3 "$ARTIFACT_URL" --output "$RUNNER_TEMP/oneul-eodi-production.aab"
+          set -euo pipefail
+          mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
+          eas build \
+            --platform android \
+            --profile production \
+            --local \
+            --non-interactive \
+            --output "$RUNNER_TEMP/oneul-eodi-production.aab"
           test -s "$RUNNER_TEMP/oneul-eodi-production.aab"
+          file "$RUNNER_TEMP/oneul-eodi-production.aab"
 
       - name: Upload production AAB artifact
         uses: actions/upload-artifact@v4
