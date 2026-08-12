@@ -95,21 +95,27 @@ jobs:
           echo "::add-mask::$publishable_key"
 
           set_eas_public() {
-            local name="$1"
-            local value="$2"
+            local environment="$1"
+            local name="$2"
+            local value="$3"
             eas env:set \
-              --environment production \
+              --environment "$environment" \
               --name "$name" \
               --value "$value" \
               --visibility plaintext \
               --scope project \
               --non-interactive
-            printf '%s registered in EAS production.\n' "$name"
+            printf '%s registered in EAS %s.\n' "$name" "$environment"
           }
 
-          set_eas_public EXPO_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
-          set_eas_public EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$publishable_key"
-          set_eas_public EXPO_PUBLIC_WEB_URL "$WEB_URL"
+          for environment in production preview; do
+            set_eas_public "$environment" EXPO_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
+            set_eas_public "$environment" EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$publishable_key"
+            set_eas_public "$environment" EXPO_PUBLIC_WEB_URL "$WEB_URL"
+          done
 
-      - name: Publish automatic update
-        run: eas update --channel preview --platform all --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment production --non-interactive
+      - name: Publish Android preview update
+        run: eas update --channel preview --platform android --message "${{ github.event.head_commit.message || 'Manual Android preview update' }}" --environment preview --non-interactive
+
+      - name: Publish iOS preview update
+        run: eas update --channel preview --platform ios --message "${{ github.event.head_commit.message || 'Manual iOS preview update' }}" --environment production --non-interactive
