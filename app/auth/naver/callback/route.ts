@@ -195,7 +195,7 @@ export async function GET(request: NextRequest) {
     );
     const { data: sessionData, error: sessionError } =
       await supabase.auth.verifyOtp({
-        type: "magiclink",
+        type: "email",
         token_hash: exchange.token_hash,
       });
 
