@@ -50,6 +50,7 @@ function getClientEnvironment(): ClientEnvironment {
 export default function DownloadLauncher() {
   const [androidStatus, setAndroidStatus] = useState<DownloadStatus>("checking");
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [iosActionMessage, setIOSActionMessage] = useState("");
   const [clientEnvironment, setClientEnvironment] = useState<ClientEnvironment | null>(null);
   const devicePlatform = clientEnvironment?.devicePlatform ?? null;
   const isIOSSafari = clientEnvironment?.isIOSSafari ?? false;
@@ -103,18 +104,42 @@ export default function DownloadLauncher() {
   };
 
   const iosStatusMessage = () => {
+    if (iosActionMessage) return iosActionMessage;
     if (isInstalled) return "이 iPhone에 오늘어디가 설치되어 있습니다.";
-    if (devicePlatform !== "ios") return "iPhone의 Safari에서 이 페이지를 열어 주세요.";
-    if (!isIOSSafari) return "Safari로 이 페이지를 다시 열면 설치할 수 있습니다.";
-    return "App Store와 TestFlight 없이 바로 설치할 수 있습니다.";
+    if (devicePlatform !== "ios") return "iPhone의 Safari에서 이 페이지를 열어 설치할 수 있습니다.";
+    if (!isIOSSafari) return "Safari에서 열면 홈 화면 앱으로 설치할 수 있습니다.";
+    return "버튼을 누른 뒤 Safari의 공유 → 홈 화면에 추가로 설치합니다.";
   };
 
-  const handleIOSInstall = () => {
+  const copyInstallUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setIOSActionMessage("설치 주소를 복사했습니다. iPhone Safari에서 붙여넣어 열어 주세요.");
+    } catch {
+      setIOSActionMessage("이 페이지 주소를 복사해 iPhone Safari에서 열어 주세요.");
+    }
+  };
+
+  const handleIOSInstall = async () => {
     if (isInstalled) {
       window.location.assign("/");
       return;
     }
+
     setShowIOSInstructions(true);
+
+    if (devicePlatform !== "ios" || !isIOSSafari) {
+      await copyInstallUrl();
+      return;
+    }
+
+    setIOSActionMessage("Safari 아래쪽 공유 버튼을 누른 뒤 ‘홈 화면에 추가’를 선택해 주세요.");
+    window.requestAnimationFrame(() => {
+      document.getElementById("ios-install-title")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
   };
 
   return (
@@ -134,27 +159,38 @@ export default function DownloadLauncher() {
         <button
           type="button"
           className={`${styles.downloadButton} ${styles.iosButton}`}
-          onClick={handleIOSInstall}
+          onClick={() => void handleIOSInstall()}
+          aria-expanded={showIOSInstructions}
+          aria-controls="ios-install-guide"
         >
-          {isInstalled ? "설치된 오늘어디 열기" : "iPhone 홈 화면에 설치"}
+          {isInstalled ? "설치된 오늘어디 열기" : "iPhone 앱 설치"}
         </button>
         <p className={styles.status}>{iosStatusMessage()}</p>
 
         {showIOSInstructions ? (
-          <section className={styles.iosInstructions} aria-labelledby="ios-install-title">
-            <p className={styles.iosInstructionLabel}>iPhone 설치 방법</p>
+          <section
+            id="ios-install-guide"
+            className={styles.iosInstructions}
+            aria-labelledby="ios-install-title"
+          >
+            <p className={styles.iosInstructionLabel}>iPhone 앱 설치</p>
             <h2 id="ios-install-title">
-              {isIOSSafari ? "Safari에서 세 단계만 진행하세요" : "먼저 Safari에서 열어 주세요"}
+              {isIOSSafari ? "Safari에서 홈 화면 앱으로 설치하세요" : "Safari에서 설치 페이지를 열어 주세요"}
             </h2>
             {isIOSSafari ? (
-              <ol>
-                <li><strong>1</strong><span>화면 아래의 <b>공유</b> 버튼을 누릅니다.</span></li>
-                <li><strong>2</strong><span>메뉴를 내려 <b>홈 화면에 추가</b>를 선택합니다.</span></li>
-                <li><strong>3</strong><span>오른쪽 위의 <b>추가</b>를 누르면 설치가 끝납니다.</span></li>
-              </ol>
+              <>
+                <p className={styles.safariNotice}>
+                  iPhone은 APK나 IPA 파일을 직접 내려받는 방식이 아니라 Safari의 홈 화면 앱 설치 방식으로 사용할 수 있습니다.
+                </p>
+                <ol>
+                  <li><strong>1</strong><span>Safari 화면 아래의 <b>공유</b> 버튼을 누릅니다.</span></li>
+                  <li><strong>2</strong><span>메뉴를 내려 <b>홈 화면에 추가</b>를 선택합니다.</span></li>
+                  <li><strong>3</strong><span>오른쪽 위의 <b>추가</b>를 누르면 오늘어디 아이콘이 홈 화면에 설치됩니다.</span></li>
+                </ol>
+              </>
             ) : (
               <p className={styles.safariNotice}>
-                주소를 복사한 뒤 Safari 주소창에 붙여넣고, 다시 “iPhone 홈 화면에 설치”를 눌러 주세요.
+                설치 주소를 복사했습니다. iPhone에서 Safari를 열고 주소창에 붙여넣은 뒤 “iPhone 앱 설치” 버튼을 다시 눌러 주세요.
               </p>
             )}
           </section>
