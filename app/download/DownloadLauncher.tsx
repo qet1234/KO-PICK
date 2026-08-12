@@ -61,7 +61,7 @@ export default function DownloadLauncher() {
 
     hasStarted.current = true;
     setAndroidStatus("downloading");
-    window.location.assign(`${DOWNLOAD_ENDPOINT}?platform=android`);
+    window.location.assign(`${DOWNLOAD_ENDPOINT}?platform=android&download=1`);
   }, []);
 
   const checkAndroidAvailability = useCallback(async (shouldStart: boolean) => {
@@ -89,13 +89,12 @@ export default function DownloadLauncher() {
   }, [startAndroidDownload]);
 
   useEffect(() => {
-    const platform = getDevicePlatform();
     const environmentFrame = window.requestAnimationFrame(() => {
       setClientEnvironment(getClientEnvironment());
     });
 
     const checkAndroid = () => {
-      void checkAndroidAvailability(platform === "android");
+      void checkAndroidAvailability(false);
     };
 
     checkAndroid();
