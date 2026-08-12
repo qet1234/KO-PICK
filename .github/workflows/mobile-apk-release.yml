@@ -29,7 +29,6 @@ jobs:
         working-directory: mobile
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      EAS_LOCAL_BUILD_ARTIFACTS_DIR: ${{ runner.temp }}/eas-local-artifacts
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -80,6 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          export EAS_LOCAL_BUILD_ARTIFACTS_DIR="$RUNNER_TEMP/eas-local-artifacts"
           mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
           rm -f "$RUNNER_TEMP/koreapick-latest.apk"
           eas build \
