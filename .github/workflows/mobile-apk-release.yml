@@ -87,22 +87,46 @@ jobs:
           source .env.local
           set +a
 
-          rm -rf "$RUNNER_TEMP/koreapick-prebuild"
+          prebuild_root="$RUNNER_TEMP/koreapick-prebuild"
+          rm -rf "$prebuild_root"
 
-          # Stop EAS before the native Gradle build. This keeps the existing
-          # EAS-managed Android signing key while avoiding `eas build --local`,
-          # which was repeatedly stalling during the native build stage.
+          # EAS is used only to generate the native Android project and inject
+          # the existing EAS-managed signing credentials. The actual APK/AAB
+          # compilation is performed directly by Gradle in the next step.
+          set +e
           eas build:inspect \
             --platform android \
             --profile preview \
             --stage pre-build \
-            --output "$RUNNER_TEMP/koreapick-prebuild" \
+            --output "$prebuild_root" \
             --force \
             --verbose
+          inspect_status=$?
+          set -e
 
-          test -f "$RUNNER_TEMP/koreapick-prebuild/android/gradlew"
-          test -f "$RUNNER_TEMP/koreapick-prebuild/android/app/build.gradle"
-          echo "Native Android project is ready for direct Gradle build."
+          # build:inspect can return a non-zero status after successfully
+          # copying the prepared project. Validate the generated native files
+          # instead of treating that status alone as a build failure.
+          if [ -f "$prebuild_root/android/gradlew" ]; then
+            android_dir="$prebuild_root/android"
+          elif [ -f "$prebuild_root/mobile/android/gradlew" ]; then
+            android_dir="$prebuild_root/mobile/android"
+          else
+            echo "Android prebuild output was not found. inspect status: $inspect_status"
+            echo "Prepared directory contents:"
+            find "$prebuild_root" -maxdepth 4 -type f 2>/dev/null | head -n 200 || true
+            exit 1
+          fi
+
+          test -f "$android_dir/app/build.gradle"
+          test -f "$android_dir/app/credentials.json" || true
+          chmod +x "$android_dir/gradlew"
+
+          echo "NATIVE_ANDROID_DIR=$android_dir" >> "$GITHUB_ENV"
+          echo "Native Android project is ready at $android_dir."
+          if [ "$inspect_status" -ne 0 ]; then
+            echo "build:inspect returned $inspect_status, but required Android project files were created successfully; continuing with Gradle."
+          fi
 
       - name: Build APK and AAB directly with Gradle
         timeout-minutes: 35
@@ -113,8 +137,9 @@ jobs:
           source .env.local
           set +a
 
-          cd "$RUNNER_TEMP/koreapick-prebuild/android"
-          chmod +x ./gradlew
+          test -n "${NATIVE_ANDROID_DIR:-}"
+          test -f "$NATIVE_ANDROID_DIR/gradlew"
+          cd "$NATIVE_ANDROID_DIR"
 
           ./gradlew \
             --no-daemon \
