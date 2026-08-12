@@ -4,6 +4,7 @@ import {
   createMobileNaverRedirect,
   getNaverCallbackUrl,
   NAVER_CLIENT_ID,
+  NAVER_CLIENT_ID_IS_USABLE,
   NAVER_MOBILE_PLATFORM_COOKIE,
   NAVER_MOBILE_STATE_COOKIE,
   readNaverOAuthStates,
@@ -13,11 +14,11 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   const platform = request.nextUrl.searchParams.get("platform");
-  if (!NAVER_CLIENT_ID) {
-    console.error("NAVER_CLIENT_ID is not configured for mobile login.");
+  if (!NAVER_CLIENT_ID_IS_USABLE) {
+    console.error("NAVER_CLIENT_ID is missing or points to the deleted legacy app.");
     return createMobileNaverRedirect({
       requestUrl: request.url,
-      error: "네이버 로그인 서버 설정이 완료되지 않았습니다.",
+      error: "네이버 로그인 앱 설정을 갱신해야 합니다.",
       useAppLink: platform === "android",
     });
   }
