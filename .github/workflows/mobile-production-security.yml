@@ -20,7 +20,7 @@ jobs:
   build-aab:
     name: Build production AAB locally
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
     defaults:
       run:
         working-directory: mobile
@@ -48,6 +48,9 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
