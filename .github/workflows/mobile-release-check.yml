@@ -36,7 +36,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Expo dependency check
+        id: expo_check
+        continue-on-error: true
+        run: npx expo install --check
+
       - name: Expo Doctor
+        id: expo_doctor
+        continue-on-error: true
         run: npm run doctor
 
       - name: Verify release Expo config
@@ -47,3 +54,11 @@ jobs:
           EXPO_PUBLIC_NAVER_MAP_CLIENT_ID: release-check
           EXPO_PUBLIC_WEB_URL: https://release-check.invalid
         run: npx expo config --type public > /tmp/expo-public-config.txt
+
+      - name: Enforce Expo health
+        if: always()
+        run: |
+          if [ "${{ steps.expo_check.outcome }}" != "success" ] || [ "${{ steps.expo_doctor.outcome }}" != "success" ]; then
+            echo "Expo dependency/doctor validation failed. See the preceding logs for the exact compatible versions."
+            exit 1
+          fi
