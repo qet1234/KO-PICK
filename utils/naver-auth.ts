@@ -6,6 +6,15 @@ export const NAVER_MOBILE_STATE_COOKIE = "ko_pick_naver_mobile_oauth_state";
 export const NAVER_MOBILE_PLATFORM_COOKIE = "ko_pick_naver_mobile_platform";
 export const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID?.trim() || "";
 
+const DELETED_LEGACY_NAVER_CLIENT_SHA256 =
+  "87646e543b1c39af43b72544cfb6df48a0118d59ea0d2608fd9614ceea8012a7";
+
+export const NAVER_CLIENT_ID_IS_USABLE = Boolean(
+  NAVER_CLIENT_ID &&
+    createHash("sha256").update(NAVER_CLIENT_ID).digest("hex") !==
+      DELETED_LEGACY_NAVER_CLIENT_SHA256,
+);
+
 export function readNaverOAuthStates(value?: string) {
   if (!value) return [];
 
