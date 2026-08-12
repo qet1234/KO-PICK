@@ -110,6 +110,8 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
       'expo-build-properties',
       {
         android: {
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
           extraMavenRepos: ['https://repository.map.naver.com/archive/maven'],
         },
       },
