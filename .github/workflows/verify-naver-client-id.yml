@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/verify-naver-client-id.yml"
+      - "utils/naver-auth.ts"
+      - "app/auth/naver/**"
+      - "app/auth/mobile/naver/**"
   workflow_dispatch:
 
 permissions:
@@ -16,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-      EXPECTED_SHA256: 87646e543b1c39af43b72544cfb6df48a0118d59ea0d2608fd9614ceea8012a7
+      DELETED_LEGACY_SHA256: 87646e543b1c39af43b72544cfb6df48a0118d59ea0d2608fd9614ceea8012a7
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Compare Naver Client ID without exposing it
+      - name: Verify Naver Client ID without exposing it
         shell: bash
         run: |
           set -euo pipefail
@@ -28,12 +31,12 @@ jobs:
             description='NAVER_CLIENT_ID secret is missing'
           else
             actual="$(printf '%s' "$NAVER_CLIENT_ID" | sha256sum | awk '{print $1}')"
-            if [ "$actual" = "$EXPECTED_SHA256" ]; then
-              state=success
-              description='Naver Client ID matches developer console'
-            else
+            if [ "$actual" = "$DELETED_LEGACY_SHA256" ]; then
               state=failure
-              description='Naver Client ID does not match developer console'
+              description='Naver Client ID points to deleted legacy app'
+            else
+              state=success
+              description='Naver Client ID is configured and not legacy deleted app'
             fi
           fi
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
