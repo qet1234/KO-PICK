@@ -4,8 +4,7 @@ import { NextResponse } from "next/server";
 export const NAVER_STATE_COOKIE = "ko_pick_naver_oauth_state";
 export const NAVER_MOBILE_STATE_COOKIE = "ko_pick_naver_mobile_oauth_state";
 export const NAVER_MOBILE_PLATFORM_COOKIE = "ko_pick_naver_mobile_platform";
-export const NAVER_CLIENT_ID =
-  process.env.NAVER_CLIENT_ID?.trim() || "2q4Cf2az1due2FFaiXnu";
+export const NAVER_CLIENT_ID = process.env.NAVER_CLIENT_ID?.trim() || "";
 
 export function readNaverOAuthStates(value?: string) {
   if (!value) return [];
