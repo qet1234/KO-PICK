@@ -209,13 +209,20 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
     };
     sources?: ('TOUR_API' | 'NAVER_LOCAL')[];
   }>(`/api/tour/places?${params.toString()}`, signal);
-  if (result.places.length === 0) {
-    void trackMobileOperation({
-      eventType: 'search_no_results',
-      feature: 'place_search',
-      route: `/api/tour/places?region=${encodeURIComponent(query.region)}&category=${encodeURIComponent(query.category)}${query.query ? `&query=${encodeURIComponent(query.query)}` : ''}`,
-    });
-  }
+
+  void trackMobileOperation({
+    eventType: result.places.length > 0 ? 'search_success' : 'search_no_results',
+    feature: 'place_search',
+    route: `/api/tour/places?${params.toString().slice(0, 220)}`,
+    metadata: {
+      region: query.region,
+      category: query.category,
+      district: query.district ?? null,
+      locality: query.locality?.trim() || null,
+      query: query.query?.trim() || null,
+      resultCount: result.places.length,
+    },
+  });
   return result;
 }
 
@@ -235,9 +242,23 @@ export async function fetchNaverDiningPlaces(query: {
   budget: string;
 }) {
   const params = new URLSearchParams(query);
-  return fetchKoPick<{ places: NaverDiningPlace[]; query: string; budget: string }>(
+  const result = await fetchKoPick<{ places: NaverDiningPlace[]; query: string; budget: string }>(
     `/api/naver/dining-search?${params.toString()}`,
   );
+  void trackMobileOperation({
+    eventType: result.places.length > 0 ? 'search_success' : 'search_no_results',
+    feature: 'office_dining',
+    route: `/api/naver/dining-search?${params.toString().slice(0, 220)}`,
+    metadata: {
+      region: query.region,
+      district: query.district,
+      foodType: query.foodType,
+      foodDetail: query.foodDetail,
+      budget: query.budget,
+      resultCount: result.places.length,
+    },
+  });
+  return result;
 }
 
 export async function fetchRecommendations(query: RecommendationQuery) {
@@ -252,9 +273,23 @@ export async function fetchRecommendations(query: RecommendationQuery) {
     scope: query.region === '전국' ? '전국' : '내 지역',
   });
 
-  return fetchKoPick<{
+  const result = await fetchKoPick<{
     items: Recommendation[];
     source: '한국관광공사 TourAPI';
     attributionUrl: string;
   }>(`/api/recommend?${params.toString()}`);
+  void trackMobileOperation({
+    eventType: result.items.length > 0 ? 'search_success' : 'search_no_results',
+    feature: 'recommendations',
+    route: `/api/recommend?${params.toString().slice(0, 220)}`,
+    metadata: {
+      region: query.region,
+      category: query.category,
+      relationship: query.relationship,
+      budget: query.budget,
+      mood: query.mood || '감성적인',
+      resultCount: result.items.length,
+    },
+  });
+  return result;
 }
