@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,6 +40,10 @@ function supportGmailUrl(type: 'inquiry' | 'feedback') {
     ? '오늘어디 이용 중 느낀 점이나 개선 의견을 적어 주세요.\n\n사용 기기:\n의견:'
     : '오늘어디 이용 중 궁금한 점이나 문제를 적어 주세요.\n\n사용 기기:\n문의 내용:';
   return `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${encodeURIComponent(supportEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function isInternalNaverEmail(email: string | null | undefined) {
+  return Boolean(email && /^naver_[a-f0-9]+@auth\.koreapick\.duckdns\.org$/i.test(email));
 }
 
 export default function AccountScreen() {
@@ -107,6 +112,19 @@ export default function AccountScreen() {
     return <View style={styles.center}><ActivityIndicator color="#ff3b36" /></View>;
   }
 
+  const metadata = session?.user.user_metadata ?? {};
+  const profileImage = typeof metadata.avatar_url === 'string' && metadata.avatar_url
+    ? metadata.avatar_url
+    : typeof metadata.picture === 'string' && metadata.picture
+      ? metadata.picture
+      : null;
+  const contactEmail = typeof metadata.contact_email === 'string' && metadata.contact_email.trim()
+    ? metadata.contact_email.trim()
+    : null;
+  const visibleEmail = contactEmail
+    || (!isInternalNaverEmail(session?.user.email) ? session?.user.email : null)
+    || '이메일 비공개 계정';
+
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -115,11 +133,15 @@ export default function AccountScreen() {
 
         {session ? (
           <View style={styles.card}>
-            <View style={styles.avatar}><Text style={styles.avatarText}>?</Text></View>
+            {profileImage ? (
+              <Image accessibilityLabel="프로필 사진" source={{ uri: profileImage }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatar}><Text style={styles.avatarText}>?</Text></View>
+            )}
             <Text style={styles.name}>
               {session.user.user_metadata.full_name || session.user.user_metadata.name || '오늘어디 사용자'}
             </Text>
-            <Text style={styles.email}>{session.user.email || '이메일 비공개 계정'}</Text>
+            <Text style={styles.email}>{visibleEmail}</Text>
             <Text style={styles.provider}>
               {providerLabel(session.user.app_metadata.provider)} 로그인 · 모바일 보안 세션
             </Text>
@@ -215,9 +237,10 @@ const styles = StyleSheet.create({
   title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' },
   card: { marginTop: 22, alignItems: 'center', borderRadius: 24, backgroundColor: '#ffffff', padding: 24 },
   avatar: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#ff3b36' },
+  avatarImage: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#f1f1ee' },
   avatarText: { color: '#ffffff', fontSize: 24, fontWeight: '900' },
   name: { marginTop: 14, color: '#101010', fontSize: 20, fontWeight: '900' },
-  email: { marginTop: 5, color: '#71716d', fontSize: 13 },
+  email: { marginTop: 5, color: '#71716d', fontSize: 13, textAlign: 'center' },
   provider: { marginTop: 8, color: '#ff3b36', fontSize: 12, fontWeight: '800' },
   cardTitle: { color: '#101010', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   cardDescription: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20, textAlign: 'center' },
