@@ -15,13 +15,13 @@ on:
 
 concurrency:
   group: mobile-apk-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-and-publish:
     name: Build and publish Android APK locally
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     permissions:
       contents: write
     defaults:
@@ -75,21 +75,72 @@ jobs:
           test -s .env.local
           echo "Preview environment restored for local APK build."
 
+      - name: Show Android build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Node: $(node --version)"
+          echo "npm: $(npm --version)"
+          echo "Java:"
+          java -version
+          echo "Android SDK: ${ANDROID_HOME:-unset}"
+          echo "Disk:"
+          df -h "$RUNNER_TEMP" .
+          echo "Memory:"
+          free -h
+
       - name: Build standalone APK locally
+        timeout-minutes: 45
         shell: bash
         run: |
           set -euo pipefail
           export EAS_LOCAL_BUILD_ARTIFACTS_DIR="$RUNNER_TEMP/eas-local-artifacts"
           mkdir -p "$EAS_LOCAL_BUILD_ARTIFACTS_DIR"
-          rm -f "$RUNNER_TEMP/koreapick-latest.apk"
-          eas build \
-            --platform android \
-            --profile preview \
-            --local \
-            --non-interactive \
-            --freeze-credentials \
-            --output "$RUNNER_TEMP/koreapick-latest.apk"
+          rm -f "$RUNNER_TEMP/koreapick-latest.apk" "$RUNNER_TEMP/eas-local-build.log"
+
+          heartbeat() {
+            while true; do
+              sleep 60
+              echo "[APK build heartbeat] $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+              df -h "$RUNNER_TEMP" | tail -n 1 || true
+              free -h | sed -n '1,2p' || true
+            done
+          }
+          heartbeat &
+          HEARTBEAT_PID=$!
+          cleanup() {
+            kill "$HEARTBEAT_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          set +e
+          timeout --signal=TERM --kill-after=2m 40m \
+            eas build \
+              --platform android \
+              --profile preview \
+              --local \
+              --non-interactive \
+              --freeze-credentials \
+              --output "$RUNNER_TEMP/koreapick-latest.apk" \
+            2>&1 | tee "$RUNNER_TEMP/eas-local-build.log"
+          build_status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$build_status" -ne 0 ]; then
+            echo "Local EAS build failed or timed out with status $build_status."
+            echo "Last 200 log lines:"
+            tail -n 200 "$RUNNER_TEMP/eas-local-build.log" || true
+            echo "Processes:"
+            ps -ef | tail -n 80 || true
+            echo "Disk:"
+            df -h || true
+            echo "Memory:"
+            free -h || true
+            exit "$build_status"
+          fi
+
           test -s "$RUNNER_TEMP/koreapick-latest.apk"
+          ls -lh "$RUNNER_TEMP/koreapick-latest.apk"
 
       - name: Verify APK package and signature
         shell: bash
