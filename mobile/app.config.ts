@@ -112,6 +112,8 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
         android: {
           compileSdkVersion: 36,
           targetSdkVersion: 36,
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
           extraMavenRepos: ['https://repository.map.naver.com/archive/maven'],
         },
       },
