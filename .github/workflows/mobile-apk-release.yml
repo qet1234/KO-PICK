@@ -81,6 +81,29 @@ jobs:
           curl --fail --location --retry 3 "$ARTIFACT_URL" --output "$RUNNER_TEMP/koreapick-latest.apk"
           test -s "$RUNNER_TEMP/koreapick-latest.apk"
 
+      - name: Update public APK download URL
+        env:
+          ARTIFACT_URL: ${{ steps.eas-build.outputs.artifact_url }}
+        shell: bash
+        run: |
+          cat > ../app/api/app-download/latest-apk.ts <<EOF
+          // This file is updated automatically after a successful EAS Android preview build.
+          export const latestAndroidApkUrl =
+            "${ARTIFACT_URL}";
+          EOF
+
+          cd ..
+          if git diff --quiet -- app/api/app-download/latest-apk.ts; then
+            echo "APK URL is already current."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add app/api/app-download/latest-apk.ts
+            git commit -m "Update Android APK download URL"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
       - name: Publish stable download asset
         env:
           GH_TOKEN: ${{ github.token }}
