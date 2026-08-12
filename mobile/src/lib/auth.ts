@@ -56,7 +56,7 @@ async function createSessionFromUrl(url: string) {
   const tokenHash = params.get('token_hash');
   if (tokenHash) {
     const result = await supabase.auth.verifyOtp({
-      type: 'magiclink',
+      type: 'email',
       token_hash: tokenHash,
     });
     if (result.error) throw result.error;
