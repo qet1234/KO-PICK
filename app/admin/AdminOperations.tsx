@@ -3,6 +3,9 @@
 import { useState } from "react";
 
 export type OperationsSummary = {
+  searches: number;
+  searchSuccesses: number;
+  searchSuccessRate: number;
   searchNoResults: number;
   placeClicks: number;
   appErrors: number;
@@ -14,6 +17,22 @@ export type OperationsSummary = {
     directions: { count: number; rate: number };
     booking: { count: number; rate: number };
   };
+  topPlaces: Array<{
+    place_id: string;
+    place_name: string | null;
+    category: string | null;
+    clicks: number;
+    map_opens: number;
+    directions: number;
+    bookings: number;
+    score: number;
+  }>;
+  topSearches: Array<{
+    query: string;
+    region: string | null;
+    category: string | null;
+    count: number;
+  }>;
   slowApis: Array<{ route: string; requests: number; avg_ms: number; p95_ms: number; errors: number }>;
   noResultQueries: Array<{ feature: string; route: string; count: number }>;
   recentErrors: Array<{ platform: string; feature: string; route: string | null; error_message: string | null; status_code: number | null; created_at: string }>;
@@ -54,10 +73,10 @@ export function AdminOperationsDashboard({ summary }: { summary: OperationsSumma
   return (
     <section id="operations">
       <div className="admin-section-heading operations-heading">
-        <div><span className="admin-kicker">PRODUCT OPERATIONS</span><h2>기능 운영 지표</h2><p>최근 30일 사용자 행동, 오류와 API 성능입니다.</p></div>
+        <div><span className="admin-kicker">PRODUCT OPERATIONS</span><h2>기능 운영 지표</h2><p>최근 30일 사용자 행동, 검색 품질, 오류와 API 성능입니다.</p></div>
       </div>
       <div className="metric-grid operations-metrics">
-        <article className="metric-card is-red"><small>검색 결과 없음</small><strong>{number(summary.searchNoResults)}</strong><span>필터·데이터 보완 후보</span></article>
+        <article className="metric-card is-red"><small>검색 성공률</small><strong>{summary.searchSuccessRate}%</strong><span>검색 {number(summary.searches)}회 · 결과 없음 {number(summary.searchNoResults)}건</span></article>
         <article className="metric-card"><small>장소 카드 클릭</small><strong>{number(summary.placeClicks)}</strong><span>상세 관심 행동</span></article>
         <article className="metric-card is-dark"><small>느린 API</small><strong>{number(summary.slowApiCount)}</strong><span>1.5초 이상 · 오류 {number(summary.apiErrorCount)}건</span></article>
         <article className="metric-card is-lime"><small>앱 오류·강제 종료</small><strong>{number(summary.appErrors + summary.appCrashes)}</strong><span>강제 종료 {number(summary.appCrashes)}건</span></article>
@@ -77,6 +96,23 @@ export function AdminOperationsDashboard({ summary }: { summary: OperationsSumma
           <div className="operations-table">
             {summary.slowApis.map((item) => <div key={item.route}><strong>{item.route}</strong><span>평균 {number(item.avg_ms)}ms</span><b>P95 {number(item.p95_ms)}ms</b><small>{number(item.requests)}회 · 오류 {number(item.errors)}</small></div>)}
             {summary.slowApis.length === 0 ? <p className="chart-empty">수집된 API 성능 정보가 없습니다.</p> : null}
+          </div>
+        </article>
+      </div>
+
+      <div className="operations-grid">
+        <article className="admin-panel">
+          <div className="panel-title"><div><h2>실시간 인기 장소</h2><p>클릭·지도·길찾기·예약 행동을 가중 합산</p></div><span>ENGAGEMENT</span></div>
+          <div className="operations-table compact">
+            {summary.topPlaces.map((item, index) => <div key={item.place_id}><em>{index + 1}</em><strong>{item.place_name || item.place_id}</strong><span>{item.category || "분류 없음"}</span><b>{number(item.score)}점</b><small>클릭 {number(item.clicks)} · 지도 {number(item.map_opens)} · 길찾기 {number(item.directions)} · 예약 {number(item.bookings)}</small></div>)}
+            {summary.topPlaces.length === 0 ? <p className="chart-empty">아직 인기 장소를 계산할 행동 데이터가 없습니다.</p> : null}
+          </div>
+        </article>
+        <article className="admin-panel">
+          <div className="panel-title"><div><h2>인기 검색 조건</h2><p>검색 결과가 실제로 반환된 조건 기준</p></div><span>SEARCH</span></div>
+          <div className="operations-table compact">
+            {summary.topSearches.map((item, index) => <div key={`${item.query}-${item.region ?? ""}-${index}`}><em>{index + 1}</em><strong>{item.query}</strong><span>{[item.region, item.category].filter(Boolean).join(" · ") || "전체 조건"}</span><b>{number(item.count)}회</b></div>)}
+            {summary.topSearches.length === 0 ? <p className="chart-empty">검색 성공 데이터가 쌓이면 인기 조건이 표시됩니다.</p> : null}
           </div>
         </article>
       </div>
