@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build-and-publish:
-    name: Prebuild and build Android with Gradle
+    name: Prebuild and build Android AAB with Gradle
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -29,6 +29,7 @@ jobs:
         working-directory: mobile
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      NODE_ENV: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -90,9 +91,8 @@ jobs:
           prebuild_root="$RUNNER_TEMP/koreapick-prebuild"
           rm -rf "$prebuild_root"
 
-          # EAS is used only to generate the native Android project and inject
-          # the existing EAS-managed signing credentials. The actual APK/AAB
-          # compilation is performed directly by Gradle in the next step.
+          # EAS is used only for prebuild and for materializing the existing
+          # EAS-managed Android signing credentials. Gradle performs the AAB build.
           set +e
           eas build:inspect \
             --platform android \
@@ -104,31 +104,36 @@ jobs:
           inspect_status=$?
           set -e
 
-          # build:inspect can return a non-zero status after successfully
-          # copying the prepared project. Validate the generated native files
-          # instead of treating that status alone as a build failure.
           if [ -f "$prebuild_root/android/gradlew" ]; then
             android_dir="$prebuild_root/android"
           elif [ -f "$prebuild_root/mobile/android/gradlew" ]; then
             android_dir="$prebuild_root/mobile/android"
           else
             echo "Android prebuild output was not found. inspect status: $inspect_status"
-            echo "Prepared directory contents:"
             find "$prebuild_root" -maxdepth 4 -type f 2>/dev/null | head -n 200 || true
             exit 1
           fi
 
+          native_root="$(dirname "$android_dir")"
+          credentials_file="$native_root/credentials.json"
+
           test -f "$android_dir/app/build.gradle"
-          test -f "$android_dir/app/credentials.json" || true
+          test -f "$android_dir/app/eas-build-inject-android-credentials.gradle"
+          test -s "$credentials_file"
           chmod +x "$android_dir/gradlew"
 
+          # Current EAS signing injection resolves credentials.json from
+          # EAS_BUILD_WORKINGDIR. build:inspect sets it only inside its own process,
+          # so export the copied native project root for the separate Gradle process.
           echo "NATIVE_ANDROID_DIR=$android_dir" >> "$GITHUB_ENV"
-          echo "Native Android project is ready at $android_dir."
+          echo "EAS_BUILD_WORKINGDIR=$native_root" >> "$GITHUB_ENV"
+
+          echo "Native Android project and signing credentials are ready."
           if [ "$inspect_status" -ne 0 ]; then
-            echo "build:inspect returned $inspect_status, but required Android project files were created successfully; continuing with Gradle."
+            echo "build:inspect returned $inspect_status after producing the required files; continuing with Gradle."
           fi
 
-      - name: Build APK and AAB directly with Gradle
+      - name: Build Google Play AAB directly with Gradle
         timeout-minutes: 35
         shell: bash
         run: |
@@ -138,7 +143,9 @@ jobs:
           set +a
 
           test -n "${NATIVE_ANDROID_DIR:-}"
+          test -n "${EAS_BUILD_WORKINGDIR:-}"
           test -f "$NATIVE_ANDROID_DIR/gradlew"
+          test -s "$EAS_BUILD_WORKINGDIR/credentials.json"
           cd "$NATIVE_ANDROID_DIR"
 
           ./gradlew \
@@ -146,53 +153,42 @@ jobs:
             --stacktrace \
             --console=plain \
             --max-workers=2 \
-            app:assembleRelease \
             app:bundleRelease
 
-          apk_path="app/build/outputs/apk/release/app-release.apk"
           aab_path="app/build/outputs/bundle/release/app-release.aab"
-          test -s "$apk_path"
           test -s "$aab_path"
 
-          cp "$apk_path" "$RUNNER_TEMP/koreapick-latest.apk"
           cp "$aab_path" "$RUNNER_TEMP/koreapick-latest.aab"
-          ls -lh "$RUNNER_TEMP/koreapick-latest.apk" "$RUNNER_TEMP/koreapick-latest.aab"
+          ls -lh "$RUNNER_TEMP/koreapick-latest.aab"
 
-      - name: Verify APK package and signing certificate
+      - name: Verify AAB signing certificate
         shell: bash
         run: |
           set -euo pipefail
-          apksigner_path="$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          test -n "$apksigner_path"
+          aab="$RUNNER_TEMP/koreapick-latest.aab"
+          test -s "$aab"
 
-          verify_output="$($apksigner_path verify --verbose --print-certs "$RUNNER_TEMP/koreapick-latest.apk")"
-          printf '%s\n' "$verify_output"
+          jarsigner -verify -strict "$aab"
 
+          cert_output="$(keytool -printcert -jarfile "$aab")"
           expected="29958c7f312befb449ae8552376ad40498b250e75f4bf11c17c4ad60de78305f"
-          actual="$(printf '%s\n' "$verify_output" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
+          actual="$(printf '%s\n' "$cert_output" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr -d ':[:space:]')"
 
           if [ -z "$actual" ]; then
-            echo "Could not read APK signing certificate SHA-256 digest."
+            echo "Could not read AAB signing certificate SHA-256 digest."
             exit 1
           fi
 
           if [ "$actual" != "$expected" ]; then
-            echo "APK signing certificate does not match the existing 오늘어디 Android signing key."
+            echo "AAB signing certificate does not match the existing 오늘어디 Android signing key."
             echo "Expected: $expected"
             echo "Actual:   $actual"
             exit 1
           fi
 
-          echo "APK signing certificate matches the existing app and Android App Links configuration."
+          echo "AAB signature and signing certificate are valid."
 
-      - name: Verify Android App Bundle
-        shell: bash
-        run: |
-          set -euo pipefail
-          jarsigner -verify -strict "$RUNNER_TEMP/koreapick-latest.aab"
-          echo "AAB signature verification passed."
-
-      - name: Publish stable Android download assets
+      - name: Publish Google Play AAB
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -200,26 +196,22 @@ jobs:
           set -euo pipefail
           if gh release view android-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload android-latest \
-              "$RUNNER_TEMP/koreapick-latest.apk" \
               "$RUNNER_TEMP/koreapick-latest.aab" \
               --clobber \
               --repo "$GITHUB_REPOSITORY"
           else
             gh release create android-latest \
-              "$RUNNER_TEMP/koreapick-latest.apk" \
               "$RUNNER_TEMP/koreapick-latest.aab" \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
               --title "오늘어디 Android 최신 버전" \
-              --notes "APK는 기기 테스트용, AAB는 Google Play 업로드용 최신 Android 빌드입니다."
+              --notes "Google Play 업로드용 최신 Android App Bundle입니다."
           fi
 
-      - name: Upload workflow artifacts
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: koreapick-latest-android
-          path: |
-            ${{ runner.temp }}/koreapick-latest.apk
-            ${{ runner.temp }}/koreapick-latest.aab
+          name: koreapick-google-play-aab
+          path: ${{ runner.temp }}/koreapick-latest.aab
           if-no-files-found: error
           retention-days: 7
