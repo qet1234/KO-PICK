@@ -81,6 +81,11 @@ export type RecommendationQuery = {
   mood?: string;
 };
 
+type EngagementScore = {
+  place_id: string;
+  score: number;
+};
+
 async function fetchKoPick<T>(path: string, requestSignal?: AbortSignal) {
   const startedAt = Date.now();
   const controller = new AbortController();
@@ -130,6 +135,32 @@ async function fetchKoPick<T>(path: string, requestSignal?: AbortSignal) {
   } finally {
     clearTimeout(timeout);
     requestSignal?.removeEventListener('abort', abortRequest);
+  }
+}
+
+async function rankRecommendationsByEngagement(items: Recommendation[]) {
+  if (items.length < 2) return items;
+  try {
+    const params = new URLSearchParams();
+    items.slice(0, 50).forEach((item) => params.append('id', item.id));
+    const ranking = await fetchKoPick<{ items: EngagementScore[] }>(
+      `/api/recommend/engagement?${params.toString()}`,
+    );
+    if (!Array.isArray(ranking.items) || ranking.items.length === 0) return items;
+
+    const engagement = new Map(
+      ranking.items.map((item) => [String(item.place_id), Number(item.score) || 0]),
+    );
+    return items
+      .map((item, index) => ({
+        item,
+        index,
+        combinedScore: item.score + Math.min(8, Math.log1p(engagement.get(item.id) ?? 0) * 2),
+      }))
+      .sort((a, b) => b.combinedScore - a.combinedScore || a.index - b.index)
+      .map(({ item }) => item);
+  } catch {
+    return items;
   }
 }
 
@@ -278,8 +309,9 @@ export async function fetchRecommendations(query: RecommendationQuery) {
     source: '한국관광공사 TourAPI';
     attributionUrl: string;
   }>(`/api/recommend?${params.toString()}`);
+  const rankedItems = await rankRecommendationsByEngagement(result.items);
   void trackMobileOperation({
-    eventType: result.items.length > 0 ? 'search_success' : 'search_no_results',
+    eventType: rankedItems.length > 0 ? 'search_success' : 'search_no_results',
     feature: 'recommendations',
     route: `/api/recommend?${params.toString().slice(0, 220)}`,
     metadata: {
@@ -288,8 +320,8 @@ export async function fetchRecommendations(query: RecommendationQuery) {
       relationship: query.relationship,
       budget: query.budget,
       mood: query.mood || '감성적인',
-      resultCount: result.items.length,
+      resultCount: rankedItems.length,
     },
   });
-  return result;
+  return { ...result, items: rankedItems };
 }
