@@ -47,13 +47,16 @@ jobs:
             exit 1
           fi
 
-          digest="$($apksigner_path verify --print-certs "$RUNNER_TEMP/koreapick-latest.apk" \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' \
-            | head -n 1 \
+          cert_output="$($apksigner_path verify --print-certs "$RUNNER_TEMP/koreapick-latest.apk")"
+          digest="$(printf '%s\n' "$cert_output" \
+            | grep -i -m1 'certificate SHA-256 digest' \
+            | sed -E 's/.*digest:[[:space:]]*//I' \
+            | tr -d '[:space:]:' \
             | tr '[:lower:]' '[:upper:]')"
 
           if ! printf '%s' "$digest" | grep -Eq '^[0-9A-F]{64}$'; then
             echo 'Could not read a valid SHA-256 signing certificate digest.'
+            printf '%s\n' "$cert_output" | grep -i 'certificate.*digest' || true
             exit 1
           fi
 
