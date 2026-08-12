@@ -18,6 +18,7 @@ function getDownloadUrl(platform: string | null) {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const statusOnly = requestUrl.searchParams.has("status");
+  const explicitDownload = requestUrl.searchParams.get("download") === "1";
   const platform = requestUrl.searchParams.get("platform");
   const downloadUrl = getDownloadUrl(platform);
 
@@ -26,6 +27,10 @@ export async function GET(request: Request) {
       { ready: false },
       { status: 503, headers: noStoreHeaders },
     );
+  }
+
+  if (!statusOnly && !explicitDownload) {
+    return NextResponse.redirect(new URL("/download", request.url), 307);
   }
 
   try {
