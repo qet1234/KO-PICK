@@ -13,11 +13,41 @@ function featureFromPath(path: string) {
   return "web_api";
 }
 
-function isEmptyResult(payload: unknown) {
-  if (!payload || typeof payload !== "object") return false;
+function resultCount(payload: unknown) {
+  if (!payload || typeof payload !== "object") return null;
   const value = payload as { places?: unknown; items?: unknown };
-  return (Array.isArray(value.places) && value.places.length === 0)
-    || (Array.isArray(value.items) && value.items.length === 0);
+  if (Array.isArray(value.places)) return value.places.length;
+  if (Array.isArray(value.items)) return value.items.length;
+  return null;
+}
+
+function searchMetadata(url: URL, count: number) {
+  const result: Record<string, string | number | boolean | null> = { resultCount: count };
+  const allowedParams = [
+    "region",
+    "category",
+    "district",
+    "locality",
+    "query",
+    "relationship",
+    "budget",
+    "mood",
+    "foodType",
+    "foodDetail",
+    "openNow",
+  ];
+  for (const key of allowedParams) {
+    const value = url.searchParams.get(key)?.trim();
+    if (value) result[key] = value.slice(0, 120);
+  }
+  return result;
+}
+
+function isSearchRequest(url: URL) {
+  if (url.pathname === "/api/tour/places") {
+    return url.searchParams.get("mode") !== "subregions";
+  }
+  return url.pathname === "/api/recommend" || url.pathname === "/api/naver/dining-search";
 }
 
 export default function OperationsTelemetry() {
@@ -46,13 +76,15 @@ export default function OperationsTelemetry() {
           success: response.ok,
         });
 
-        if (response.ok && ["/api/tour/places", "/api/recommend", "/api/naver/dining-search"].includes(url.pathname)) {
+        if (response.ok && isSearchRequest(url)) {
           void response.clone().json().then((payload: unknown) => {
-            if (!isEmptyResult(payload)) return;
+            const count = resultCount(payload);
+            if (count === null) return;
             trackOperationEvent({
-              eventType: "search_no_results",
+              eventType: count > 0 ? "search_success" : "search_no_results",
               feature: featureFromPath(url.pathname),
               route: `${url.pathname}?${url.searchParams.toString().slice(0, 220)}`,
+              metadata: searchMetadata(url, count),
             });
           }).catch(() => undefined);
         }

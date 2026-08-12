@@ -8,7 +8,7 @@ import { getAnalyticsConsent } from '@/lib/privacy-preferences';
 const VISITOR_KEY = 'kopick:operations-visitor:v1';
 
 type MobileOperationEvent = {
-  eventType: 'search_no_results' | 'place_card_click' | 'map_open' | 'directions_open' | 'booking_open' | 'app_error' | 'app_crash' | 'api_request';
+  eventType: 'search_success' | 'search_no_results' | 'place_card_click' | 'map_open' | 'directions_open' | 'booking_open' | 'app_error' | 'app_crash' | 'api_request';
   feature: string;
   route?: string;
   placeId?: string;

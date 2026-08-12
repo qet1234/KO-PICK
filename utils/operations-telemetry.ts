@@ -1,6 +1,7 @@
 "use client";
 
 export type OperationEventType =
+  | "search_success"
   | "search_no_results"
   | "place_card_click"
   | "map_open"
