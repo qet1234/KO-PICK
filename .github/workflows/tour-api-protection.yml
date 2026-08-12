@@ -59,6 +59,8 @@ jobs:
           ! grep -R --line-number --include='*.yml' --include='*.yaml' \
             --exclude='tour-api-protection.yml' \
             'kopick-api\.onrender\.com' .github/workflows
+          ! grep -R --line-number --exclude-dir=node_modules --exclude-dir=.git \
+            'onrender\.com' app components utils mobile supabase backend frontend
 
       - name: Verify supported Node runtime
         shell: bash
