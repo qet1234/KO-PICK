@@ -95,11 +95,12 @@ export default function AdminSecurityMonitor() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const initialTimer = window.setTimeout(() => void refresh(), 0);
     const timer = window.setInterval(() => void refresh(), 10_000);
     const onFocus = () => void refresh();
     window.addEventListener("focus", onFocus);
     return () => {
+      window.clearTimeout(initialTimer);
       window.clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
