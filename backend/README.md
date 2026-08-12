@@ -1,6 +1,10 @@
-# 오늘어디 Spring Boot API
+# 오늘어디 Spring Boot API (보관용)
 
-## 인증 구조
+> 이 디렉터리는 과거 Spring Boot 백엔드의 복구 참고용 코드입니다.
+> 현재 운영 웹·모바일 트래픽은 Vercel + Supabase Auth/PostgreSQL/RLS/Edge Functions를 사용하며 이 백엔드를 실행하지 않습니다.
+> Render 배포 대상도 아닙니다.
+
+## 과거 인증 구조
 
 - 브라우저 로그인: Spring Security OAuth2 + PostgreSQL 세션
 - API 인증: JWT Access Token(기본 15분)
@@ -8,11 +12,11 @@
 - Refresh Token 원문은 브라우저 쿠키에만 두고 데이터베이스에는 SHA-256 해시만 저장
 - Redis 미사용
 
-로그인 성공 후 프론트엔드는 세션으로 `/api/auth/token`을 호출해 JWT를 발급받습니다. Access Token은 브라우저 메모리에만 보관합니다.
+로그인 성공 후 프론트엔드는 세션으로 `/api/auth/token`을 호출해 JWT를 발급받는 구조였습니다. Access Token은 브라우저 메모리에만 보관했습니다.
 
-## 필수 환경변수
+## 로컬 복구 테스트
 
-`backend/.env.example`을 기준으로 PostgreSQL, OAuth 공급자, JWT 서명키를 설정합니다. 운영 환경에서는 `COOKIE_SECURE=true`, 충분히 긴 무작위 `JWT_SECRET`, HTTPS를 반드시 사용합니다.
+필요한 경우에만 `backend/.env.example`을 기준으로 로컬 PostgreSQL, OAuth 공급자, JWT 서명키를 설정합니다. `application.yml`의 OAuth redirect 기본값은 로컬 복구 테스트용 `http://localhost:8080`이며, 운영 주소를 기본값으로 포함하지 않습니다.
 
 ## 주요 API
 
@@ -28,8 +32,11 @@
 
 ## 데이터베이스
 
-Flyway가 회원, Refresh Token, 인기 데이터, Spring Session 테이블을 생성합니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전합니다. 과거 협업 기능 테이블은 최종 종료 마이그레이션에서 삭제됩니다.
+Flyway가 회원, Refresh Token, 인기 데이터, Spring Session 테이블을 생성하는 과거 구조입니다. 기존 Supabase `auth.users`가 있으면 첫 마이그레이션에서 사용자 ID와 기본 프로필을 `app_users`로 이전하는 코드가 남아 있습니다.
 
-## Render 배포
+## 운영 주의사항
 
-루트의 `render.yaml`은 Docker 기반 Spring Boot 서비스와 PostgreSQL을 함께 생성합니다. Blueprint 생성 화면에서 `sync: false`로 표시되는 프론트엔드 URL, OAuth, TourAPI 값을 입력합니다. 무료 플랜은 검증용이며 실제 운영에서는 유료 인스턴스로 변경합니다.
+- 이 디렉터리를 Vercel 또는 Supabase 운영 배포에 연결하지 않습니다.
+- Render Blueprint나 Render PostgreSQL 생성 용도로 사용하지 않습니다.
+- 현재 운영 기능 수정은 루트 Next.js 앱, `mobile/`, `supabase/`를 기준으로 진행합니다.
+- 복구 목적으로 Spring 백엔드를 다시 실행해야 할 때만 별도 환경변수를 명시적으로 주입합니다.
