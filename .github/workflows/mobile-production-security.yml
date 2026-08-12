@@ -1,0 +1,202 @@
+name: Android production security build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-production-security.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: android-production-security
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-aab:
+    name: Build production AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check for EXPO_TOKEN
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "EXPO_TOKEN is required in repository Actions secrets."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate mobile project
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run doctor
+
+      - name: Build Google Play production AAB
+        id: eas-build
+        shell: bash
+        run: |
+          eas build --platform android --profile production --non-interactive --wait --json > "$RUNNER_TEMP/eas-production.json"
+          node <<'NODE'
+          const fs = require('node:fs');
+          const result = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/eas-production.json', 'utf8'));
+          const build = Array.isArray(result) ? result[0] : result;
+          const artifactUrl = build?.artifacts?.applicationArchiveUrl;
+          const buildId = build?.id ?? '';
+
+          if (!artifactUrl) {
+            throw new Error('EAS production build did not include an AAB artifact URL.');
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `artifact_url=${artifactUrl}\n`);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `build_id=${buildId}\n`);
+          NODE
+
+      - name: Download production AAB
+        env:
+          ARTIFACT_URL: ${{ steps.eas-build.outputs.artifact_url }}
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 "$ARTIFACT_URL" --output "$RUNNER_TEMP/oneul-eodi-production.aab"
+          test -s "$RUNNER_TEMP/oneul-eodi-production.aab"
+
+      - name: Upload production AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-production-aab
+          path: ${{ runner.temp }}/oneul-eodi-production.aab
+          if-no-files-found: error
+          retention-days: 7
+
+  mobsf:
+    name: MobSF static analysis
+    needs: build-aab
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Download production AAB
+        uses: actions/download-artifact@v5
+        with:
+          name: android-production-aab
+          path: artifacts
+
+      - name: Start MobSF
+        shell: bash
+        run: |
+          docker pull opensecurity/mobile-security-framework-mobsf:v4.5.1
+          docker run -d --name mobsf -p 8000:8000 opensecurity/mobile-security-framework-mobsf:v4.5.1
+
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:8000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "MobSF did not become ready."
+          docker logs mobsf || true
+          exit 1
+
+      - name: Run MobSF AAB scan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          MOBSF_API_KEY=""
+          for attempt in $(seq 1 30); do
+            MOBSF_API_KEY=$(docker logs mobsf 2>&1 | sed -n 's/.*REST API Key:[[:space:]]*//p' | tail -n 1 | tr -d '\r' || true)
+            if [ -n "$MOBSF_API_KEY" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ -z "$MOBSF_API_KEY" ]; then
+            echo "Could not obtain the MobSF REST API key."
+            docker logs mobsf || true
+            exit 1
+          fi
+
+          echo "::add-mask::$MOBSF_API_KEY"
+          MOBSF_URL="http://127.0.0.1:8000/api/v1"
+          AAB="artifacts/oneul-eodi-production.aab"
+
+          UPLOAD_JSON=$(curl --silent --show-error --fail \
+            -H "Authorization: $MOBSF_API_KEY" \
+            -H "X-Mobsf-Api-Key: $MOBSF_API_KEY" \
+            -F "file=@$AAB" \
+            "$MOBSF_URL/upload")
+
+          HASH=$(printf '%s' "$UPLOAD_JSON" | jq -r '.hash // empty')
+          SCAN_TYPE=$(printf '%s' "$UPLOAD_JSON" | jq -r '.scan_type // empty')
+          FILE_NAME=$(printf '%s' "$UPLOAD_JSON" | jq -r '.file_name // empty')
+
+          if [ -z "$HASH" ]; then
+            echo "MobSF upload did not return a scan hash."
+            printf '%s\n' "$UPLOAD_JSON"
+            exit 1
+          fi
+
+          curl --silent --show-error --fail \
+            -H "Authorization: $MOBSF_API_KEY" \
+            -H "X-Mobsf-Api-Key: $MOBSF_API_KEY" \
+            --data-urlencode "hash=$HASH" \
+            --data-urlencode "scan_type=$SCAN_TYPE" \
+            --data-urlencode "file_name=$FILE_NAME" \
+            "$MOBSF_URL/scan" > mobsf-scan-result.json
+
+          for attempt in $(seq 1 30); do
+            if curl --silent --show-error --fail \
+              -H "Authorization: $MOBSF_API_KEY" \
+              -H "X-Mobsf-Api-Key: $MOBSF_API_KEY" \
+              --data-urlencode "hash=$HASH" \
+              "$MOBSF_URL/download_pdf" \
+              --output mobsf-report.pdf; then
+              if [ -s mobsf-report.pdf ]; then
+                break
+              fi
+            fi
+            sleep 10
+          done
+
+          test -s mobsf-report.pdf
+
+      - name: Upload MobSF report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobsf-production-report
+          path: |
+            mobsf-report.pdf
+            mobsf-scan-result.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop MobSF
+        if: always()
+        run: docker rm -f mobsf || true
