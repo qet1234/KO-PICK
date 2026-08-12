@@ -78,8 +78,9 @@ export default function DownloadLauncher() {
     const environmentFrame = window.requestAnimationFrame(() => {
       setClientEnvironment(getClientEnvironment());
     });
-
-    void checkAndroidAvailability();
+    const availabilityFrame = window.requestAnimationFrame(() => {
+      void checkAndroidAvailability();
+    });
     const availabilityTimer = window.setInterval(
       () => void checkAndroidAvailability(),
       AVAILABILITY_CHECK_INTERVAL_MS,
@@ -87,6 +88,7 @@ export default function DownloadLauncher() {
 
     return () => {
       window.cancelAnimationFrame(environmentFrame);
+      window.cancelAnimationFrame(availabilityFrame);
       window.clearInterval(availabilityTimer);
     };
   }, [checkAndroidAvailability]);
