@@ -1,0 +1,49 @@
+name: Mobile release check
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-release-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Expo Doctor
+        run: npm run doctor
+
+      - name: Verify release Expo config
+        env:
+          EAS_BUILD_PROFILE: production
+          EXPO_PUBLIC_SUPABASE_URL: https://release-check.invalid
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: release-check
+          EXPO_PUBLIC_NAVER_MAP_CLIENT_ID: release-check
+          EXPO_PUBLIC_WEB_URL: https://release-check.invalid
+        run: npx expo config --type public > /tmp/expo-public-config.txt
