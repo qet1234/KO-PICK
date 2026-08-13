@@ -16,16 +16,14 @@
         "buildType": "apk"
       }
     },
-    "testflight": {
+    "production": {
       "distribution": "store",
       "autoIncrement": true,
-      "channel": "preview",
-      "environment": "production"
-    },
-    "production": {
-      "autoIncrement": true,
       "channel": "production",
-      "environment": "production"
+      "environment": "production",
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
@@ -34,8 +32,6 @@
         "track": "internal",
         "releaseStatus": "draft"
       }
-    },
-    "testflight": {},
-    "production": {}
+    }
   }
 }
