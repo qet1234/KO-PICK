@@ -239,12 +239,12 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
       totalPages: number;
     };
     sources?: ('TOUR_API' | 'NAVER_LOCAL')[];
-  }>(`/api/tour/places?${params.toString()}`, signal);
+  }>(`/api/tour/places-ranked?${params.toString()}`, signal);
 
   void trackMobileOperation({
     eventType: result.places.length > 0 ? 'search_success' : 'search_no_results',
     feature: 'place_search',
-    route: `/api/tour/places?${params.toString().slice(0, 220)}`,
+    route: `/api/tour/places-ranked?${params.toString().slice(0, 220)}`,
     metadata: {
       region: query.region,
       category: query.category,
@@ -259,7 +259,7 @@ export async function fetchTourPlaces(query: PlaceQuery, signal?: AbortSignal) {
 
 export async function fetchTourSubregions(region: string, signal?: AbortSignal) {
   const params = new URLSearchParams({ mode: 'subregions', region });
-  return fetchKoPick<{ subregions: TourSubregion[] }>(`/api/tour/places?${params.toString()}`, signal);
+  return fetchKoPick<{ subregions: TourSubregion[] }>(`/api/tour/places-ranked?${params.toString()}`, signal);
 }
 
 export async function fetchNaverDiningPlaces(query: {
