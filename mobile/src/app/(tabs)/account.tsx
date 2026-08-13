@@ -113,17 +113,31 @@ export default function AccountScreen() {
   }
 
   const metadata = session?.user.user_metadata ?? {};
+  const provider = session?.user.app_metadata.provider;
+  const isNaverAccount = provider === 'naver';
   const profileImage = typeof metadata.avatar_url === 'string' && metadata.avatar_url
     ? metadata.avatar_url
     : typeof metadata.picture === 'string' && metadata.picture
       ? metadata.picture
       : null;
-  const contactEmail = typeof metadata.contact_email === 'string' && metadata.contact_email.trim()
+  const rawContactEmail = typeof metadata.contact_email === 'string' && metadata.contact_email.trim()
     ? metadata.contact_email.trim()
     : null;
-  const visibleEmail = contactEmail
-    || (!isInternalNaverEmail(session?.user.email) ? session?.user.email : null)
-    || '이메일 비공개 계정';
+  const contactEmail = rawContactEmail && !isInternalNaverEmail(rawContactEmail)
+    ? rawContactEmail
+    : null;
+  const authEmail = session?.user.email && !isInternalNaverEmail(session.user.email)
+    ? session.user.email
+    : null;
+  const visibleEmail = contactEmail || authEmail;
+  const accountEmailText = isNaverAccount
+    ? visibleEmail
+      ? `연락처 이메일 · ${visibleEmail}`
+      : '연락처 이메일 미제공'
+    : visibleEmail || '이메일 비공개 계정';
+  const providerText = isNaverAccount
+    ? '네이버 로그인 · 연결됨'
+    : `${providerLabel(provider)} 로그인 · 안전하게 연결됨`;
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -141,10 +155,13 @@ export default function AccountScreen() {
             <Text style={styles.name}>
               {session.user.user_metadata.full_name || session.user.user_metadata.name || '오늘어디 사용자'}
             </Text>
-            <Text style={styles.email}>{visibleEmail}</Text>
-            <Text style={styles.provider}>
-              {providerLabel(session.user.app_metadata.provider)} 로그인 · 모바일 보안 세션
-            </Text>
+            <Text style={styles.email}>{accountEmailText}</Text>
+            <Text style={[styles.provider, isNaverAccount && styles.naverProvider]}>{providerText}</Text>
+            {isNaverAccount ? (
+              <Text style={styles.providerNotice}>
+                네이버에서 동의한 프로필 정보만 계정 표시와 로그인에 사용합니다.
+              </Text>
+            ) : null}
             <MotionPressable accessibilityRole="button" onPress={() => void logout()} style={styles.outlineButton}>
               <Text style={styles.outlineText}>로그아웃</Text>
             </MotionPressable>
@@ -242,6 +259,8 @@ const styles = StyleSheet.create({
   name: { marginTop: 14, color: '#101010', fontSize: 20, fontWeight: '900' },
   email: { marginTop: 5, color: '#71716d', fontSize: 13, textAlign: 'center' },
   provider: { marginTop: 8, color: '#ff3b36', fontSize: 12, fontWeight: '800' },
+  naverProvider: { color: '#03c75a' },
+  providerNotice: { marginTop: 8, color: '#71716d', fontSize: 11, lineHeight: 17, textAlign: 'center' },
   cardTitle: { color: '#101010', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   cardDescription: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20, textAlign: 'center' },
   loginButton: { width: '100%', marginTop: 20, alignItems: 'center', borderRadius: 14, backgroundColor: '#ff3b36', paddingVertical: 15 },
