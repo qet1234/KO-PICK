@@ -14,6 +14,26 @@ const SessionContext = createContext<SessionContextValue>({
   session: null,
 });
 
+function normalizeSession(session: Session | null): Session | null {
+  if (!session) return null;
+
+  const metadataProvider = session.user.user_metadata?.provider;
+  if (metadataProvider !== 'naver' || session.user.app_metadata.provider === 'naver') {
+    return session;
+  }
+
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      app_metadata: {
+        ...session.user.app_metadata,
+        provider: 'naver',
+      },
+    },
+  };
+}
+
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(appConfig.isSupabaseConfigured);
@@ -24,11 +44,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
 
     void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      setSession(normalizeSession(data.session));
       setLoading(false);
     });
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+      setSession(normalizeSession(nextSession));
       setLoading(false);
     });
 
