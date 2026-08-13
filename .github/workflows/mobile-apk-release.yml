@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build Android production AAB with EAS
+    name: Build Google Play production AAB with EAS
     runs-on: ubuntu-latest
     timeout-minutes: 120
     permissions:
@@ -59,10 +59,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate Android launcher icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          png_signature() {
+            xxd -p -l 8 "$1" | tr -d '\n'
+          }
+          is_png() {
+            [ -f "$1" ] && [ "$(png_signature "$1")" = "89504e470d0a1a0a" ]
+          }
+
+          if ! is_png assets/icon.png || ! is_png assets/adaptive-icon.png; then
+            echo "Current launcher icon assets are not valid PNG files. Restoring the last known-good Android release icons."
+            git fetch --depth=1 origin ffdfa427deead735858d8d7a2b08c00a71b12cbf
+            git show ffdfa427deead735858d8d7a2b08c00a71b12cbf:mobile/assets/icon.png > assets/icon.png
+            git show ffdfa427deead735858d8d7a2b08c00a71b12cbf:mobile/assets/adaptive-icon.png > assets/adaptive-icon.png
+          fi
+
+          is_png assets/icon.png
+          is_png assets/adaptive-icon.png
+          echo "Android launcher icons are valid PNG files."
+
       - name: Validate mobile project
         run: |
           npm run typecheck
           npx expo-doctor
+          npx expo config --type public >/tmp/expo-public-config.json
+
+      - name: Verify Google Play target API configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'targetSdkVersion: 36' app.config.ts
+          grep -q 'compileSdkVersion: 36' app.config.ts
+          echo "Google Play target API configuration is set to API 36."
 
       - name: Build Google Play production AAB on EAS
         shell: bash
@@ -72,4 +103,5 @@ jobs:
             --platform android \
             --profile production \
             --non-interactive \
+            --clear-cache \
             --wait
