@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Android image assets
+        run: npm run verify:assets
+
       - name: Align Expo SDK dependencies
         run: npx expo install --fix --npm
 
