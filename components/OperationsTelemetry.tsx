@@ -44,7 +44,7 @@ function searchMetadata(url: URL, count: number) {
 }
 
 function isSearchRequest(url: URL) {
-  if (url.pathname === "/api/tour/places") {
+  if (url.pathname === "/api/tour/places" || url.pathname === "/api/tour/places-ranked") {
     return url.searchParams.get("mode") !== "subregions";
   }
   return url.pathname === "/api/recommend" || url.pathname === "/api/naver/dining-search";
