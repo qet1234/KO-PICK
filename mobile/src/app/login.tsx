@@ -104,8 +104,17 @@ export default function LoginScreen() {
           <MotionPressable disabled={!ready} onPress={() => void login('kakao')} style={[styles.provider, styles.kakao, !ready && styles.disabled]}>
             <Text style={styles.kakaoText}>{active === 'kakao' ? '카카오 연결 중...' : '●  카카오로 시작'}</Text>
           </MotionPressable>
-          <MotionPressable disabled={!ready} onPress={() => void login('naver')} style={[styles.provider, styles.naver, !ready && styles.disabled]}>
-            <Text style={styles.providerText}>{active === 'naver' ? '네이버 연결 중...' : 'N  네이버로 로그인'}</Text>
+          <MotionPressable
+            accessibilityLabel="네이버로 로그인"
+            accessibilityRole="button"
+            disabled={!ready}
+            onPress={() => void login('naver')}
+            style={[styles.provider, styles.naver, !ready && styles.disabled]}
+          >
+            <View style={styles.naverContent}>
+              <Text aria-hidden style={styles.naverSymbol}>N</Text>
+              <Text style={styles.naverText}>{active === 'naver' ? '네이버 연결 중...' : '네이버로 로그인'}</Text>
+            </View>
           </MotionPressable>
           <MotionPressable disabled={!ready} onPress={() => void login('google')} style={[styles.provider, styles.google, !ready && styles.disabled]}>
             <Text style={styles.googleText}>{active === 'google' ? 'Google 연결 중...' : 'G  Google로 로그인'}</Text>
@@ -145,6 +154,9 @@ const styles = StyleSheet.create({
   provider: { minHeight: 50, marginTop: 10, alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 12 },
   kakao: { backgroundColor: '#fee500' },
   naver: { backgroundColor: '#03c75a' },
+  naverContent: { width: '100%', minHeight: 24, alignItems: 'center', justifyContent: 'center' },
+  naverSymbol: { position: 'absolute', left: 18, color: '#ffffff', fontSize: 21, fontWeight: '900', letterSpacing: -1.5 },
+  naverText: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
   google: { borderWidth: 1, borderColor: '#dadad4', backgroundColor: '#ffffff' },
   apple: { backgroundColor: '#000000' },
   disabled: { opacity: 0.42 },
