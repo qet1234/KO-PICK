@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          build_json="$(eas build:list --platform android --status finished --limit 1 --json --non-interactive)"
+          build_json="$(eas build:list --platform android --build-profile preview --status finished --limit 1 --json --non-interactive)"
           download_url="$(printf '%s' "$build_json" | jq -r '.[0].artifacts.buildUrl // empty')"
           version_code="$(printf '%s' "$build_json" | jq -r '.[0].appBuildVersion // "1"')"
 
