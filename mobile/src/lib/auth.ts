@@ -11,14 +11,10 @@ WebBrowser.maybeCompleteAuthSession();
 
 export type MobileAuthProvider = 'apple' | 'google' | 'kakao' | 'naver';
 
-const customSchemeRedirectTo = makeRedirectUri({
+const redirectTo = makeRedirectUri({
   scheme: 'kopick',
   path: 'auth/callback',
 });
-const androidAppLinkRedirectTo = 'https://koreapick.duckdns.org/auth/mobile/callback';
-const redirectTo = Platform.OS === 'android'
-  ? androidAppLinkRedirectTo
-  : customSchemeRedirectTo;
 
 function authParams(url: string) {
   const queryStart = url.indexOf('?');

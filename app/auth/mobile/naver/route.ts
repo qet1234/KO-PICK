@@ -13,13 +13,11 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  const platform = request.nextUrl.searchParams.get("platform");
   if (!NAVER_CLIENT_ID_IS_USABLE) {
     console.error("NAVER_CLIENT_ID is missing or points to the deleted legacy app.");
     return createMobileNaverRedirect({
       requestUrl: request.url,
       error: "네이버 로그인 앱 설정을 갱신해야 합니다.",
-      useAppLink: platform === "android",
     });
   }
 
@@ -49,7 +47,7 @@ export async function GET(request: NextRequest) {
   );
   response.cookies.set(
     NAVER_MOBILE_PLATFORM_COOKIE,
-    platform === "android" ? "android" : "custom",
+    "custom",
     {
       httpOnly: true,
       maxAge: 60 * 15,
