@@ -1,4 +1,4 @@
 // This file is updated automatically after a successful EAS Android preview build.
 export const latestAndroidApkUrl =
-  "https://expo.dev/artifacts/eas/4Tw5acY1FqAiRYdfJky2HY9fkiiI4OWu0MUqEoet8sE.aab";
-export const latestAndroidVersionCode = 32;
+  "https://expo.dev/artifacts/eas/7bHDt5iti0gkK9B_Dt93MaSZApN1OI5V6m-osLtUtFc.apk";
+export const latestAndroidVersionCode = 33;
