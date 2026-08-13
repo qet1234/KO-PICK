@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
@@ -19,12 +19,7 @@ import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/ap
 import { deleteAccount } from '@/lib/api';
 import { appConfig } from '@/lib/config';
 import { getMobileOperationVisitorId } from '@/lib/operations';
-import {
-  clearMobileLocalData,
-  getAnalyticsConsent,
-  setAnalyticsConsent,
-  type AnalyticsConsent,
-} from '@/lib/privacy-preferences';
+import { clearMobileLocalData } from '@/lib/privacy-preferences';
 import { supabase } from '@/lib/supabase';
 
 function providerLabel(provider: unknown) {
@@ -52,23 +47,6 @@ export default function AccountScreen() {
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [analyticsConsent, setAnalyticsState] = useState<AnalyticsConsent>(null);
-
-  useEffect(() => {
-    void getAnalyticsConsent().then(setAnalyticsState);
-  }, []);
-
-  const updateAnalyticsConsent = async (value: 'granted' | 'denied') => {
-    await setAnalyticsConsent(value);
-    setAnalyticsState(value);
-    Alert.alert(
-      '설정 저장 완료',
-      value === 'granted'
-        ? '서비스 개선 데이터 제공을 허용했습니다.'
-        : '수집을 중단하고 이 기기의 기존 서비스 개선 식별자를 삭제했습니다.',
-    );
-  };
-
   const logout = async () => {
     await supabase.auth.signOut({ scope: 'local' });
   };
@@ -86,7 +64,6 @@ export default function AccountScreen() {
       await supabase.auth.signOut({ scope: 'local' });
       await clearAppleAuthState();
       await clearMobileLocalData();
-      setAnalyticsState(null);
       setDeleteOpen(false);
       setConfirmText('');
       if (result.appleRevocation === 'manual_required') {
@@ -228,24 +205,6 @@ export default function AccountScreen() {
           </View>
         ) : null}
 
-        <View style={styles.privacyCard}>
-          <Text style={styles.privacyTitle}>서비스 개선 데이터</Text>
-          <Text style={styles.privacyDescription}>
-            검색·장소 이용 이벤트와 앱 성능·오류 정보를 90일 동안 처리합니다. 광고 추적에는 사용하지 않으며 언제든 철회할 수 있습니다.
-          </Text>
-          <Text style={styles.privacyStatus}>
-            현재 설정: {analyticsConsent === 'granted' ? '허용' : analyticsConsent === 'denied' ? '허용 안 함' : '선택 전'}
-          </Text>
-          <View style={styles.privacyActions}>
-            <MotionPressable onPress={() => void updateAnalyticsConsent('denied')} style={styles.privacySecondary}>
-              <Text style={styles.privacySecondaryText}>허용 안 함</Text>
-            </MotionPressable>
-            <MotionPressable onPress={() => void updateAnalyticsConsent('granted')} style={styles.privacyPrimary}>
-              <Text style={styles.privacyPrimaryText}>허용</Text>
-            </MotionPressable>
-          </View>
-        </View>
-
         <View style={styles.links}>
           <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}><Text style={styles.link}>이용약관</Text></MotionPressable>
           <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}><Text style={styles.link}>개인정보처리방침</Text></MotionPressable>
@@ -333,15 +292,6 @@ const styles = StyleSheet.create({
   naverUsageValue: { marginTop: 5, color: '#61615c', fontSize: 12, lineHeight: 18 },
   naverUsageFootnote: { marginTop: 15, borderRadius: 12, backgroundColor: '#f4fbf6', color: '#4f6357', fontSize: 11, lineHeight: 17, paddingHorizontal: 12, paddingVertical: 10 },
   links: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 18 },
-  privacyCard: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', padding: 18 },
-  privacyTitle: { color: '#101010', fontSize: 17, fontWeight: '900' },
-  privacyDescription: { marginTop: 8, color: '#61615c', fontSize: 13, lineHeight: 20 },
-  privacyStatus: { marginTop: 10, color: '#a43232', fontSize: 12, fontWeight: '800' },
-  privacyActions: { marginTop: 14, flexDirection: 'row', gap: 10 },
-  privacySecondary: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 12, paddingVertical: 12 },
-  privacySecondaryText: { color: '#454541', fontSize: 13, fontWeight: '800' },
-  privacyPrimary: { flex: 1, alignItems: 'center', borderRadius: 12, backgroundColor: '#ff3b36', paddingVertical: 12 },
-  privacyPrimaryText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   link: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dadad4', color: '#454541', fontSize: 14, fontWeight: '700', paddingVertical: 16 },
   deleteCard: { marginTop: 18, borderWidth: 1, borderColor: '#f0caca', borderRadius: 20, backgroundColor: '#fffafa', padding: 18 },
   deleteTitle: { color: '#7d2424', fontSize: 18, fontWeight: '900' },

@@ -5,6 +5,7 @@ import { appConfig } from '@/lib/config';
 export type AnalyticsConsent = 'granted' | 'denied' | null;
 
 const ANALYTICS_CONSENT_KEY = 'todaywhere:analytics-consent:v1';
+const ANALYTICS_PROMPTED_PREFIX = 'todaywhere:analytics-consent-prompted:v1:';
 const OPERATIONS_VISITOR_KEY = 'kopick:operations-visitor:v1';
 const SAVED_PLACES_KEY = 'todaywhere:saved-places:v1';
 const RECENT_PLACES_KEY = 'todaywhere:recent-places:v1';
@@ -15,9 +16,17 @@ export async function getAnalyticsConsent(): Promise<AnalyticsConsent> {
   return value === 'granted' || value === 'denied' ? value : null;
 }
 
-export async function setAnalyticsConsent(value: Exclude<AnalyticsConsent, null>) {
+export async function hasAnalyticsConsentPrompted(userId: string) {
+  return AsyncStorage.getItem(`${ANALYTICS_PROMPTED_PREFIX}${userId}`).then((value) => value === '1');
+}
+
+export async function setAnalyticsConsent(
+  value: Exclude<AnalyticsConsent, null>,
+  userId?: string,
+) {
   const previousVisitorId = await AsyncStorage.getItem(OPERATIONS_VISITOR_KEY);
   await AsyncStorage.setItem(ANALYTICS_CONSENT_KEY, value);
+  if (userId) await AsyncStorage.setItem(`${ANALYTICS_PROMPTED_PREFIX}${userId}`, '1');
 
   if (value === 'denied' && previousVisitorId) {
     try {
@@ -34,11 +43,14 @@ export async function setAnalyticsConsent(value: Exclude<AnalyticsConsent, null>
 }
 
 export async function clearMobileLocalData() {
+  const allKeys = await AsyncStorage.getAllKeys();
+  const promptedKeys = allKeys.filter((key) => key.startsWith(ANALYTICS_PROMPTED_PREFIX));
   await AsyncStorage.multiRemove([
     ANALYTICS_CONSENT_KEY,
     OPERATIONS_VISITOR_KEY,
     SAVED_PLACES_KEY,
     RECENT_PLACES_KEY,
     MAP_PREFERENCE_KEY,
+    ...promptedKeys,
   ]);
 }
