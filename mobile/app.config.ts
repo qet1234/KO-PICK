@@ -49,7 +49,6 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     ...config.android,
     package: 'com.koreapick.app',
-    versionCode: 1,
     allowBackup: false,
     intentFilters: [
       {
