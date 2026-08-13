@@ -1,0 +1,96 @@
+name: Mobile dependency security audit
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/package.json"
+      - "mobile/package-lock.json"
+      - ".github/workflows/mobile-security-audit.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-dependency-security-audit
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit mobile npm dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Collect npm audit report
+        shell: bash
+        run: |
+          set +e
+          npm audit --json > npm-audit.json
+          audit_exit=$?
+          set -e
+          echo "audit_exit_code=$audit_exit" >> "$GITHUB_ENV"
+
+      - name: Summarize vulnerabilities
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const vulnerabilities = report.vulnerabilities || {};
+          const order = { critical: 4, high: 3, moderate: 2, low: 1, info: 0 };
+          const rows = Object.entries(vulnerabilities)
+            .sort((a, b) => (order[b[1].severity] || 0) - (order[a[1].severity] || 0) || a[0].localeCompare(b[0]));
+
+          console.log('=== npm audit metadata ===');
+          console.log(JSON.stringify(report.metadata?.vulnerabilities || {}, null, 2));
+          console.log('=== vulnerability details ===');
+          for (const [name, item] of rows) {
+            const via = (item.via || []).map((entry) => typeof entry === 'string'
+              ? entry
+              : `${entry.source}:${entry.title} [${entry.range}]`).join(' | ');
+            console.log(JSON.stringify({
+              name,
+              severity: item.severity,
+              isDirect: item.isDirect,
+              range: item.range,
+              nodes: item.nodes,
+              fixAvailable: item.fixAvailable,
+              via,
+            }));
+          }
+
+          const summary = report.metadata?.vulnerabilities || {};
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+            `## Mobile npm security audit\n\n` +
+            `- Critical: ${summary.critical || 0}\n` +
+            `- High: ${summary.high || 0}\n` +
+            `- Moderate: ${summary.moderate || 0}\n` +
+            `- Low: ${summary.low || 0}\n` +
+            `- Total: ${summary.total || 0}\n` +
+            `- npm audit exit code: ${process.env.audit_exit_code || 'unknown'}\n`);
+          NODE
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-npm-audit
+          path: mobile/npm-audit.json
+          if-no-files-found: error
+          retention-days: 7
