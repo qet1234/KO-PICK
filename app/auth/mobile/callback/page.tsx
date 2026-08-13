@@ -5,7 +5,12 @@ import { useEffect } from "react";
 const APP_CALLBACK_URL = "kopick://auth/callback";
 
 function getAppCallbackUrl() {
-  return `${APP_CALLBACK_URL}${window.location.search}${window.location.hash}`;
+  const params = new URLSearchParams(window.location.search);
+  const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
+  fragmentParams.forEach((value, key) => params.append(key, value));
+
+  const query = params.toString();
+  return `${APP_CALLBACK_URL}${query ? `?${query}` : ""}`;
 }
 
 export default function MobileAuthCallbackFallbackPage() {

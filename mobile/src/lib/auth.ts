@@ -11,10 +11,12 @@ WebBrowser.maybeCompleteAuthSession();
 
 export type MobileAuthProvider = 'apple' | 'google' | 'kakao' | 'naver';
 
-const redirectTo = makeRedirectUri({
+const appRedirectTo = makeRedirectUri({
   scheme: 'kopick',
   path: 'auth/callback',
 });
+
+const webRedirectTo = new URL('/auth/mobile/callback', appConfig.webUrl).toString();
 
 function authParams(url: string) {
   const queryStart = url.indexOf('?');
@@ -100,7 +102,7 @@ async function finishBrowserLogin(
   startUrl: string,
   provider: MobileAuthProvider,
 ): Promise<Session> {
-  const result = await WebBrowser.openAuthSessionAsync(startUrl, redirectTo);
+  const result = await WebBrowser.openAuthSessionAsync(startUrl, appRedirectTo);
   if (result.type === 'cancel' || result.type === 'dismiss') {
     throw new Error('로그인이 취소되었습니다.');
   }
@@ -121,7 +123,7 @@ export async function signInWithSupabaseOAuth(
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider as Provider,
     options: {
-      redirectTo,
+      redirectTo: webRedirectTo,
       skipBrowserRedirect: true,
       queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
     },

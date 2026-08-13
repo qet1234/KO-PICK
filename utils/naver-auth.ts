@@ -88,7 +88,7 @@ export function createMobileNaverRedirect(options: {
   const params = new URLSearchParams({ provider: "naver" });
   if (options.error) params.set("error_description", options.error);
   if (options.tokenHash) params.set("token_hash", options.tokenHash);
-  destination.hash = params.toString();
+  if (options.useAppLink) {\n    destination.hash = params.toString();\n  } else {\n    destination.search = params.toString();\n  }
 
   const response = NextResponse.redirect(destination);
   response.headers.set("Cache-Control", "private, no-store");
