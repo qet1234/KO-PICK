@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { latestAndroidApkUrl } from "./latest-apk";
+import { latestAndroidApkUrl, latestAndroidVersionCode } from "./latest-apk";
 
 const noStoreHeaders = {
   "Cache-Control": "no-store, max-age=0",
@@ -47,7 +47,14 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ ready: true }, { headers: noStoreHeaders });
+    return NextResponse.json(
+      {
+        ready: true,
+        versionCode: latestAndroidVersionCode,
+        downloadUrl: "/api/app-download?platform=android&download=1",
+      },
+      { headers: noStoreHeaders },
+    );
   } catch {
     return NextResponse.json(
       { ready: false },
