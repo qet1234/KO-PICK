@@ -17,8 +17,9 @@ export const springApiUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/kopick-ap
 
 // TourAPI requests must run through the same-origin Next.js route. Supabase Edge
 // egress can be rejected by data.go.kr with HTTP 403 even when the same key works
-// from the production Vercel and Render runtimes.
-export const tourPlacesApiUrl = "/api/tour/places";
+// from the production Vercel and Render runtimes. The ranked wrapper preserves
+// the existing TourAPI behavior while lifting places with KO-PICK popularity data.
+export const tourPlacesApiUrl = "/api/tour/places-ranked";
 
 let sharedBrowserClient: ReturnType<typeof createClient> | null = null;
 function browserClient() {
