@@ -1,6 +1,6 @@
 name: Mobile Preview APK
 
-# Manual trigger refresh: 2026-08-13
+# Manual trigger refresh: 2026-08-14 signup-consent build
 on:
   push:
     branches:
