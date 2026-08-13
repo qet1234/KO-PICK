@@ -5,6 +5,11 @@ on:
     branches:
       - main
     paths:
+      - "mobile/app.config.ts"
+      - "mobile/assets/**"
+      - "mobile/eas.json"
+      - "mobile/package.json"
+      - "mobile/package-lock.json"
       - ".github/workflows/mobile-preview-apk.yml"
   workflow_dispatch:
 
@@ -70,11 +75,14 @@ jobs:
           set -euo pipefail
           build_json="$(eas build:list --platform android --status finished --limit 1 --json --non-interactive)"
           download_url="$(printf '%s' "$build_json" | jq -r '.[0].artifacts.buildUrl // empty')"
+          version_code="$(printf '%s' "$build_json" | jq -r '.[0].appBuildVersion // "1"')"
+
           if [ -z "$download_url" ]; then
             echo "Latest Android build artifact URL was not found."
             printf '%s\n' "$build_json"
             exit 1
           fi
+
           case "$download_url" in
             https://expo.dev/artifacts/eas/*.apk) ;;
             https://expo.dev/artifacts/eas/*) ;;
@@ -83,12 +91,19 @@ jobs:
               exit 1
               ;;
           esac
+
+          case "$version_code" in
+            ''|*[!0-9]*) version_code=1 ;;
+          esac
+
           echo "download_url=$download_url" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
           echo "Latest APK artifact resolved."
 
       - name: Update public APK download target
         env:
           DOWNLOAD_URL: ${{ steps.artifact.outputs.download_url }}
+          VERSION_CODE: ${{ steps.artifact.outputs.version_code }}
         shell: bash
         run: |
           set -euo pipefail
@@ -97,6 +112,7 @@ jobs:
           // This file is updated automatically after a successful EAS Android preview build.
           export const latestAndroidApkUrl =
             "$DOWNLOAD_URL";
+          export const latestAndroidVersionCode = $VERSION_CODE;
           EOF
 
           if git diff --quiet -- "$target"; then
