@@ -69,8 +69,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      monochromeImage: './assets/monochrome-icon.png',
-      backgroundColor: '#121212',
+      backgroundColor: '#FFFFFF',
     },
     blockedPermissions: [
       'android.permission.READ_EXTERNAL_STORAGE',
