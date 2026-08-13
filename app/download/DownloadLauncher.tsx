@@ -16,6 +16,12 @@ interface ClientEnvironment {
   isInstalled: boolean;
 }
 
+interface AndroidDownloadStatus {
+  ready?: boolean;
+  versionCode?: number;
+  downloadUrl?: string;
+}
+
 const DOWNLOAD_ENDPOINT = "/api/app-download";
 const AVAILABILITY_CHECK_INTERVAL_MS = 10_000;
 
@@ -49,6 +55,10 @@ function getClientEnvironment(): ClientEnvironment {
 
 export default function DownloadLauncher() {
   const [androidStatus, setAndroidStatus] = useState<DownloadStatus>("checking");
+  const [androidVersionCode, setAndroidVersionCode] = useState<number | null>(null);
+  const [androidDownloadUrl, setAndroidDownloadUrl] = useState(
+    `${DOWNLOAD_ENDPOINT}?platform=android&download=1`,
+  );
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [iosActionMessage, setIOSActionMessage] = useState("");
   const [clientEnvironment, setClientEnvironment] = useState<ClientEnvironment | null>(null);
@@ -64,6 +74,13 @@ export default function DownloadLauncher() {
       );
 
       if (response.ok) {
+        const result = (await response.json()) as AndroidDownloadStatus;
+        if (typeof result.versionCode === "number") {
+          setAndroidVersionCode(result.versionCode);
+        }
+        if (typeof result.downloadUrl === "string" && result.downloadUrl.startsWith("/")) {
+          setAndroidDownloadUrl(result.downloadUrl);
+        }
         setAndroidStatus("ready");
         return;
       }
@@ -94,15 +111,19 @@ export default function DownloadLauncher() {
   }, [checkAndroidAvailability]);
 
   const androidStatusMessage = () => {
-    if (androidStatus === "checking") return "최신 APK를 확인하고 있습니다…";
-    if (androidStatus === "ready") return "최신 APK를 받을 수 있습니다.";
+    if (androidStatus === "checking") return "최신 Android APK를 확인하고 있습니다…";
+    if (androidStatus === "ready") {
+      return androidVersionCode
+        ? `현재 배포 중인 최신 APK를 받을 수 있습니다. (버전 코드 ${androidVersionCode})`
+        : "현재 배포 중인 최신 APK를 받을 수 있습니다.";
+    }
     if (androidStatus === "preparing") {
-      return "최신 APK를 준비 중입니다. 완료되면 이 페이지에서 받을 수 있습니다.";
+      return "새 APK를 준비 중입니다. 완료되면 이 페이지의 같은 버튼이 자동으로 최신 파일을 가리킵니다.";
     }
     if (androidStatus === "downloading") {
-      return "다운로드를 시작했습니다.";
+      return "최신 APK 다운로드를 시작했습니다. 기존 앱을 삭제하지 말고 업데이트 설치해 주세요.";
     }
-    return "상태 확인과 관계없이 다운로드 버튼을 눌러 다시 시도할 수 있습니다.";
+    return "최신 APK 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
   };
 
   const iosStatusMessage = () => {
@@ -149,10 +170,10 @@ export default function DownloadLauncher() {
       <div className={styles.downloadOption}>
         <a
           className={styles.downloadButton}
-          href={`${DOWNLOAD_ENDPOINT}?platform=android&download=1`}
+          href={androidDownloadUrl}
           onClick={() => setAndroidStatus("downloading")}
         >
-          Android APK 다운로드
+          Android 최신 APK 다운로드 / 업데이트
         </a>
         <p className={styles.status}>{androidStatusMessage()}</p>
       </div>
