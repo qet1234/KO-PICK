@@ -5,17 +5,17 @@ on:
     branches:
       - main
     paths:
-      - 'mobile/**'
-      - '.github/workflows/mobile-eas-update.yml'
+      - "mobile/**"
+      - ".github/workflows/mobile-eas-update.yml"
   workflow_dispatch:
 
 concurrency:
-  group: mobile-eas-update-preview
+  group: mobile-eas-update
   cancel-in-progress: true
 
 jobs:
-  publish-preview-update:
-    name: Restore mobile configuration and publish preview OTA update
+  publish-update:
+    name: Restore mobile configuration and publish OTA updates
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -113,6 +113,9 @@ jobs:
             set_eas_public "$environment" EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$publishable_key"
             set_eas_public "$environment" EXPO_PUBLIC_WEB_URL "$WEB_URL"
           done
+
+      - name: Publish Android production update
+        run: eas update --channel production --platform android --message "${{ github.event.head_commit.message || 'Manual Android production update' }}" --environment production --non-interactive
 
       - name: Publish Android preview update
         run: eas update --channel preview --platform android --message "${{ github.event.head_commit.message || 'Manual Android preview update' }}" --environment preview --non-interactive
