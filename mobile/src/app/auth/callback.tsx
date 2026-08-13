@@ -9,7 +9,7 @@ import { completeMobileAuthUrl } from '@/lib/auth';
 export default function AuthCallbackScreen() {
   const incomingUrl = Linking.useURL();
   const routeParams = useLocalSearchParams<
-    Record<string, string | string[] | undefined>
+    Record<string, string | string[]>
   >();
   const routedAuthUrl = authCallbackUrlFromRouteParams(routeParams);
   const [message, setMessage] = useState('로그인을 완료하고 있어요.');
