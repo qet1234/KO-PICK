@@ -45,7 +45,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "doctor": "npx expo-doctor",
-    "update:preview": "eas update --channel preview --environment production"
+    "update:preview": "eas update --channel preview --environment production",
+    "verify:assets": "node scripts/verify-image-assets.mjs"
   },
   "engines": {
     "node": ">=22.13.0"
