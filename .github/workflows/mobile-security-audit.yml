@@ -87,6 +87,16 @@ jobs:
             `- npm audit exit code: ${process.env.audit_exit_code || 'unknown'}\n`);
           NODE
 
+      - name: Preview non-breaking npm fixes
+        shell: bash
+        run: |
+          set +e
+          npm audit fix --package-lock-only --dry-run --no-fund
+          preview_exit=$?
+          set -e
+          echo "preview_exit_code=$preview_exit" >> "$GITHUB_ENV"
+          echo "npm audit fix dry-run exit code: $preview_exit"
+
       - name: Upload audit report
         uses: actions/upload-artifact@v4
         with:
