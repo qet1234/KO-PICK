@@ -138,6 +138,9 @@ export default function AccountScreen() {
   const providerText = isNaverAccount
     ? '네이버 로그인 · 연결됨'
     : `${providerLabel(provider)} 로그인 · 안전하게 연결됨`;
+  const displayName = session?.user.user_metadata.full_name
+    || session?.user.user_metadata.name
+    || '오늘어디 사용자';
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -152,9 +155,7 @@ export default function AccountScreen() {
             ) : (
               <View style={styles.avatar}><Text style={styles.avatarText}>?</Text></View>
             )}
-            <Text style={styles.name}>
-              {session.user.user_metadata.full_name || session.user.user_metadata.name || '오늘어디 사용자'}
-            </Text>
+            <Text style={styles.name}>{displayName}</Text>
             <Text style={styles.email}>{accountEmailText}</Text>
             <Text style={[styles.provider, isNaverAccount && styles.naverProvider]}>{providerText}</Text>
             {isNaverAccount ? (
@@ -178,6 +179,54 @@ export default function AccountScreen() {
             </MotionPressable>
           </View>
         )}
+
+        {session && isNaverAccount ? (
+          <View style={styles.naverUsageCard}>
+            <View style={styles.naverUsageHeader}>
+              <View style={styles.naverBadge}><Text style={styles.naverBadgeText}>N</Text></View>
+              <View style={styles.naverUsageHeadingCopy}>
+                <Text style={styles.naverUsageTitle}>네이버 제공 정보 활용처</Text>
+                <Text style={styles.naverUsageSubtitle}>네이버 로그인 시 제공된 정보는 아래 용도로만 사용합니다.</Text>
+              </View>
+            </View>
+
+            <View style={styles.naverUsageRow}>
+              <View style={styles.naverUsageLabelWrap}>
+                <Text style={styles.naverUsageLabel}>이름·닉네임</Text>
+                <Text style={styles.naverUsageState}>현재 표시: {displayName}</Text>
+              </View>
+              <Text style={styles.naverUsageValue}>내 계정의 사용자 이름 표시 및 회원 식별</Text>
+            </View>
+
+            <View style={styles.naverUsageRow}>
+              <View style={styles.naverUsageLabelWrap}>
+                <Text style={styles.naverUsageLabel}>이메일</Text>
+                <Text style={styles.naverUsageState}>{visibleEmail ? '제공됨' : '미제공'}</Text>
+              </View>
+              <Text style={styles.naverUsageValue}>연락처 이메일 표시 및 계정 관련 안내에 사용(제공된 경우)</Text>
+            </View>
+
+            <View style={styles.naverUsageRow}>
+              <View style={styles.naverUsageLabelWrap}>
+                <Text style={styles.naverUsageLabel}>프로필 이미지</Text>
+                <Text style={styles.naverUsageState}>{profileImage ? '제공됨' : '미제공'}</Text>
+              </View>
+              <Text style={styles.naverUsageValue}>내 계정 프로필 사진 표시(제공된 경우)</Text>
+            </View>
+
+            <View style={[styles.naverUsageRow, styles.naverUsageRowLast]}>
+              <View style={styles.naverUsageLabelWrap}>
+                <Text style={styles.naverUsageLabel}>네이버 고유 식별자</Text>
+                <Text style={styles.naverUsageState}>내부 안전 처리</Text>
+              </View>
+              <Text style={styles.naverUsageValue}>로그인 회원 식별 및 동일 계정의 중복 가입 방지</Text>
+            </View>
+
+            <Text style={styles.naverUsageFootnote}>
+              이용자가 네이버 동의 화면에서 허용한 항목만 처리하며, 제공되지 않은 선택 정보는 임의로 생성하거나 외부에 공개하지 않습니다.
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.privacyCard}>
           <Text style={styles.privacyTitle}>서비스 개선 데이터</Text>
@@ -269,6 +318,20 @@ const styles = StyleSheet.create({
   outlineText: { color: '#454541', fontSize: 14, fontWeight: '800' },
   deleteButton: { width: '100%', marginTop: 10, alignItems: 'center', borderRadius: 14, paddingVertical: 13 },
   deleteButtonText: { color: '#a43232', fontSize: 13, fontWeight: '800' },
+  naverUsageCard: { marginTop: 18, borderWidth: 1, borderColor: '#d6f3e2', borderRadius: 20, backgroundColor: '#ffffff', padding: 18 },
+  naverUsageHeader: { flexDirection: 'row', alignItems: 'center' },
+  naverBadge: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#03c75a' },
+  naverBadgeText: { color: '#ffffff', fontSize: 21, fontWeight: '900' },
+  naverUsageHeadingCopy: { flex: 1, paddingLeft: 11 },
+  naverUsageTitle: { color: '#101010', fontSize: 17, fontWeight: '900' },
+  naverUsageSubtitle: { marginTop: 3, color: '#71716d', fontSize: 11, lineHeight: 17 },
+  naverUsageRow: { marginTop: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#e6e6e1', paddingBottom: 13 },
+  naverUsageRowLast: { borderBottomWidth: 0, paddingBottom: 0 },
+  naverUsageLabelWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  naverUsageLabel: { color: '#242421', fontSize: 13, fontWeight: '900' },
+  naverUsageState: { color: '#03a94c', fontSize: 11, fontWeight: '800' },
+  naverUsageValue: { marginTop: 5, color: '#61615c', fontSize: 12, lineHeight: 18 },
+  naverUsageFootnote: { marginTop: 15, borderRadius: 12, backgroundColor: '#f4fbf6', color: '#4f6357', fontSize: 11, lineHeight: 17, paddingHorizontal: 12, paddingVertical: 10 },
   links: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 18 },
   privacyCard: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', padding: 18 },
   privacyTitle: { color: '#101010', fontSize: 17, fontWeight: '900' },
