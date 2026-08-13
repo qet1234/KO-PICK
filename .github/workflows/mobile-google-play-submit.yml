@@ -2,6 +2,11 @@ name: Google Play internal submit
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/mobile-google-play-submit.yml'
 
 concurrency:
   group: mobile-google-play-internal-submit
