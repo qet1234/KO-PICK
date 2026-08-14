@@ -6,7 +6,8 @@ import { createIosConfig } from './config/platform/ios';
 const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
-const isReleaseBuild = process.env.EAS_BUILD_PROFILE === 'production';
+const releaseProfiles = new Set(['production', 'testflight', 'ios-production']);
+const isReleaseBuild = releaseProfiles.has(process.env.EAS_BUILD_PROFILE ?? '');
 
 if (isReleaseBuild) {
   const requiredEnvironmentVariables = [
