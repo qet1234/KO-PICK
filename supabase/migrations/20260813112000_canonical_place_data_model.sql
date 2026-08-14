@@ -74,7 +74,7 @@ create table if not exists public.place_click_events (
   visitor_id text check (visitor_id is null or char_length(visitor_id) <= 120),
   provider text not null default 'tourapi' check (char_length(provider) <= 40),
   external_id text not null check (char_length(external_id) between 1 and 180),
-  event_type text not null default 'view' check (event_type in ('view','detail','outbound','favorite','route','share')),
+  event_type text not null default 'view' check (event_type in ('view','detail','outbound','favorite','route','share','map','reservation')),
   source_screen text check (source_screen is null or char_length(source_screen) <= 120),
   created_at timestamptz not null default now()
 );
