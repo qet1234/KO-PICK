@@ -141,6 +141,12 @@ export default function AccountPage() {
 
         <a
           className="account-home-link"
+          href="/owner/reservations"
+        >
+          사장님 예약관리 →
+        </a>
+        <a
+          className="account-home-link"
           href="/"
         >
           ← 홈으로 돌아가기
