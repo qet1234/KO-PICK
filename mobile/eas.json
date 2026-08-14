@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/eas.json",
+  "cli": {
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "production",
+      "environment": "production",
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "production-ios",
+      "environment": "production"
+    },
+    "ios-production": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "channel": "production-ios",
+      "environment": "production"
+    }
+  },
+  "submit": {
+    "internal": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
+  }
+}
