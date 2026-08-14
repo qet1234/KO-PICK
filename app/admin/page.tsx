@@ -198,10 +198,11 @@ export default async function AdminPage() {
         </Link>
         <nav aria-label="관리자 메뉴">
           <a href="#service-control"><span>01</span>앱 운영 제어</a>
-          <a href="#operations"><span>02</span>기능 운영 지표</a>
-          <a href="#traffic"><span>03</span>트래픽 현황</a>
-          <a href="#reports"><span>04</span>장소 신고</a>
-          <a href="#accounts"><span>05</span>로그인 계정</a>
+          <Link href="/admin/merchant-stores"><span>02</span>입점 승인</Link>
+          <a href="#operations"><span>03</span>기능 운영 지표</a>
+          <a href="#traffic"><span>04</span>트래픽 현황</a>
+          <a href="#reports"><span>05</span>장소 신고</a>
+          <a href="#accounts"><span>06</span>로그인 계정</a>
         </nav>
         <div className="admin-sidebar-bottom">
           <small>접속 계정</small>
