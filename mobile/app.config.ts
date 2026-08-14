@@ -1,5 +1,8 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+import { createAndroidConfig } from './config/platform/android';
+import { createIosConfig } from './config/platform/ios';
+
 const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
@@ -35,48 +38,8 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     checkAutomatically: 'ON_LOAD',
     fallbackToCacheTimeout: 0,
   },
-  ios: {
-    ...config.ios,
-    bundleIdentifier: 'com.koreapick.app',
-    buildNumber: '1',
-    supportsTablet: false,
-    usesAppleSignIn: true,
-    infoPlist: {
-      ...config.ios?.infoPlist,
-      ITSAppUsesNonExemptEncryption: false,
-    },
-  },
-  android: {
-    ...config.android,
-    package: 'com.koreapick.app',
-    versionCode: 25,
-    allowBackup: false,
-    intentFilters: [
-      {
-        action: 'VIEW',
-        autoVerify: true,
-        category: ['BROWSABLE', 'DEFAULT'],
-        data: [
-          {
-            scheme: 'https',
-            host: 'koreapick.duckdns.org',
-            pathPrefix: '/auth/mobile/callback',
-          },
-        ],
-      },
-    ],
-    predictiveBackGestureEnabled: false,
-    adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FFFFFF',
-    },
-    blockedPermissions: [
-      'android.permission.READ_EXTERNAL_STORAGE',
-      'android.permission.WRITE_EXTERNAL_STORAGE',
-      'android.permission.SYSTEM_ALERT_WINDOW',
-      'android.permission.VIBRATE',
-    ],
-  },
+  ios: createIosConfig(config.ios),
+  android: createAndroidConfig(config.android),
   web: {
     ...config.web,
     output: 'static',
