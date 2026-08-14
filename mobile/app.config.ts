@@ -1,7 +1,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-import { createAndroidConfig } from './config/platform/android';
-import { createIosConfig } from './config/platform/ios';
+import { createAndroidConfig } from './config/platform/android.js';
+import { createIosConfig } from './config/platform/ios.js';
 
 const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
