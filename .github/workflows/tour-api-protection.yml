@@ -39,7 +39,7 @@ jobs:
           grep -q 'TOUR_API_SERVICE_KEY' app/api/tour/places/route.ts
           grep -q 'apis.data.go.kr/B551011/KorService2' app/api/tour/places/route.ts
           grep -q 'tourPlacesApiUrl' components/CategoryExplorePage.tsx
-          grep -q 'export const tourPlacesApiUrl = "/api/tour/places"' utils/spring-api.ts
+          grep -qE 'export const tourPlacesApiUrl = "/api/tour/places(-ranked)?"' utils/spring-api.ts
           grep -q 'detailCommon2' utils/tourapi-image.ts
           grep -q 'cpyrhtDivCd' utils/tourapi-image.ts
           grep -q 'Type1' utils/tourapi-image.ts
