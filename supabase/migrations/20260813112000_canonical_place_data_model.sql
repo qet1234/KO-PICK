@@ -139,6 +139,15 @@ security invoker
 set search_path = public
 as $$
 begin
+  delete from public.place_popularity p
+  where not exists (
+    select 1
+    from public.place_click_events e
+    where e.provider = p.provider
+      and e.external_id = p.external_id
+      and e.created_at >= now() - interval '30 days'
+  );
+
   insert into public.place_popularity(provider, external_id, views_1d, views_7d, views_30d, favorites_30d, routes_30d, shares_30d, score, calculated_at)
   select
     e.provider,
@@ -150,9 +159,11 @@ begin
     count(*) filter (where e.event_type = 'route' and e.created_at >= now() - interval '30 days'),
     count(*) filter (where e.event_type = 'share' and e.created_at >= now() - interval '30 days'),
     (count(*) filter (where e.event_type in ('view','detail') and e.created_at >= now() - interval '7 days'))::numeric
-      + (count(*) filter (where e.event_type = 'favorite' and e.created_at >= now() - interval '30 days')) * 4
+      + (count(*) filter (where e.event_type = 'map' and e.created_at >= now() - interval '30 days')) * 2
       + (count(*) filter (where e.event_type = 'route' and e.created_at >= now() - interval '30 days')) * 3
-      + (count(*) filter (where e.event_type = 'share' and e.created_at >= now() - interval '30 days')) * 5,
+      + (count(*) filter (where e.event_type = 'favorite' and e.created_at >= now() - interval '30 days')) * 4
+      + (count(*) filter (where e.event_type = 'share' and e.created_at >= now() - interval '30 days')) * 5
+      + (count(*) filter (where e.event_type = 'reservation' and e.created_at >= now() - interval '30 days')) * 8,
     now()
   from public.place_click_events e
   where e.created_at >= now() - interval '30 days'
