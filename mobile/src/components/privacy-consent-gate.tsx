@@ -26,35 +26,34 @@ function isNewAccount(createdAt: string, lastSignInAt?: string) {
 
 export function PrivacyConsentGate() {
   const { loading, session } = useSession();
-  const [visible, setVisible] = useState(false);
+  const [consentState, setConsentState] = useState<{ userId: string; prompted: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
   const userId = session?.user.id;
+  const shouldPrompt = !loading
+    && Boolean(session && isNewAccount(session.user.created_at, session.user.last_sign_in_at));
+  const visible = shouldPrompt
+    && consentState?.userId === userId
+    && consentState.prompted === false;
 
   useEffect(() => {
+    if (!shouldPrompt || !userId) return;
+
     let cancelled = false;
-
-    if (loading || !session || !isNewAccount(session.user.created_at, session.user.last_sign_in_at)) {
-      setVisible(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    void hasAnalyticsConsentPrompted(session.user.id).then((prompted) => {
-      if (!cancelled) setVisible(!prompted);
+    void hasAnalyticsConsentPrompted(userId).then((prompted) => {
+      if (!cancelled) setConsentState({ userId, prompted });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [loading, session, userId]);
+  }, [shouldPrompt, userId]);
 
   const choose = async (value: 'granted' | 'denied') => {
     if (saving || !userId) return;
     setSaving(true);
     try {
       await setAnalyticsConsent(value, userId);
-      setVisible(false);
+      setConsentState({ userId, prompted: true });
     } finally {
       setSaving(false);
     }
