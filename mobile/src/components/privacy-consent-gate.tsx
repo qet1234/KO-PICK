@@ -33,7 +33,7 @@ export function PrivacyConsentGate() {
     && Boolean(session && isNewAccount(session.user.created_at, session.user.last_sign_in_at));
   const visible = shouldPrompt
     && consentState?.userId === userId
-    && consentState.prompted === false;
+    && consentState?.prompted === false;
 
   useEffect(() => {
     if (!shouldPrompt || !userId) return;
