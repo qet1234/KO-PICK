@@ -7,6 +7,7 @@ import { reportPlaceInformation, trackOperationEvent } from "@/utils/operations-
 import { isClientFeatureEnabled } from "@/utils/feature-flags-client";
 import { tourPlacesApiUrl } from "@/utils/spring-api";
 import NaverBookingButton from "@/components/NaverBookingButton";
+import ReservationRequestButton from "@/components/ReservationRequestButton";
 import {
   libraryPlaceKey,
   loadPlaceLibrary,
@@ -1231,6 +1232,13 @@ export default function CategoryExplorePage({
                       source={place.source === "NAVER_LOCAL" ? "naver" : "tour"}
                       className="kp-explore-naver-booking-link"
                       onClick={() => trackOperationEvent({ category: place.category, eventType: "booking_open", feature: "reservations", placeId: place.id, placeName: place.name, route: "/explore" })}
+                    />
+                    <ReservationRequestButton
+                      placeId={String(place.id)}
+                      placeName={place.name}
+                      placeSource={place.source === "NAVER_LOCAL" ? "NAVER_LOCAL" : "TOUR_API"}
+                      address={place.address}
+                      category={place.category}
                     />
                     <button
                       className="kp-explore-report-link"
