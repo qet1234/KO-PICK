@@ -50,7 +50,14 @@ begin
 end;
 $$;
 
-select public.refresh_place_popularity();
+do $
+begin
+  if to_regclass('public.place_popularity') is not null
+    and to_regclass('public.place_click_events') is not null then
+    perform public.refresh_place_popularity();
+  end if;
+end
+$;
 
 select cron.schedule(
   'refresh-place-popularity',
