@@ -1,0 +1,24 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+
+type Store = { id:string; name:string; address:string|null; place_source:string; place_id:string; approval_status:string };
+type Reservation = { id:string; store_id:string; guest_name:string; customer_phone:string; reservation_date:string; reservation_time:string; party_size:number; menu:string|null; note:string|null; status:string; source:string; created_at:string };
+const labels:Record<string,string>={pending:"승인 대기",confirmed:"예약 확정",seated:"방문",completed:"이용 완료",rejected:"거절",cancelled:"취소",no_show:"노쇼"};
+
+export default function OwnerReservationManager({ initialStores, initialReservations }:{ initialStores:Store[]; initialReservations:Reservation[] }) {
+  const [stores,setStores]=useState(initialStores);const [reservations,setReservations]=useState(initialReservations);const [message,setMessage]=useState("");const [saving,setSaving]=useState(false);
+  const approved=stores.filter(store=>store.approval_status==="approved");
+  const pendingCount=reservations.filter(item=>item.status==="pending").length;
+  const guests=reservations.filter(item=>["pending","confirmed","seated"].includes(item.status)).reduce((sum,item)=>sum+item.party_size,0);
+  const storeMap=useMemo(()=>new Map(stores.map(store=>[store.id,store.name])),[stores]);
+  const register=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();setSaving(true);const form=new FormData(event.currentTarget);try{const response=await fetch("/api/owner/reservations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({placeSource:form.get("placeSource"),placeId:form.get("placeId"),name:form.get("name"),address:form.get("address"),phone:form.get("phone")})});const data=await response.json();if(!response.ok)throw new Error(data.error);setStores(current=>[...current,data.store]);setMessage("매장 등록을 접수했습니다. 운영자 승인 후 고객 예약 버튼이 활성화됩니다.");}catch(error){setMessage(error instanceof Error?error.message:"등록에 실패했습니다.")}finally{setSaving(false)}};
+  const update=async(id:string,status:string)=>{const before=reservations;setReservations(current=>current.map(item=>item.id===id?{...item,status}:item));try{const response=await fetch("/api/owner/reservations",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({reservationId:id,status})});const data=await response.json();if(!response.ok)throw new Error(data.error);setMessage("예약 상태를 저장했습니다.");}catch(error){setReservations(before);setMessage(error instanceof Error?error.message:"상태 변경에 실패했습니다.")}};
+  return <>
+    <section className="owner-summary"><article><span>오늘 예약</span><strong>{reservations.length}<small>건</small></strong></article><article><span>방문 예정 인원</span><strong>{guests}<small>명</small></strong></article><article><span>승인 대기</span><strong>{pendingCount}<small>건</small></strong></article><article><span>등록 매장</span><strong>{approved.length}<small>곳</small></strong></article></section>
+    {message&&<div className="owner-message">{message}</div>}
+    {approved.length===0&&<section className="owner-register"><div><span>STORE ONBOARDING</span><h2>예약을 받을 매장을 등록해 주세요</h2><p>장소 찾기에 표시되는 장소 ID와 매장 정보를 입력하면 확인 후 예약 기능이 열립니다.</p></div><form onSubmit={register}><label>데이터 출처<select name="placeSource"><option value="TOUR_API">TourAPI</option><option value="NAVER_LOCAL">네이버 지역검색</option><option value="MANUAL">직접 등록</option></select></label><label>장소 ID<input name="placeId" required /></label><label>매장명<input name="name" required /></label><label>주소<input name="address" /></label><label>매장 연락처<input name="phone" /></label><button disabled={saving}>{saving?"접수 중…":"매장 등록 신청"}</button></form></section>}
+    {stores.some(store=>store.approval_status==="pending")&&<div className="owner-pending">승인 대기 중인 매장이 있습니다. 승인 전에는 고객 예약 버튼이 활성화되지 않습니다.</div>}
+    <section className="owner-panel"><div className="owner-panel-head"><div><h2>예약 목록</h2><p>예약일과 시간순으로 표시됩니다.</p></div></div><div className="owner-list">{reservations.length===0?<div className="owner-empty">아직 접수된 예약이 없습니다.</div>:reservations.map(item=><article key={item.id}><time>{item.reservation_date}<strong>{item.reservation_time.slice(0,5)}</strong></time><div><strong>{item.guest_name} · {item.party_size}명</strong><span>{item.customer_phone} · {storeMap.get(item.store_id)}</span></div><div><strong>{item.menu||"메뉴 현장 선택"}</strong><span>{item.note||"요청사항 없음"}</span></div><em className={`is-${item.status}`}>{labels[item.status]||item.status}</em><div className="owner-actions">{item.status==="pending"&&<><button onClick={()=>update(item.id,"confirmed")}>승인</button><button onClick={()=>update(item.id,"rejected")}>거절</button></>}{item.status==="confirmed"&&<><button onClick={()=>update(item.id,"seated")}>방문</button><button onClick={()=>update(item.id,"no_show")}>노쇼</button></>}{item.status==="seated"&&<button onClick={()=>update(item.id,"completed")}>이용 완료</button>}</div></article>)}</div></section>
+  </>;
+}
