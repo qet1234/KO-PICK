@@ -44,6 +44,12 @@
         "track": "internal",
         "releaseStatus": "draft"
       }
+    },
+    "testflight": {
+      "ios": {}
+    },
+    "ios-production": {
+      "ios": {}
     }
   }
 }
