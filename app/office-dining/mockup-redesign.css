@@ -1,0 +1,295 @@
+.od-page {
+  min-height: 100vh;
+  background: #f5f5f3;
+  color: #171717;
+}
+
+.od-header {
+  border-bottom: 1px solid #e8e8e8;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: none;
+}
+
+.od-hero {
+  max-width: 980px;
+  min-height: auto;
+  margin: 20px auto 0;
+  border: 1px solid #e7e7e7;
+  border-radius: 22px;
+  background: #fff;
+  color: #171717;
+  padding: 26px;
+  box-shadow: 0 14px 36px rgba(20, 20, 20, 0.06);
+}
+
+.od-hero-copy p,
+.od-builder-heading small,
+.od-map-heading small,
+.od-list-heading small {
+  color: #ff3b36;
+}
+
+.od-hero-copy h1 {
+  color: #171717;
+  font-size: clamp(28px, 5vw, 46px);
+}
+
+.od-hero-copy > span {
+  color: #6d6d6d;
+}
+
+.od-hero-steps span {
+  border-color: #e6e6e6;
+  background: #fafafa;
+  color: #333;
+}
+
+.od-hero-steps b {
+  background: #ff3b36;
+  color: #fff;
+}
+
+.od-builder,
+.od-map-panel,
+.od-list-panel {
+  border: 1px solid #e7e7e7;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(20, 20, 20, 0.06);
+}
+
+.od-mode-tabs button {
+  border-color: #e3e3e3;
+  background: #fff;
+  color: #333;
+}
+
+.od-mode-tabs button.is-active {
+  border-color: #ff3b36;
+  background: #ff3b36;
+  color: #fff;
+}
+
+.od-live-badge {
+  border-color: #b9e6c9;
+  background: #f1fff6;
+  color: #079146;
+}
+
+.od-form-grid select,
+.od-form-grid input {
+  border-color: #dedede;
+  background: #fafafa;
+  color: #171717;
+}
+
+.od-choice-group button {
+  border-color: #e2e2e2;
+  background: #f8f8f8;
+  color: #444;
+}
+
+.od-choice-group button.is-active {
+  border-color: #ff3b36;
+  background: #fff0ee;
+  color: #d82d28;
+}
+
+.od-search-button {
+  background: #ff3b36;
+  box-shadow: none;
+}
+
+.od-map-heading > span {
+  background: #fff0ee;
+  color: #ff3b36;
+}
+
+.od-map-marker,
+.od-place-number {
+  background: #ff3b36;
+}
+
+.od-place-card {
+  border-color: #e7e7e7;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.od-place-card.is-selected {
+  border-color: #ff3b36;
+  background: #fffafa;
+}
+
+.od-place-copy small {
+  color: #ff3b36;
+}
+
+.od-place-actions a:first-child {
+  border-color: #ff3b36;
+  background: #fff0ee;
+  color: #d72d28;
+}
+
+@media (max-width: 760px) {
+  .od-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    min-height: 60px;
+  }
+
+  .od-back {
+    display: none;
+  }
+
+  .od-hero {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 18px 16px 12px;
+    box-shadow: none;
+  }
+
+  .od-hero-copy p,
+  .od-hero-copy > span,
+  .od-hero-steps {
+    display: none;
+  }
+
+  .od-hero-copy h1 {
+    margin: 0;
+    font-size: 23px;
+    line-height: 1.25;
+  }
+
+  .od-builder {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 10px 14px 18px;
+    box-shadow: none;
+  }
+
+  .od-mode-tabs {
+    gap: 7px;
+  }
+
+  .od-mode-tabs button {
+    min-height: 50px;
+    border-radius: 11px;
+    padding: 9px;
+  }
+
+  .od-mode-tabs button span {
+    display: none;
+  }
+
+  .od-builder-heading {
+    margin-top: 14px;
+  }
+
+  .od-builder-heading h2 {
+    font-size: 17px;
+  }
+
+  .od-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .od-form-grid label > span,
+  .od-choice-group legend {
+    font-size: 10px;
+  }
+
+  .od-form-grid select,
+  .od-form-grid input {
+    min-height: 45px;
+    font-size: 11px;
+    padding: 0 9px;
+  }
+
+  .od-office-input {
+    grid-column: auto;
+  }
+
+  .od-choice-group {
+    margin-top: 13px;
+  }
+
+  .od-choice-group > div {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 3px;
+  }
+
+  .od-choice-group button {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 0 11px;
+    font-size: 10px;
+  }
+
+  .od-actions {
+    margin-top: 16px;
+  }
+
+  .od-search-button {
+    min-height: 50px;
+    border-radius: 11px;
+  }
+
+  .od-kakao-share,
+  .od-data-note,
+  .od-share-note {
+    display: none;
+  }
+
+  .od-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+  }
+
+  .od-map-panel,
+  .od-list-panel {
+    width: 100%;
+    border: 0;
+    border-radius: 0;
+    padding: 14px;
+    box-shadow: none;
+  }
+
+  .od-map {
+    min-height: 260px;
+    border-radius: 14px;
+  }
+
+  .od-list-heading h2,
+  .od-map-heading h2 {
+    font-size: 18px;
+  }
+
+  .od-place-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .od-place-number {
+    width: 32px;
+    height: 32px;
+  }
+
+  .od-place-copy strong {
+    font-size: 14px;
+  }
+
+  .od-place-actions {
+    flex-direction: column;
+  }
+}
+

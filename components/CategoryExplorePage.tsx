@@ -6,8 +6,6 @@ import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { reportPlaceInformation, trackOperationEvent } from "@/utils/operations-telemetry";
 import { isClientFeatureEnabled } from "@/utils/feature-flags-client";
 import { tourPlacesApiUrl } from "@/utils/spring-api";
-import NaverBookingButton from "@/components/NaverBookingButton";
-import ReservationRequestButton from "@/components/ReservationRequestButton";
 import {
   libraryPlaceKey,
   loadPlaceLibrary,
@@ -1202,6 +1200,26 @@ export default function CategoryExplorePage({
 
                   <div className="kp-explore-external-actions">
                     <a
+                      className="kp-explore-detail-link"
+                      href={`/place?${new URLSearchParams({
+                        id: String(place.id),
+                        name: place.name,
+                        category: displayCategory(place.category),
+                        address: place.address ?? "",
+                        latitude: String(place.latitude),
+                        longitude: String(place.longitude),
+                        imageUrl: place.imageUrl ?? "",
+                        imageAttribution: place.imageAttribution ?? "",
+                        imageCopyrightCode: place.imageCopyrightCode ?? "",
+                        imageModificationAllowed: place.imageModificationAllowed ? "1" : "0",
+                        openingHoursText: place.openingHoursText ?? "",
+                        openingState: place.openingState ?? "unknown",
+                      }).toString()}`}
+                      onClick={() => void recordRecentPlace(place)}
+                    >
+                      장소 상세 보기
+                    </a>
+                    <a
                       className="kp-explore-naver-map-link"
                       href={naverMapSearchUrl(
                         place.name,
@@ -1225,21 +1243,6 @@ export default function CategoryExplorePage({
                     >
                       네이버 지도에서 보기 ↗
                     </a>
-                    <NaverBookingButton
-                      name={place.name}
-                      address={place.address}
-                      category={place.category}
-                      source={place.source === "NAVER_LOCAL" ? "naver" : "tour"}
-                      className="kp-explore-naver-booking-link"
-                      onClick={() => trackOperationEvent({ category: place.category, eventType: "booking_open", feature: "reservations", placeId: place.id, placeName: place.name, route: "/explore" })}
-                    />
-                    <ReservationRequestButton
-                      placeId={String(place.id)}
-                      placeName={place.name}
-                      placeSource={place.source === "NAVER_LOCAL" ? "NAVER_LOCAL" : "TOUR_API"}
-                      address={place.address}
-                      category={place.category}
-                    />
                     <button
                       className="kp-explore-report-link"
                       type="button"

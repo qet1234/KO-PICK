@@ -3,8 +3,10 @@ import LegalFooter from "@/components/LegalFooter";
 import OperationsTelemetry from "@/components/OperationsTelemetry";
 import TrafficTracker from "@/components/TrafficTracker";
 import WebFeatureFlagGate from "@/components/WebFeatureFlagGate";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import "./globals.css";
 import "./legal.css";
+import "./mobile-bottom-nav.css";
 
 export const metadata: Metadata = {
   title: "오늘어디 | 전국 추천 플랫폼",
@@ -38,7 +40,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#146b45",
+  themeColor: "#ff3b36",
 };
 
 export default function RootLayout({
@@ -52,6 +54,7 @@ export default function RootLayout({
         <OperationsTelemetry />
         <TrafficTracker />
         <WebFeatureFlagGate>{children}</WebFeatureFlagGate>
+        <MobileBottomNav />
         <LegalFooter />
       </body>
     </html>

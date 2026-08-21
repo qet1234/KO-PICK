@@ -105,14 +105,14 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
   const markersRef = useRef<NaverMarkerInstance[]>([]);
   const infoWindowRef = useRef<NaverInfoWindowInstance | null>(null);
   const sharedSearchStartedRef = useRef(false);
-  const [mode, setMode] = useState<DiningMode>(initialSharedInput?.mode ?? "회식");
+  const [mode, setMode] = useState<DiningMode>(initialSharedInput?.mode ?? "점심");
   const [region, setRegion] = useState(initialSharedInput?.region ?? "서울");
   const [district, setDistrict] = useState(initialSharedInput?.district ?? "전체");
   const [officeArea, setOfficeArea] = useState(initialSharedInput?.officeArea ?? "");
   const [headcount, setHeadcount] = useState(initialSharedInput?.headcount ?? "5~8명");
   const [foodType, setFoodType] = useState(initialSharedInput?.foodType ?? "전체");
   const [foodDetail, setFoodDetail] = useState(initialSharedInput?.foodDetail ?? "전체");
-  const [budget, setBudget] = useState(initialSharedInput?.budget ?? "1인 3만원 이하");
+  const [budget, setBudget] = useState(initialSharedInput?.budget ?? "1인 1만원 이하");
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -390,7 +390,7 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
       <section className="od-hero">
         <div className="od-hero-copy">
           <p>OFFICE DINING</p>
-          <h1>오늘 점심부터<br />팀 회식까지 한 번에</h1>
+          <h1>직장인 식사</h1>
           <span>지역·음식 종류·금액대를 고르면 네이버 음식점명을 지도 마커로 바로 비교할 수 있습니다.</span>
         </div>
         <div className="od-hero-steps" aria-label="이용 순서">
@@ -400,7 +400,7 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
 
       <section className="od-builder" aria-labelledby="od-builder-title">
         <div className="od-mode-tabs" role="tablist" aria-label="식사 목적">
-          {(["회식", "점심"] as DiningMode[]).map((item) => (
+          {(["점심", "회식"] as DiningMode[]).map((item) => (
             <button
               type="button"
               role="tab"
