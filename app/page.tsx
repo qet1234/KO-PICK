@@ -1,7 +1,6 @@
 import AuthHeader from "@/components/AuthHeader";
 import Image from "next/image";
-import HomeDiscoveryHub from "@/components/HomeDiscoveryHub";
-import HeroDiscoveryPanel from "@/components/HeroDiscoveryPanel";
+import HomeAppDiscovery from "@/components/HomeAppDiscovery";
 import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
 import SeasonalFoodList from "@/components/SeasonalFoodList";
 import "./home.css";
@@ -14,6 +13,7 @@ import "./home-clarity.css";
 import "./home-seasonal-food.css";
 import "./home-category-grid.css";
 import "./home-catchtable.css";
+import "./home-app-redesign.css";
 
 export const dynamic = "force-dynamic";
 
@@ -51,12 +51,11 @@ export default function Home() {
         </div>
       </header>
 
-      <div id="discovery"><HomeDiscoveryHub /></div>
+      <div id="discovery"><HomeAppDiscovery /></div>
 
       <section className="kp-hero" id="journeys">
         <div className="kp-container kp-hero-frame kp-hero-frame--discovery">
           <HeroWeatherDashboard />
-          <HeroDiscoveryPanel />
         </div>
       </section>
 

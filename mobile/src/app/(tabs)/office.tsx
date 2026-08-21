@@ -92,14 +92,14 @@ function SelectField({ label, value, onPress }: SelectFieldProps) {
 }
 
 export default function OfficeDiningScreen() {
-  const [mode, setMode] = useState<DiningMode>('회식');
+  const [mode, setMode] = useState<DiningMode>('점심');
   const [region, setRegion] = useState('서울');
   const [district, setDistrict] = useState('전체');
   const [officeArea, setOfficeArea] = useState('');
   const [headcount, setHeadcount] = useState('5~8명');
   const [foodType, setFoodType] = useState('전체');
   const [foodDetail, setFoodDetail] = useState('전체');
-  const [budget, setBudget] = useState('1인 3만원 이하');
+  const [budget, setBudget] = useState('1인 1만원 이하');
   const [places, setPlaces] = useState<NaverDiningPlace[]>([]);
   const [selected, setSelected] = useState<NaverDiningPlace | null>(null);
   const [picker, setPicker] = useState<PickerKind>(null);
@@ -201,8 +201,8 @@ export default function OfficeDiningScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
         <View style={styles.hero}>
-          <Text style={styles.heroEyebrow}>OFFICE DINING</Text>
-          <Text style={styles.heroTitle}>오늘 점심부터{`\n`}팀 회식까지 한 번에</Text>
+          <Text style={styles.heroEyebrow}>오늘어디 OFFICE DINING</Text>
+          <Text style={styles.heroTitle}>직장인 식사</Text>
           <Text style={styles.heroDescription}>
             지역·음식 종류·금액대를 고르면 네이버 음식점명을 지도 마커로 바로 비교할 수 있습니다.
           </Text>
@@ -217,7 +217,7 @@ export default function OfficeDiningScreen() {
         </View>
 
         <View style={styles.modeRow}>
-          {(['회식', '점심'] as DiningMode[]).map((item) => {
+          {(['점심', '회식'] as DiningMode[]).map((item) => {
             const active = mode === item;
             return (
               <MotionPressable
@@ -288,7 +288,7 @@ export default function OfficeDiningScreen() {
               disabled={loading}
               onPress={() => void search()}
               style={[styles.searchButton, loading && styles.disabled]}>
-              {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>{mode} 장소 찾아보기</Text>}
+                {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>조건에 맞는 장소 찾기</Text>}
             </MotionPressable>
             <MotionPressable
               disabled={sharing}
@@ -419,27 +419,27 @@ export default function OfficeDiningScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f5f7fc' },
-  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
-  hero: { overflow: 'hidden', borderRadius: 28, backgroundColor: '#101d47', padding: 24 },
-  heroEyebrow: { color: '#91aaff', fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
-  heroTitle: { marginTop: 10, color: '#ffffff', fontSize: 30, lineHeight: 39, fontWeight: '900', letterSpacing: -0.7 },
-  heroDescription: { marginTop: 12, color: '#ced8f8', fontSize: 14, lineHeight: 22 },
-  stepList: { marginTop: 20, gap: 8 },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
+  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40 },
+  hero: { overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: '#eeeeee', backgroundColor: '#ffffff', paddingVertical: 14 },
+  heroEyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
+  heroTitle: { marginTop: 6, color: '#171717', fontSize: 25, lineHeight: 32, fontWeight: '900', letterSpacing: -0.7 },
+  heroDescription: { marginTop: 7, color: '#6e6e6e', fontSize: 12, lineHeight: 19 },
+  stepList: { display: 'none', marginTop: 20, gap: 8 },
   stepItem: { minHeight: 42, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#304273', borderRadius: 13, backgroundColor: '#19295b', paddingHorizontal: 12 },
   stepNumber: { width: 24, height: 24, textAlign: 'center', textAlignVertical: 'center', borderRadius: 12, backgroundColor: '#ff9d42', color: '#182036', fontSize: 12, fontWeight: '900' },
   stepText: { marginLeft: 10, color: '#ffffff', fontSize: 13, fontWeight: '800' },
   modeRow: { marginTop: 14, flexDirection: 'row', gap: 10 },
   modeButton: { flex: 1, minHeight: 86, justifyContent: 'center', borderWidth: 1, borderColor: '#dce2ef', borderRadius: 18, backgroundColor: '#ffffff', padding: 15 },
-  modeButtonActive: { borderColor: '#3157c8', backgroundColor: '#3157c8' },
+  modeButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' },
   modeTitle: { color: '#182036', fontSize: 16, fontWeight: '900' },
   modeTitleActive: { color: '#ffffff' },
   modeDescription: { marginTop: 4, color: '#667188', fontSize: 11 },
   modeDescriptionActive: { color: '#dce5ff' },
-  builder: { marginTop: 12, borderWidth: 1, borderColor: '#dce2ef', borderRadius: 24, backgroundColor: '#ffffff', padding: 18 },
+  builder: { marginTop: 10, borderWidth: 1, borderColor: '#e7e7e7', borderRadius: 18, backgroundColor: '#ffffff', padding: 15 },
   builderHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 6 },
   builderHeading: { flex: 1 },
-  builderEyebrow: { color: '#3157c8', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  builderEyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   builderTitle: { marginTop: 5, color: '#182036', fontSize: 22, fontWeight: '900', letterSpacing: -0.4 },
   naverBadge: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#dce2ef', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
   naverDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#03c75a' },
@@ -455,11 +455,11 @@ const styles = StyleSheet.create({
   choiceGroup: { marginTop: 21 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: '#dce2ef', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 13, paddingVertical: 8 },
-  chipActive: { borderColor: '#3157c8', backgroundColor: '#eef3ff' },
+  chipActive: { borderColor: '#ff3b36', backgroundColor: '#fff0ee' },
   chipText: { color: '#59647b', fontSize: 12, fontWeight: '700' },
-  chipTextActive: { color: '#3157c8', fontWeight: '900' },
+  chipTextActive: { color: '#d62d28', fontWeight: '900' },
   actionRow: { marginTop: 26, gap: 10 },
-  searchButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#3157c8', paddingVertical: 14 },
+  searchButton: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#ff3b36', paddingVertical: 14 },
   disabled: { opacity: 0.6 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
   shareButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e2ca00', borderRadius: 14, backgroundColor: '#fee500', paddingVertical: 14 },
@@ -468,13 +468,13 @@ const styles = StyleSheet.create({
   shareNote: { marginTop: 5, color: '#667188', fontSize: 11, lineHeight: 17 },
   shareNotice: { marginTop: 11, borderRadius: 11, backgroundColor: '#eef3ff', color: '#3157c8', padding: 11, fontSize: 12, lineHeight: 18, fontWeight: '700' },
   error: { marginTop: 11, borderRadius: 11, backgroundColor: '#fff0f0', color: '#a23232', padding: 11, fontSize: 12, lineHeight: 18 },
-  mapPanel: { marginTop: 16, borderWidth: 1, borderColor: '#dce2ef', borderRadius: 24, backgroundColor: '#ffffff', padding: 18 },
+  mapPanel: { marginTop: 14, borderWidth: 1, borderColor: '#e7e7e7', borderRadius: 18, backgroundColor: '#ffffff', padding: 15 },
   panelHeadingRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   panelHeadingCopy: { flex: 1 },
-  panelEyebrow: { color: '#3157c8', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  panelEyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   panelTitle: { marginTop: 5, color: '#182036', fontSize: 21, fontWeight: '900', letterSpacing: -0.4 },
-  countBadge: { borderRadius: 999, backgroundColor: '#eef3ff', paddingHorizontal: 11, paddingVertical: 7 },
-  countText: { color: '#3157c8', fontSize: 11, fontWeight: '900' },
+  countBadge: { borderRadius: 999, backgroundColor: '#fff0ee', paddingHorizontal: 11, paddingVertical: 7 },
+  countText: { color: '#ff3b36', fontSize: 11, fontWeight: '900' },
   mapShell: { marginTop: 16, overflow: 'hidden', borderRadius: 18, backgroundColor: '#eef3ff' },
   selectedCard: { marginTop: 12, borderWidth: 1, borderColor: '#cdd9ff', borderRadius: 16, backgroundColor: '#eef3ff', padding: 14 },
   selectedLabel: { color: '#3157c8', fontSize: 10, fontWeight: '900' },
@@ -482,24 +482,24 @@ const styles = StyleSheet.create({
   selectedMeta: { marginTop: 5, marginBottom: 13, color: '#667188', fontSize: 12, lineHeight: 18 },
   routeButton: { alignItems: 'center', borderRadius: 12, backgroundColor: '#03c75a', paddingVertical: 13 },
   routeText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  resultsPanel: { marginTop: 16, borderWidth: 1, borderColor: '#dce2ef', borderRadius: 24, backgroundColor: '#ffffff', padding: 18 },
+  resultsPanel: { marginTop: 14, borderWidth: 1, borderColor: '#e7e7e7', borderRadius: 18, backgroundColor: '#ffffff', padding: 15 },
   resultSummary: { marginTop: 9, color: '#59647b', fontSize: 12, lineHeight: 18 },
   source: { marginTop: 4, color: '#8a94aa', fontSize: 10 },
   emptyState: { marginTop: 16, borderRadius: 16, backgroundColor: '#f5f7fc', padding: 18 },
   emptyTitle: { color: '#182036', fontSize: 15, fontWeight: '900' },
   emptyText: { marginTop: 6, color: '#667188', fontSize: 12, lineHeight: 19 },
   restaurantCard: { marginTop: 12, borderWidth: 1, borderColor: '#dce2ef', borderRadius: 18, backgroundColor: '#ffffff', padding: 13 },
-  restaurantCardActive: { borderColor: '#3157c8', backgroundColor: '#fbfcff' },
+  restaurantCardActive: { borderColor: '#ff3b36', backgroundColor: '#fffafa' },
   restaurantMain: { flexDirection: 'row', alignItems: 'flex-start' },
-  restaurantNumber: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#101d47' },
+  restaurantNumber: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#ff3b36' },
   restaurantNumberText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   restaurantCopy: { flex: 1, marginLeft: 11 },
-  restaurantCategory: { color: '#3157c8', fontSize: 10, fontWeight: '900' },
+  restaurantCategory: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   restaurantTitle: { marginTop: 3, color: '#182036', fontSize: 17, fontWeight: '900' },
   restaurantAddress: { marginTop: 5, color: '#667188', fontSize: 11, lineHeight: 17 },
   restaurantActions: { marginTop: 13, flexDirection: 'row', gap: 8 },
-  nameSearchButton: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#3157c8', borderRadius: 11, backgroundColor: '#eef3ff', paddingVertical: 12 },
-  nameSearchText: { color: '#3157c8', fontSize: 11, fontWeight: '900' },
+  nameSearchButton: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#ff3b36', borderRadius: 11, backgroundColor: '#fff0ee', paddingVertical: 12 },
+  nameSearchText: { color: '#d72d28', fontSize: 11, fontWeight: '900' },
   cardRouteButton: { flex: 1, alignItems: 'center', borderRadius: 11, backgroundColor: '#03c75a', paddingVertical: 12 },
   cardRouteText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },

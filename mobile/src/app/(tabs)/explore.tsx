@@ -26,6 +26,7 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
   selected,
   saved,
   onSelect,
+  onOpenDetails,
   onToggleSaved,
   onReport,
 }: {
@@ -33,23 +34,31 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
   selected: boolean;
   saved: boolean;
   onSelect: (place: TourPlace) => void;
+  onOpenDetails: (place: TourPlace) => void;
   onToggleSaved: (place: TourPlace) => void;
   onReport: (place: TourPlace) => void;
 }) {
   return (
     <View style={[styles.card, selected && styles.cardSelected]}>
       <MotionPressable onPress={() => onSelect(place)} style={styles.cardMain}>
-        <PlaceImage
-          name={place.name}
-          imageUrl={place.imageThumbnailUrl || place.imageUrl}
-          attribution={place.imageAttribution}
-          copyrightCode={place.imageCopyrightCode}
-          modificationAllowed={place.imageModificationAllowed}
-        />
-        <Text style={styles.cardTitle}>{place.name}</Text>
-        <Text style={styles.cardMeta}>{place.category} · {place.address}</Text>
-        {place.openingState === 'open' ? <Text style={styles.openBadge}>● 현재 영업 중</Text> : null}
-        {place.openingHoursText ? <Text numberOfLines={2} style={styles.hoursText}>{place.openingHoursText}</Text> : null}
+        <View style={styles.cardImage}>
+          <PlaceImage
+            name={place.name}
+            imageUrl={place.imageThumbnailUrl || place.imageUrl}
+            attribution={place.imageAttribution}
+            copyrightCode={place.imageCopyrightCode}
+            modificationAllowed={place.imageModificationAllowed}
+          />
+        </View>
+        <View style={styles.cardCopy}>
+          <Text style={styles.cardTitle}>{place.name}</Text>
+          <Text numberOfLines={2} style={styles.cardMeta}>{place.category} · {place.address}</Text>
+          {place.openingState === 'open' ? <Text style={styles.openBadge}>● 현재 영업 중</Text> : null}
+          {place.openingHoursText ? <Text numberOfLines={1} style={styles.hoursText}>{place.openingHoursText}</Text> : null}
+        </View>
+      </MotionPressable>
+      <MotionPressable accessibilityRole="button" onPress={() => onOpenDetails(place)} style={styles.detailButton}>
+        <Text style={styles.detailButtonText}>장소 상세 보기</Text>
       </MotionPressable>
       <MotionPressable accessibilityLabel={`${place.name} ${saved ? '찜 해제' : '찜하기'}`} accessibilityRole="button" onPress={() => onToggleSaved(place)} style={[styles.saveButton, saved && styles.saveButtonActive]}>
         <Text style={[styles.saveIcon, saved && styles.saveIconActive]}>{saved ? '♥' : '♡'}</Text>
@@ -208,6 +217,26 @@ export default function ExploreScreen() {
     ]);
   };
 
+  const openDetails = (place: TourPlace) => {
+    router.push({
+      pathname: '/place-detail',
+      params: {
+        id: place.id,
+        name: place.name,
+        category: place.category,
+        address: place.address ?? '',
+        latitude: String(place.latitude),
+        longitude: String(place.longitude),
+        imageUrl: place.imageUrl ?? place.imageThumbnailUrl ?? '',
+        imageAttribution: place.imageAttribution ?? '',
+        imageCopyrightCode: place.imageCopyrightCode ?? '',
+        imageModificationAllowed: place.imageModificationAllowed ? '1' : '0',
+        openingHoursText: place.openingHoursText ?? '',
+        openingState: place.openingState,
+      },
+    });
+  };
+
   const toggleSaved = async (place: TourPlace) => {
     if (!session) {
       Alert.alert(
@@ -350,7 +379,7 @@ export default function ExploreScreen() {
           <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
         </View> : null}
         {sortedPlaces.map((place) => (
-          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onToggleSaved={toggleSaved} onReport={reportPlace} />
+          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onOpenDetails={openDetails} onToggleSaved={toggleSaved} onReport={reportPlace} />
         ))}
         {totalPages > 1 ? <View style={styles.paginationBottom}>
           <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
@@ -363,19 +392,19 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7f4' }, container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 20, paddingBottom: 34 }, containerCompact: { paddingHorizontal: 14 },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' }, container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 34 }, containerCompact: { paddingHorizontal: 12 },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' }, subtitle: { marginTop: 8, color: '#71716d', fontSize: 13, lineHeight: 20 },
-  filters: { marginTop: 20, borderRadius: 22, backgroundColor: '#ffffff', padding: 17 }, searchButton: { minHeight: 50, marginTop: 14, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
+  filters: { marginTop: 14, borderWidth: 1, borderColor: '#e8e8e8', borderRadius: 18, backgroundColor: '#ffffff', padding: 14 }, searchButton: { minHeight: 48, marginTop: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
   searchLabel: { marginBottom: 8, color: '#101010', fontSize: 12, fontWeight: '900' }, searchRow: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 18 }, searchInput: { flex: 1, minHeight: 50, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 14, fontSize: 13, fontWeight: '700' }, clearButton: { width: 36, height: 36, marginLeft: -47, alignItems: 'center', justifyContent: 'center', borderRadius: 18 }, clearButtonText: { color: '#71716d', fontSize: 22, fontWeight: '700' }, submitButton: { minWidth: 64, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010', paddingHorizontal: 12 }, submitButtonText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   localityFilter: { marginTop: 18 }, localityLabel: { marginBottom: 9, color: '#454541', fontSize: 13, fontWeight: '900' }, localityRow: { flexDirection: 'row', gap: 7 }, localityInput: { flex: 1, minHeight: 46, borderWidth: 1, borderColor: '#dadad4', borderRadius: 13, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 12, fontWeight: '800' }, localityButton: { minWidth: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#101010' }, localityButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
   instantNote: { marginTop: 12, color: '#71716d', fontSize: 11, lineHeight: 17 },
   openFilter: { minHeight: 54, marginTop: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#ffffff', paddingHorizontal: 12 }, openFilterActive: { borderColor: '#18a65a', backgroundColor: '#effcf5' }, openCheck: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#cfcfc8', borderRadius: 8 }, openCheckActive: { borderColor: '#18a65a', backgroundColor: '#18a65a' }, openCheckText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, openFilterCopy: { flex: 1 }, openFilterTitle: { color: '#101010', fontSize: 12, fontWeight: '900' }, openFilterNote: { marginTop: 2, color: '#71716d', fontSize: 10 },
   searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },
-  resultToolbar: { marginTop: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }, segmentedControl: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', padding: 3 }, segmentButton: { minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 999, paddingHorizontal: 10 }, segmentButtonActive: { backgroundColor: '#101010' }, segmentButtonText: { color: '#71716d', fontSize: 10, fontWeight: '900' }, segmentButtonTextActive: { color: '#ffffff' },
+  resultToolbar: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }, segmentedControl: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e3e3e3', borderRadius: 11, backgroundColor: '#f7f7f7', padding: 3 }, segmentButton: { minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 9, paddingHorizontal: 10 }, segmentButtonActive: { backgroundColor: '#ff3b36' }, segmentButtonText: { color: '#71716d', fontSize: 10, fontWeight: '900' }, segmentButtonTextActive: { color: '#ffffff' },
   mapShell: { marginTop: 18, overflow: 'hidden', borderRadius: 20 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
   selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
   list: { marginTop: 26 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 21, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
-  card: { marginTop: 12, position: 'relative', borderWidth: 1, borderColor: 'transparent', borderRadius: 19, backgroundColor: '#ffffff', padding: 12 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { borderRadius: 14 }, cardTitle: { marginTop: 13, color: '#101010', fontSize: 17, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 10, color: '#71716d', fontSize: 11, lineHeight: 17 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 10, color: '#71716d', fontSize: 10, lineHeight: 15 }, saveButton: { width: 42, height: 42, position: 'absolute', top: 20, right: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 21, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 23, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
+  card: { marginTop: 10, position: 'relative', borderWidth: 1, borderColor: '#e8e8e8', borderRadius: 16, backgroundColor: '#ffffff', padding: 10 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { minHeight: 118, flexDirection: 'row', borderRadius: 12 }, cardImage: { width: 108, overflow: 'hidden', borderRadius: 12 }, cardCopy: { flex: 1, minWidth: 0, paddingLeft: 12, paddingRight: 34 }, cardTitle: { color: '#101010', fontSize: 16, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 7, color: '#71716d', fontSize: 10, lineHeight: 15 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 7, color: '#71716d', fontSize: 10, lineHeight: 15 }, detailButton: { minHeight: 36, marginTop: 9, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#fff0ee' }, detailButtonText: { color: '#d72d28', fontSize: 10, fontWeight: '900' }, saveButton: { width: 36, height: 36, position: 'absolute', top: 12, right: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 18, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 20, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
   reportButton: { minHeight: 42, marginTop: 8, alignItems: 'center', justifyContent: 'center' }, reportButtonText: { color: '#71716d', fontSize: 11, fontWeight: '800', textDecorationLine: 'underline' },
   pagination: { marginTop: 14, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }, paginationBottom: { marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   pageButton: { minWidth: 82, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 14 }, pageButtonDisabled: { opacity: 0.38 }, pageButtonText: { color: '#101010', fontSize: 12, fontWeight: '900' },

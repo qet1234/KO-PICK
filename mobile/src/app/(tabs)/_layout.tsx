@@ -55,14 +55,14 @@ export default function TabLayout() {
     headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: '#ff3b36', tabBarInactiveTintColor: '#71716d',
     tabBarLabelStyle: { fontSize: compact ? 9 : 10, lineHeight: 13, fontWeight: '800', marginBottom: 2, textAlign: 'center' },
     tabBarIconStyle: { height: 25, marginTop: 4, alignItems: 'center', justifyContent: 'center' },
-    tabBarActiveBackgroundColor: '#fff0ee', tabBarItemStyle: { marginHorizontal: compact ? 1 : 3, marginVertical: 4, borderRadius: 14 },
-    tabBarStyle: { height: 64 + insets.bottom, paddingHorizontal: compact ? 2 : 5, paddingTop: 2, paddingBottom: Math.max(insets.bottom, 6), borderTopColor: '#dadad4' },
+    tabBarActiveBackgroundColor: 'transparent', tabBarItemStyle: { marginHorizontal: compact ? 0 : 2, marginVertical: 2, borderRadius: 12 },
+    tabBarStyle: { height: 66 + insets.bottom, paddingHorizontal: compact ? 1 : 4, paddingTop: 4, paddingBottom: Math.max(insets.bottom, 6), borderTopColor: '#e8e8e8', backgroundColor: '#ffffff' },
     tabBarButton: (props) => <AnimatedTabButton {...props} />,
   }}>
-    <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: ({ focused }) => <TabIcon label="K" focused={focused} size={19} /> }} />
-    <Tabs.Screen name="explore" options={{ title: '장소 찾기', tabBarIcon: ({ focused }) => <TabIcon label="⌖" focused={focused} size={21} /> }} />
+    <Tabs.Screen name="index" options={{ title: '홈', tabBarIcon: ({ focused }) => <TabIcon label="⌂" focused={focused} size={21} /> }} />
+    <Tabs.Screen name="explore" options={{ title: '장소 찾기', tabBarIcon: ({ focused }) => <TabIcon label="⌕" focused={focused} size={21} /> }} />
     <Tabs.Screen name="saved" options={{ title: '저장', tabBarIcon: ({ focused }) => <TabIcon label={focused ? '♥' : '♡'} focused={focused} size={21} /> }} />
-    <Tabs.Screen name="office" options={{ title: '직장인 식사', tabBarIcon: ({ focused }) => <TabIcon label="식" focused={focused} size={17} /> }} />
+    <Tabs.Screen name="office" options={{ title: '직장인 식사', tabBarIcon: ({ focused }) => <TabIcon label="▣" focused={focused} size={19} /> }} />
     <Tabs.Screen name="account" options={{ title: '내 계정', tabBarIcon: ({ focused }) => <AccountIcon focused={focused} /> }} />
   </Tabs>;
 }
