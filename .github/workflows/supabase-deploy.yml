@@ -28,6 +28,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 2
+
+      - name: Detect changed Supabase resources
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+            echo "functions=*" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+            base="HEAD^"
+          fi
+          changed_files="$(git diff --name-only "$base" "$GITHUB_SHA")"
+          if grep -q '^supabase/migrations/' <<<"$changed_files"; then
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "migrations=false" >> "$GITHUB_OUTPUT"
+          fi
+          functions="$(sed -n 's|^supabase/functions/\([^/]*\)/.*|\1|p' <<<"$changed_files" | sort -u | paste -sd, -)"
+          echo "functions=$functions" >> "$GITHUB_OUTPUT"
 
       - name: Verify required secrets
         shell: bash
@@ -41,6 +66,7 @@ jobs:
           version: 2.111.0
 
       - name: Apply database migration
+        if: steps.changes.outputs.migrations == 'true'
         env:
           ADMIN_MIGRATION: supabase/migrations/20260810130000_admin_dashboard.sql
           APP_STATUS_MIGRATION: supabase/migrations/20260810170000_app_service_status.sql
@@ -80,6 +106,7 @@ jobs:
           fi
 
       - name: Verify privacy, sharing, and admin migrations
+        if: steps.changes.outputs.migrations == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -96,6 +123,7 @@ jobs:
           jq -e '.[0].ready == true' verify-migration-response.json >/dev/null
 
       - name: Verify Together Spaces data and APIs are removed
+        if: steps.changes.outputs.migrations == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -111,26 +139,29 @@ jobs:
             | tee verify-together-removed-response.json
           jq -e '.[0].ready == true' verify-together-removed-response.json >/dev/null
 
-      - name: Deploy regular Edge Functions
+      - name: Deploy changed regular Edge Functions
+        env:
+          CHANGED_FUNCTIONS: ${{ steps.changes.outputs.functions }}
         shell: bash
         run: |
           set -euo pipefail
-          for directory in supabase/functions/*; do
-            [ -d "$directory" ] || continue
-            function_name="$(basename "$directory")"
+          if [ -z "$CHANGED_FUNCTIONS" ]; then
+            echo "No Edge Function changes detected."
+            exit 0
+          fi
+
+          if [ "$CHANGED_FUNCTIONS" = "*" ]; then
+            mapfile -t functions < <(find supabase/functions -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+          else
+            IFS=',' read -r -a functions <<<"$CHANGED_FUNCTIONS"
+          fi
+
+          for function_name in "${functions[@]}"; do
             case "$function_name" in
-              kopick-api|kopick-gateway|kopick-place-gateway|kopick-core) continue ;;
+              kopick-api|kopick-gateway|kopick-place-gateway|kopick-core|naver-userinfo|sync-tour-places)
+                echo "Skipping $function_name; its dedicated workflow owns deployment."
+                continue
+                ;;
             esac
             supabase functions deploy "$function_name" --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
           done
-
-      - name: Deploy KO-PICK core and public gateway
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf supabase/functions/kopick-core
-          cp -R supabase/functions/kopick-api supabase/functions/kopick-core
-          sed -i 's|const marker = "/kopick-api";|const marker = "/kopick-core";|' supabase/functions/kopick-core/index.ts
-          supabase functions deploy kopick-core --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
-          cp supabase/functions/kopick-place-gateway/index.ts supabase/functions/kopick-api/index.ts
-          supabase functions deploy kopick-api --project-ref "$SUPABASE_PROJECT_ID" --no-verify-jwt
