@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "mobile/**"
+      - "mobile/src/**"
+      - "mobile/assets/**"
+      - "mobile/config/**"
       - ".github/workflows/mobile-eas-update.yml"
   workflow_dispatch:
 
@@ -15,33 +17,26 @@ concurrency:
 
 jobs:
   publish-update:
-    name: Restore mobile configuration and publish OTA updates
+    name: Publish runtime OTA updates
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
     defaults:
       run:
         working-directory: mobile
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: vbwaruzncfaxnjyybudm
-      SUPABASE_URL: https://vbwaruzncfaxnjyybudm.supabase.co
-      WEB_URL: https://koreapick.duckdns.org
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Check deployment credentials
+      - name: Check Expo token
         shell: bash
         run: |
           set -euo pipefail
-          missing=()
-          test -n "${{ secrets.EXPO_TOKEN }}" || missing+=("EXPO_TOKEN")
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || missing+=("SUPABASE_ACCESS_TOKEN")
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing GitHub Actions secrets: %s\n' "${missing[*]}"
+          test -n "${{ secrets.EXPO_TOKEN }}" || {
+            echo "Missing GitHub Actions secret: EXPO_TOKEN"
             exit 1
-          fi
+          }
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -59,66 +54,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Restore public mobile environment in EAS
-        shell: bash
-        run: |
-          set -euo pipefail
-          response_file="$(mktemp)"
-          trap 'rm -f "$response_file"' EXIT
-
-          curl --fail-with-body --silent --show-error \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            --output "$response_file" \
-            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/api-keys"
-
-          publishable_key="$(jq -r '
-            if type != "array" then empty
-            else
-              ([.[]
-                | select(
-                    ((.api_key // "") | startswith("sb_publishable_"))
-                    or ((.type // "") == "publishable")
-                    or ((.name // "") == "publishable")
-                  )
-                | .api_key][0])
-              // ([.[]
-                | select(((.name // "") == "anon") or ((.id // "") == "anon"))
-                | .api_key][0])
-              // empty
-            end
-          ' "$response_file")"
-
-          if [ -z "$publishable_key" ]; then
-            echo "Supabase publishable key was not found."
-            exit 1
-          fi
-          echo "::add-mask::$publishable_key"
-
-          set_eas_public() {
-            local environment="$1"
-            local name="$2"
-            local value="$3"
-            eas env:set \
-              --environment "$environment" \
-              --name "$name" \
-              --value "$value" \
-              --visibility plaintext \
-              --scope project \
-              --non-interactive
-            printf '%s registered in EAS %s.\n' "$name" "$environment"
-          }
-
-          for environment in production preview; do
-            set_eas_public "$environment" EXPO_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
-            set_eas_public "$environment" EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$publishable_key"
-            set_eas_public "$environment" EXPO_PUBLIC_WEB_URL "$WEB_URL"
-          done
-
       - name: Publish Android production update
         run: eas update --channel production --platform android --message "${{ github.event.head_commit.message || 'Manual Android production update' }}" --environment production --non-interactive
 
-      - name: Publish Android preview update
-        run: eas update --channel preview --platform android --message "${{ github.event.head_commit.message || 'Manual Android preview update' }}" --environment preview --non-interactive
-
-      - name: Publish iOS preview update
-        run: eas update --channel preview --platform ios --message "${{ github.event.head_commit.message || 'Manual iOS preview update' }}" --environment production --non-interactive
+      - name: Publish Android and iOS preview update
+        run: eas update --channel preview --platform all --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment preview --non-interactive
