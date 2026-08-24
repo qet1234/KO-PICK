@@ -1,11 +1,29 @@
 name: Frontend Build
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - "app/**"
+      - "components/**"
+      - "frontend/**"
+      - "public/**"
+      - "scripts/**"
+      - "utils/**"
+      - "package.json"
+      - "package-lock.json"
+      - "next.config.ts"
+      - "eslint.config.mjs"
+      - "postcss.config.mjs"
+      - "proxy.ts"
+      - "tsconfig.json"
+      - "vercel.json"
+      - ".github/workflows/frontend-build.yml"
   workflow_dispatch:
+
+concurrency:
+  group: frontend-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
