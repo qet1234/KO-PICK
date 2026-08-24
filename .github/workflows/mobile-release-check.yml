@@ -2,30 +2,34 @@ name: Mobile release check
 
 on:
   pull_request:
+    branches: [main]
     paths:
-      - 'mobile/**'
-      - '.github/workflows/mobile-release-check.yml'
+      - "mobile/**"
+      - ".github/workflows/mobile-release-check.yml"
   workflow_dispatch:
 
+concurrency:
+  group: mobile-release-check-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate-mobile:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: mobile
     steps:
-      - name: Checkout PR branch
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22.13.0'
+          node-version: "22.13.0"
           cache: npm
           cache-dependency-path: mobile/package-lock.json
 
@@ -34,9 +38,6 @@ jobs:
 
       - name: Verify Android image assets
         run: npm run verify:assets
-
-      - name: Align Expo SDK dependencies
-        run: npx expo install --fix --npm
 
       - name: Type check
         run: npm run typecheck
@@ -55,16 +56,3 @@ jobs:
           EXPO_PUBLIC_NAVER_MAP_CLIENT_ID: release-check
           EXPO_PUBLIC_WEB_URL: https://release-check.invalid
         run: npx expo config --type public > /tmp/expo-public-config.txt
-
-      - name: Commit aligned dependency metadata
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        run: |
-          if git diff --quiet -- package.json package-lock.json; then
-            echo "Expo dependencies already aligned."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json package-lock.json
-          git commit -m "Align Expo SDK 57 patch dependencies"
-          git push origin HEAD:${{ github.head_ref }}
