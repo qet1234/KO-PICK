@@ -1,16 +1,6 @@
 name: Mobile Android release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "mobile/app.config.ts"
-      - "mobile/assets/**"
-      - "mobile/eas.json"
-      - "mobile/package.json"
-      - "mobile/package-lock.json"
-      - ".github/workflows/mobile-apk-release.yml"
   workflow_dispatch:
 
 concurrency:
