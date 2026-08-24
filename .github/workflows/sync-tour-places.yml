@@ -16,7 +16,7 @@ on:
         default: false
         type: boolean
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 18 * * *"
 
 permissions:
   contents: read
@@ -54,12 +54,44 @@ jobs:
           set -euo pipefail
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "Missing GitHub Secret: SUPABASE_ACCESS_TOKEN"; exit 1; }
 
+      - name: Check whether synchronization is needed
+        id: sync-state
+        shell: bash
+        env:
+          FORCE_SYNC: ${{ github.event_name != 'schedule' || inputs.reset == true }}
+        run: |
+          set -euo pipefail
+          if [ "$FORCE_SYNC" = "true" ]; then
+            echo "needs_sync=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          jq -n '{query: "select coalesce((select status <> '\''complete'\'' from public.tour_place_sync_state where singleton = true), true) as needs_sync", read_only: true}' > /tmp/sync-state-query.json
+          response_file="$(mktemp)"
+          status="$(curl --silent --show-error --max-time 30 \
+            --output "$response_file" --write-out '%{http_code}' \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'content-type: application/json' \
+            --data-binary @/tmp/sync-state-query.json \
+            "https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query")"
+
+          if [ "$status" -ge 200 ] && [ "$status" -lt 300 ]; then
+            needs_sync="$(jq -r '.[0].needs_sync // true' "$response_file")"
+          else
+            echo "Snapshot state preflight failed with HTTP $status; continuing safely."
+            needs_sync=true
+          fi
+          echo "needs_sync=$needs_sync" >> "$GITHUB_OUTPUT"
+
       - name: Set up Supabase CLI
+        if: steps.sync-state.outputs.needs_sync == 'true'
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
       - name: Apply TourAPI snapshot schema
+        if: steps.sync-state.outputs.needs_sync == 'true'
         id: schema
         shell: bash
         run: |
@@ -87,6 +119,7 @@ jobs:
           echo "TourAPI snapshot schema is ready."
 
       - name: Deploy snapshot synchronization function
+        if: steps.sync-state.outputs.needs_sync == 'true'
         id: deploy
         shell: bash
         run: |
@@ -97,6 +130,7 @@ jobs:
           supabase functions deploy sync-tour-places --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Deploy snapshot-aware place gateway
+        if: steps.sync-state.outputs.needs_sync == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -107,6 +141,7 @@ jobs:
           supabase functions deploy kopick-api --project-ref "$PROJECT_REF" --no-verify-jwt
 
       - name: Continue full TourAPI synchronization
+        if: steps.sync-state.outputs.needs_sync == 'true'
         id: synchronize
         shell: bash
         env:
@@ -159,10 +194,13 @@ jobs:
         shell: bash
         env:
           RESULT: ${{ job.status }}
+          NEEDS_SYNC: ${{ steps.sync-state.outputs.needs_sync }}
         run: |
           if [ "$RESULT" = "success" ]; then
             state=success
-            if [ -f /tmp/final-sync-state.json ]; then
+            if [ "$NEEDS_SYNC" = "false" ]; then
+              description='TourAPI snapshot is complete; deployment skipped'
+            elif [ -f /tmp/final-sync-state.json ]; then
               status="$(jq -r '.state.status // "running"' /tmp/final-sync-state.json)"
               imported="$(jq -r '.state.imported_count // 0' /tmp/final-sync-state.json)"
               total="$(jq -r '.state.total_count // 0' /tmp/final-sync-state.json)"

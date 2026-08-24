@@ -1,17 +1,11 @@
 name: Android production security build
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "mobile/**"
-      - ".github/workflows/mobile-production-security.yml"
   workflow_dispatch:
 
 concurrency:
   group: android-production-security
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -92,7 +86,7 @@ jobs:
           name: android-production-aab
           path: ${{ runner.temp }}/oneul-eodi-production.aab
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 3
 
   mobsf:
     name: MobSF static analysis
@@ -221,7 +215,7 @@ jobs:
             mobsf-report.pdf
             mobsf-scan-result.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
 
       - name: Stop MobSF
         if: always()

@@ -1,9 +1,23 @@
 name: TourAPI Protection
 
 on:
-  push:
-    branches: [main, agent/migrate-all-to-supabase]
   pull_request:
+    branches: [main]
+    paths:
+      - "app/api/tour/**"
+      - "components/CategoryExplorePage.tsx"
+      - "utils/spring-api.ts"
+      - "utils/tourapi-image.ts"
+      - "supabase/functions/kopick-api/**"
+      - "supabase/config.toml"
+      - "package.json"
+      - "vercel.json"
+      - ".github/workflows/tour-api-protection.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: tour-api-protection-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
