@@ -1,13 +1,6 @@
 name: Verify Naver Client ID
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/verify-naver-client-id.yml"
-      - "utils/naver-auth.ts"
-      - "app/auth/naver/**"
-      - "app/auth/mobile/naver/**"
   workflow_dispatch:
 
 permissions:
