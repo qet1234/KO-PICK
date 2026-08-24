@@ -1,13 +1,6 @@
 name: Verify Weather UI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app/api/weather/route.ts"
-      - "components/HeroWeatherDashboard.tsx"
-      - "app/home-weather-dashboard.css"
-      - ".github/workflows/verify-weather-ui.yml"
   workflow_dispatch:
 
 permissions:
