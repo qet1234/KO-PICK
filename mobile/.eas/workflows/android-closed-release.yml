@@ -1,11 +1,6 @@
 name: Android closed testing release
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "mobile/**"
   workflow_dispatch: {}
 
 jobs:
