@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "mobile/**"
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   build_android:
