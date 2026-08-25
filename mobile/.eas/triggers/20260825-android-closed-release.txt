@@ -1,0 +1,2 @@
+Trigger EAS Workflow Android production AAB and Google Play closed testing release.
+Triggered on 2026-08-25 Asia/Seoul.
