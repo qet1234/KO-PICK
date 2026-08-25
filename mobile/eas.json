@@ -45,6 +45,12 @@
         "releaseStatus": "draft"
       }
     },
+    "closed": {
+      "android": {
+        "track": "alpha",
+        "releaseStatus": "completed"
+      }
+    },
     "testflight": {
       "ios": {}
     },

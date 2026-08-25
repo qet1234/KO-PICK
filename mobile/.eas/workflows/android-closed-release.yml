@@ -1,0 +1,26 @@
+name: Android closed testing release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "mobile/**"
+  workflow_dispatch:
+
+jobs:
+  build_android:
+    name: Build Android AAB
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  submit_android:
+    name: Deploy to Google Play closed testing
+    needs:
+      - build_android
+    type: submit
+    params:
+      profile: closed
+      build_id: ${{ needs.build_android.outputs.build_id }}
