@@ -1,0 +1,2 @@
+Trigger EAS Workflow after configuring the Expo GitHub base directory to mobile.
+Triggered on 2026-08-25 Asia/Seoul.
