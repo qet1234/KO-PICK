@@ -702,3 +702,312 @@
     transform: none;
   }
 }
+
+
+/* 2026-08 mockup-aligned red office dining redesign */
+:root {
+  --od-primary: #ff3b36;
+  --od-primary-deep: #c92828;
+  --od-primary-soft: #fff0ef;
+  --od-accent: #ff3b36;
+  --od-paper: #f7f7f5;
+  --od-line: #e7e7e4;
+  --od-muted: #666b72;
+}
+
+.od-page {
+  background:
+    radial-gradient(circle at 88% 5%, rgba(255, 59, 54, 0.09), transparent 24rem),
+    var(--od-paper);
+}
+
+.od-brand > span {
+  background: var(--od-primary);
+}
+
+.od-hero {
+  background:
+    linear-gradient(130deg, rgba(28, 28, 31, 0.98), rgba(70, 29, 29, 0.94)),
+    #1c1c1f;
+  box-shadow: 0 24px 60px rgba(60, 24, 24, 0.16);
+}
+
+.od-hero::after {
+  border-color: rgba(255, 59, 54, 0.23);
+}
+
+.od-hero-copy > p,
+.od-hero-steps b {
+  color: white;
+  background: var(--od-primary);
+}
+
+.od-form-grid select:focus,
+.od-form-grid input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 59, 54, 0.13);
+}
+
+.od-place-actions button {
+  border-color: var(--od-primary);
+  background: var(--od-primary);
+}
+
+.od-place-actions > *:focus-visible {
+  outline-color: rgba(255, 59, 54, 0.5);
+}
+
+@media (max-width: 680px) {
+  .od-page {
+    padding-bottom: 86px;
+    background: #fff;
+  }
+
+  .od-header,
+  .od-hero,
+  .od-builder,
+  .od-results {
+    width: 100%;
+  }
+
+  .od-header {
+    min-height: 56px;
+    padding: 0 15px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    justify-content: center;
+    border-bottom: 1px solid #ededeb;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+  }
+
+  .od-brand {
+    gap: 0;
+    font-size: 0;
+  }
+
+  .od-brand::after {
+    content: "직장인 식사";
+    color: #18181b;
+    font-size: 18px;
+    font-weight: 950;
+    letter-spacing: -0.04em;
+  }
+
+  .od-brand > span {
+    display: none;
+  }
+
+  .od-back {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    position: absolute;
+    left: 10px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 0;
+    color: transparent;
+    background: transparent;
+    font-size: 0;
+  }
+
+  .od-back::before {
+    content: "‹";
+    color: #17171a;
+    font-size: 33px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .od-hero {
+    display: none;
+  }
+
+  .od-builder {
+    margin: 0;
+    padding: 14px 14px 18px;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .od-mode-tabs {
+    gap: 8px;
+  }
+
+  .od-mode-tabs button {
+    min-height: 50px;
+    padding: 10px 8px;
+    align-items: center;
+    border-radius: 11px;
+    background: #fff;
+    text-align: center;
+  }
+
+  .od-mode-tabs button strong {
+    font-size: 14px;
+  }
+
+  .od-mode-tabs button span {
+    display: none;
+  }
+
+  .od-mode-tabs button.is-active {
+    color: white;
+    background: var(--od-primary);
+    box-shadow: none;
+  }
+
+  .od-mode-tabs button.is-active strong {
+    color: white;
+  }
+
+  .od-builder-heading {
+    margin-top: 18px;
+    align-items: center;
+  }
+
+  .od-builder-heading small,
+  .od-live-badge {
+    display: none;
+  }
+
+  .od-builder-heading h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .od-form-grid {
+    margin-top: 12px;
+    grid-template-columns: 0.8fr 1fr;
+    gap: 8px;
+  }
+
+  .od-form-grid .od-office-input {
+    grid-column: 1 / -1;
+  }
+
+  .od-form-grid label {
+    gap: 6px;
+  }
+
+  .od-form-grid select,
+  .od-form-grid input {
+    min-height: 44px;
+    padding: 0 11px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .od-choice-group {
+    margin-top: 17px;
+  }
+
+  .od-choice-group legend {
+    margin-bottom: 8px;
+  }
+
+  .od-choice-group > div {
+    flex-wrap: nowrap;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 1px 1px 4px;
+    scrollbar-width: none;
+  }
+
+  .od-choice-group > div::-webkit-scrollbar {
+    display: none;
+  }
+
+  .od-choice-group button {
+    min-height: 36px;
+    padding: 0 13px;
+    flex: 0 0 auto;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .od-actions {
+    margin-top: 20px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .od-actions > * {
+    min-height: 48px;
+    border-radius: 10px;
+  }
+
+  .od-kakao-share {
+    min-height: 42px;
+  }
+
+  .od-data-note,
+  .od-share-note {
+    display: none;
+  }
+
+  .od-results {
+    padding: 4px 14px 18px;
+    gap: 12px;
+  }
+
+  .od-list-panel {
+    order: 1;
+  }
+
+  .od-map-panel {
+    order: 2;
+  }
+
+  .od-map-panel,
+  .od-list-panel {
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .od-map-heading,
+  .od-list-heading {
+    margin-bottom: 12px;
+  }
+
+  .od-map-heading small,
+  .od-list-heading small {
+    display: none;
+  }
+
+  .od-map-heading h2,
+  .od-list-heading h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .od-map {
+    height: 285px;
+    border-radius: 12px;
+  }
+
+  .od-place-list {
+    gap: 8px;
+  }
+
+  .od-place-card {
+    border-radius: 13px;
+  }
+
+  .od-place-main {
+    padding: 12px;
+  }
+
+  .od-place-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  .od-place-actions {
+    padding: 0 10px 10px;
+  }
+}
