@@ -260,7 +260,9 @@ async function searchNaver(
   const url = new URL(config.endpoint);
   url.searchParams.set("query", query);
   url.searchParams.set("display", "5");
+  url.searchParams.set("start", "1");
   url.searchParams.set("sort", sort);
+  url.searchParams.set("format", "json");
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6_000);
@@ -270,8 +272,15 @@ async function searchNaver(
       cache: "no-store",
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`NAVER_LOCAL_${response.status}`);
-    const payload = (await response.json()) as { items?: NaverLocalItem[] };
+    const responseText = await response.text();
+    if (!response.ok) {
+      console.warn("Naver local search request failed", {
+        endpoint: new URL(config.endpoint).hostname,
+        status: response.status,
+      });
+      throw new Error(`NAVER_LOCAL_${response.status}`);
+    }
+    const payload = JSON.parse(responseText) as { items?: NaverLocalItem[] };
     return payload.items ?? [];
   } finally {
     clearTimeout(timeout);
