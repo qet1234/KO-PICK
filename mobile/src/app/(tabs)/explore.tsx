@@ -1,73 +1,84 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ChoiceChips } from '@/components/choice-chips';
 import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
-import { RouteMapChooser } from '@/components/route-map-chooser';
 import { useSession } from '@/context/session-context';
 import { fetchTourPlaces, fetchTourSubregions, type PlaceQuery, type TourPlace, type TourSubregion } from '@/lib/api';
+import { openRouteMap } from '@/lib/map-links';
 import { libraryPlaceKey, loadPlaceLibrary, recordRecentPlace, toggleSavedPlace, toLibraryPlace } from '@/lib/place-library';
 import { reportMobilePlace, trackMobileOperation } from '@/lib/operations';
 
 const regions = ['전국','서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'] as const;
 const categories = ['전체', '맛집', '카페', '관광지', '축제'] as const;
 const defaultPageSize = 50;
-const restaurantPageSize = 50;
 type TourPlacesResult = Awaited<ReturnType<typeof fetchTourPlaces>>;
-type SortMode = 'recommended' | 'name';
 type ViewMode = 'all' | 'map' | 'list';
+type PickerMode = 'region' | 'district' | null;
 
 const ExplorePlaceCard = memo(function ExplorePlaceCard({
   place,
-  selected,
+  index,
   saved,
+  selected,
   onSelect,
   onOpenDetails,
   onToggleSaved,
   onReport,
 }: {
   place: TourPlace;
-  selected: boolean;
+  index: number;
   saved: boolean;
+  selected: boolean;
   onSelect: (place: TourPlace) => void;
   onOpenDetails: (place: TourPlace) => void;
   onToggleSaved: (place: TourPlace) => void;
   onReport: (place: TourPlace) => void;
 }) {
+  const open = place.openingState === 'open';
   return (
-    <View style={[styles.card, selected && styles.cardSelected]}>
-      <MotionPressable onPress={() => onSelect(place)} style={styles.cardMain}>
-        <View style={styles.cardImage}>
-          <PlaceImage
-            name={place.name}
-            imageUrl={place.imageThumbnailUrl || place.imageUrl}
-            attribution={place.imageAttribution}
-            copyrightCode={place.imageCopyrightCode}
-            modificationAllowed={place.imageModificationAllowed}
-          />
-        </View>
-        <View style={styles.cardCopy}>
-          <Text style={styles.cardTitle}>{place.name}</Text>
-          <Text numberOfLines={2} style={styles.cardMeta}>{place.category} · {place.address}</Text>
-          {place.openingState === 'open' ? <Text style={styles.openBadge}>● 현재 영업 중</Text> : null}
-          {place.openingHoursText ? <Text numberOfLines={1} style={styles.hoursText}>{place.openingHoursText}</Text> : null}
-        </View>
-      </MotionPressable>
-      <MotionPressable accessibilityRole="button" onPress={() => onOpenDetails(place)} style={styles.detailButton}>
-        <Text style={styles.detailButtonText}>장소 상세 보기</Text>
-      </MotionPressable>
-      <MotionPressable accessibilityLabel={`${place.name} ${saved ? '찜 해제' : '찜하기'}`} accessibilityRole="button" onPress={() => onToggleSaved(place)} style={[styles.saveButton, saved && styles.saveButtonActive]}>
-        <Text style={[styles.saveIcon, saved && styles.saveIconActive]}>{saved ? '♥' : '♡'}</Text>
-      </MotionPressable>
-      <RouteMapChooser place={place} />
-      <MotionPressable accessibilityRole="button" onPress={() => onReport(place)} style={styles.reportButton}>
-        <Text style={styles.reportButtonText}>잘못된 장소 정보 신고</Text>
-      </MotionPressable>
-    </View>
+    <MotionPressable
+      accessibilityRole="button"
+      onLongPress={() => onReport(place)}
+      onPress={() => { onSelect(place); onOpenDetails(place); }}
+      style={[styles.card, selected && styles.cardSelected]}
+    >
+      <View style={styles.cardIndex}><Text style={styles.cardIndexText}>{index + 1}</Text></View>
+      <View style={styles.cardImage}>
+        <PlaceImage
+          name={place.name}
+          imageUrl={place.imageThumbnailUrl || place.imageUrl}
+          attribution={place.imageAttribution}
+          copyrightCode={place.imageCopyrightCode}
+          modificationAllowed={place.imageModificationAllowed}
+        />
+      </View>
+      <View style={styles.cardCopy}>
+        <Text numberOfLines={1} style={styles.cardTitle}>{place.name}</Text>
+        <Text numberOfLines={1} style={styles.cardMeta}>{place.category} · {open ? '영업 중' : '운영정보 확인'}</Text>
+        <Text numberOfLines={1} style={styles.hoursText}>{place.openingHoursText ?? place.address ?? '상세 정보 확인'}</Text>
+      </View>
+      <View style={styles.cardActions}>
+        <MotionPressable
+          accessibilityRole="button"
+          onPress={(event) => { event.stopPropagation(); void openRouteMap('naver', place); }}
+          style={styles.routeButton}
+        >
+          <Text style={styles.routeIcon}>➤</Text><Text style={styles.routeText}>길찾기</Text>
+        </MotionPressable>
+        <MotionPressable
+          accessibilityLabel={`${place.name} ${saved ? '저장 해제' : '저장'}`}
+          accessibilityRole="button"
+          onPress={(event) => { event.stopPropagation(); onToggleSaved(place); }}
+          style={styles.saveButton}
+        >
+          <Text style={[styles.saveText, saved && styles.saveTextActive]}>{saved ? '♥' : '♡'} 저장</Text>
+        </MotionPressable>
+      </View>
+    </MotionPressable>
   );
 });
 
@@ -83,7 +94,6 @@ export default function ExploreScreen() {
   const [region, setRegion] = useState<PlaceQuery['region']>('서울');
   const [district, setDistrict] = useState('전체');
   const [subregions, setSubregions] = useState<TourSubregion[]>([]);
-  const [localityInput, setLocalityInput] = useState('');
   const [locality, setLocality] = useState('');
   const [category, setCategory] = useState<PlaceQuery['category']>('전체');
   const [places, setPlaces] = useState<TourPlace[]>([]);
@@ -95,10 +105,9 @@ export default function ExploreScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [openNow, setOpenNow] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortMode, setSortMode] = useState<SortMode>('recommended');
   const [viewMode, setViewMode] = useState<ViewMode>('all');
+  const [pickerMode, setPickerMode] = useState<PickerMode>(null);
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
   useFocusEffect(useCallback(() => {
@@ -137,7 +146,6 @@ export default function ExploreScreen() {
     const normalizedLocality = nextLocality.trim();
     const cacheKey = `${nextRegion}:${nextSigunguCode}:${nextDistrict}:${normalizedLocality}:${nextCategory}:${nextPage}:${nextOpenNow ? 'open' : 'all'}:${normalizedQuery}`;
     const cached = force ? undefined : resultCacheRef.current.get(cacheKey);
-
     if (cached) {
       setError('');
       setLoading(false);
@@ -150,11 +158,18 @@ export default function ExploreScreen() {
     setLoading(true);
     setError('');
     try {
-      const pageSize = nextCategory === '맛집' && !nextOpenNow
-        ? restaurantPageSize
-        : nextOpenNow ? 12 : defaultPageSize;
       const result = await fetchTourPlaces(
-        { region: nextRegion, category: nextCategory, page: nextPage, pageSize, openNow: nextOpenNow, query: normalizedQuery, sigunguCode: nextSigunguCode, district: nextDistrict, locality: normalizedLocality },
+        {
+          region: nextRegion,
+          category: nextCategory,
+          page: nextPage,
+          pageSize: nextOpenNow ? 12 : defaultPageSize,
+          openNow: nextOpenNow,
+          query: normalizedQuery,
+          sigunguCode: nextSigunguCode,
+          district: nextDistrict,
+          locality: normalizedLocality,
+        },
         controller.signal,
       );
       if (requestIdRef.current !== requestId) return;
@@ -175,29 +190,6 @@ export default function ExploreScreen() {
     }
   };
 
-  const sortedPlaces = useMemo(() => {
-    if (sortMode === 'recommended') return places;
-    return [...places].sort((first, second) => first.name.localeCompare(second.name, 'ko-KR'));
-  }, [places, sortMode]);
-
-  const submitSearch = () => {
-    const nextQuery = searchInput.trim();
-    setSearchInput(nextQuery);
-    setSearchQuery(nextQuery);
-    void load(region, category, 1, false, openNow, nextQuery);
-  };
-
-  const clearSearch = () => {
-    setSearchInput('');
-    setSearchQuery('');
-    void load(region, category, 1, false, openNow, '');
-  };
-
-  const movePage = (nextPage: number) => {
-    if (loading || nextPage < 1 || nextPage > totalPages || nextPage === page) return;
-    void load(region, category, nextPage);
-  };
-
   const selectPlace = (place: TourPlace) => {
     setSelected(place);
     void recordRecentPlace(place);
@@ -205,7 +197,7 @@ export default function ExploreScreen() {
   };
 
   const reportPlace = (place: TourPlace) => {
-    const submit = (reason: 'incorrect_info' | 'closed' | 'wrong_location') => {
+    const submit = (reason: 'incorrect_info' | 'closed') => {
       void reportMobilePlace(place, reason)
         .then(() => Alert.alert('접수 완료', '확인 후 장소 정보에 반영하겠습니다.'))
         .catch((reportError) => Alert.alert('접수 실패', reportError instanceof Error ? reportError.message : '잠시 후 다시 시도해 주세요.'));
@@ -239,14 +231,10 @@ export default function ExploreScreen() {
 
   const toggleSaved = async (place: TourPlace) => {
     if (!session) {
-      Alert.alert(
-        '로그인이 필요합니다',
-        '로그인하면 저장한 장소와 최근 기록을 다른 기기에서도 이어서 확인할 수 있습니다.',
-        [
-          { text: '취소', style: 'cancel' },
-          { text: '로그인', onPress: () => router.push('/login') },
-        ],
-      );
+      Alert.alert('로그인이 필요합니다', '장소를 저장하려면 로그인해 주세요.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => router.push('/login') },
+      ]);
       return;
     }
     const normalized = toLibraryPlace(place);
@@ -259,8 +247,37 @@ export default function ExploreScreen() {
     });
   };
 
+  const chooseRegion = (value: typeof regions[number]) => {
+    setRegion(value);
+    setDistrict('전체');
+    setSubregions([]);
+    setLocality('');
+    setPickerMode(null);
+    if (value === '전국') {
+      void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
+      return;
+    }
+    void fetchTourSubregions(value).then((result) => {
+      setSubregions(result.subregions);
+      void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
+    }).catch(() => void load(value, category, 1, false, openNow, searchQuery, '', '', '전체'));
+  };
+
+  const chooseDistrict = (value: string) => {
+    setDistrict(value);
+    setLocality('');
+    setPickerMode(null);
+    const code = value === '전체' ? '' : subregions.find((item) => item.name === value)?.code ?? '';
+    void load(region, category, 1, false, openNow, searchQuery, code, '', value);
+  };
+
+  const movePage = (nextPage: number) => {
+    if (loading || nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+    void load(region, category, nextPage);
+  };
+
   useEffect(() => {
-    const nextRegion = regions.includes(params.region as typeof regions[number]) ? params.region as string : '서울';
+    const nextRegion = regions.includes(params.region as typeof regions[number]) ? params.region as typeof regions[number] : '서울';
     const rawCategory = params.category === '음식' ? '맛집' : params.category;
     const nextCategory = categories.includes(rawCategory as typeof categories[number]) ? rawCategory as PlaceQuery['category'] : '전체';
     const nextQuery = String(params.query ?? '').trim().slice(0, 80);
@@ -269,143 +286,172 @@ export default function ExploreScreen() {
     queueMicrotask(() => {
       setRegion(nextRegion);
       setCategory(nextCategory);
-      setSearchInput(nextQuery);
       setSearchQuery(nextQuery);
       void fetchTourSubregions(nextRegion).then((result) => {
         const nextSubregions = nextRegion === '전국' ? [] : result.subregions;
         const matched = nextSubregions.find((item) => item.name === requestedDistrict);
         setSubregions(nextSubregions);
         setDistrict(matched?.name ?? '전체');
-        setLocalityInput(matched ? requestedLocality : '');
         setLocality(matched ? requestedLocality : '');
         void load(nextRegion, nextCategory, 1, false, false, nextQuery, matched?.code ?? '', matched ? requestedLocality : '', matched?.name ?? '전체');
       }).catch(() => {
         setSubregions([]);
         setDistrict('전체');
-        setLocalityInput('');
         setLocality('');
         void load(nextRegion, nextCategory, 1, false, false, nextQuery, '', '', '전체');
       });
     });
-    // Load URL parameters once when this tab opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.category, params.district, params.locality, params.query, params.region]);
 
   useEffect(() => () => requestControllerRef.current?.abort(), []);
 
-  return <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-    <ScrollView ref={scrollRef} contentContainerStyle={[styles.container, width < 370 && styles.containerCompact]}>
-      <Text style={styles.title}>‹      장소 찾기</Text>
-      <View style={styles.filters}>
-        
-        <View style={styles.searchRow}>
-          <TextInput
-            accessibilityLabel="장소 검색"
-            onChangeText={setSearchInput}
-            onSubmitEditing={submitSearch}
-            placeholder="예: 성수 카페, 해운대 맛집"
-            placeholderTextColor="#989892"
-            returnKeyType="search"
-            style={styles.searchInput}
-            value={searchInput}
-          />
-          {searchInput ? <MotionPressable accessibilityLabel="검색어 지우기" accessibilityRole="button" onPress={clearSearch} style={styles.clearButton}><Text style={styles.clearButtonText}>×</Text></MotionPressable> : null}
-          <MotionPressable accessibilityRole="button" disabled={loading} onPress={submitSearch} style={[styles.submitButton, loading && styles.disabled]}><Text style={styles.submitButtonText}>검색</Text></MotionPressable>
+  const districtValues = ['전체', ...subregions.map((item) => item.name)];
+  const pickerValues = pickerMode === 'region' ? regions : districtValues;
+
+  return (
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.container, width < 370 && styles.containerCompact]} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}><Text style={styles.back}>‹</Text><Text style={styles.title}>장소 찾기</Text><View style={styles.headerSpacer} /></View>
+
+        <View style={styles.selectRow}>
+          <MotionPressable onPress={() => setPickerMode(pickerMode === 'region' ? null : 'region')} style={styles.selectBox}>
+            <Text style={styles.selectPlaceholder}>시·도</Text><Text numberOfLines={1} style={styles.selectValue}>{region}</Text><Text style={styles.selectArrow}>⌄</Text>
+          </MotionPressable>
+          <MotionPressable disabled={region === '전국'} onPress={() => setPickerMode(pickerMode === 'district' ? null : 'district')} style={[styles.selectBox, region === '전국' && styles.selectBoxDisabled]}>
+            <Text style={styles.selectPlaceholder}>시·군·구</Text><Text numberOfLines={1} style={styles.selectValue}>{district}</Text><Text style={styles.selectArrow}>⌄</Text>
+          </MotionPressable>
         </View>
-        <ChoiceChips label="지역" values={regions} selected={region} onSelect={(value) => {
-          setRegion(value);
-          setDistrict('전체');
-          setSubregions([]);
-          setLocalityInput('');
-          setLocality('');
-          if (value === '전국') {
-            void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
-            return;
-          }
-          void fetchTourSubregions(value).then((result) => {
-            setSubregions(result.subregions);
-            void load(value, category, 1, false, openNow, searchQuery, '', '', '전체');
-          }).catch(() => void load(value, category, 1, false, openNow, searchQuery, '', '', '전체'));
-        }} />
-        {region !== '전국' ? <ChoiceChips label="시·군·구" values={['전체', ...subregions.map((item) => item.name)]} selected={district} onSelect={(value) => {
-          setDistrict(value);
-          setLocalityInput('');
-          setLocality('');
-          const code = value === '전체' ? '' : subregions.find((item) => item.name === value)?.code ?? '';
-          void load(region, category, 1, false, openNow, searchQuery, code, '', value);
-        }} /> : null}
-        {district !== '전체' ? <View style={styles.localityFilter}><Text style={styles.localityLabel}>읍·면·동</Text><View style={styles.localityRow}><TextInput accessibilityLabel="읍면동 검색" onChangeText={(value) => setLocalityInput(value.slice(0, 40))} onSubmitEditing={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next, district); }} placeholder="예: 역삼동, 애월읍" placeholderTextColor="#989892" style={styles.localityInput} value={localityInput} /><MotionPressable onPress={() => { const next = localityInput.trim(); setLocality(next); void load(region, category, 1, false, openNow, searchQuery, subregions.find((item) => item.name === district)?.code ?? '', next, district); }} style={styles.localityButton}><Text style={styles.localityButtonText}>적용</Text></MotionPressable></View></View> : null}
-        <ChoiceChips label="카테고리" values={categories} selected={category} onSelect={(value) => {
-          const nextCategory = value as PlaceQuery['category'];
-          setCategory(nextCategory);
-          void load(region, nextCategory, 1);
-        }} />
-        
+
+        {pickerMode ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pickerRow}>
+            {pickerValues.map((value) => (
+              <MotionPressable key={value} onPress={() => pickerMode === 'region' ? chooseRegion(value as typeof regions[number]) : chooseDistrict(value)} style={[styles.pickerChip, (pickerMode === 'region' ? region === value : district === value) && styles.pickerChipActive]}>
+                <Text style={[styles.pickerChipText, (pickerMode === 'region' ? region === value : district === value) && styles.pickerChipTextActive]}>{value}</Text>
+              </MotionPressable>
+            ))}
+          </ScrollView>
+        ) : null}
+
+        <View style={styles.categoryRow}>
+          {categories.map((value) => {
+            const active = category === value;
+            return <MotionPressable key={value} onPress={() => { const next = value as PlaceQuery['category']; setCategory(next); void load(region, next, 1); }} style={[styles.categoryChip, active && styles.categoryChipActive]}><Text style={[styles.categoryText, active && styles.categoryTextActive]}>{value}</Text></MotionPressable>;
+          })}
+        </View>
+
         <MotionPressable
           accessibilityRole="checkbox"
           accessibilityState={{ checked: openNow }}
-          onPress={() => {
-            const next = !openNow;
-            setOpenNow(next);
-            void load(region, category, 1, false, next);
-          }}
-          style={[styles.openFilter, openNow && styles.openFilterActive]}
+          onPress={() => { const next = !openNow; setOpenNow(next); void load(region, category, 1, false, next); }}
+          style={styles.openRow}
         >
-          <Text style={styles.openFilterTitle}>현재 영업 중</Text><View style={[styles.toggle, openNow && styles.toggleActive]}><View style={[styles.toggleKnob, openNow && styles.toggleKnobActive]} /></View>
+          <Text style={styles.openTitle}>현재 영업 중</Text>
+          <View style={[styles.toggle, openNow && styles.toggleActive]}><View style={[styles.toggleKnob, openNow && styles.toggleKnobActive]} /></View>
         </MotionPressable>
-        <MotionPressable accessibilityRole="button" disabled={loading} onPress={() => void load(region, category, 1, true)} style={[styles.searchButton, loading && styles.disabled]}>
-          {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.searchText}>현재 조건 새로고침</Text>}
-        </MotionPressable>{error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-      <View style={styles.resultToolbar}>
+
         <View style={styles.segmentedControl}>
-          {([['all', '지도+목록'], ['map', '지도'], ['list', '목록']] as const).map(([value, label]) => <MotionPressable key={value} accessibilityRole="button" onPress={() => setViewMode(value)} style={[styles.segmentButton, viewMode === value && styles.segmentButtonActive]}><Text style={[styles.segmentButtonText, viewMode === value && styles.segmentButtonTextActive]}>{label}</Text></MotionPressable>)}
+          {([['all', '지도+목록'], ['map', '지도'], ['list', '목록']] as const).map(([value, label]) => (
+            <MotionPressable key={value} onPress={() => setViewMode(value)} style={[styles.segmentButton, viewMode === value && styles.segmentButtonActive]}><Text style={[styles.segmentText, viewMode === value && styles.segmentTextActive]}>{label}</Text></MotionPressable>
+          ))}
         </View>
-        <View style={styles.segmentedControl}>
-          {([['recommended', '추천순'], ['name', '이름순']] as const).map(([value, label]) => <MotionPressable key={value} accessibilityRole="button" onPress={() => setSortMode(value)} style={[styles.segmentButton, sortMode === value && styles.segmentButtonActive]}><Text style={[styles.segmentButtonText, sortMode === value && styles.segmentButtonTextActive]}>{label}</Text></MotionPressable>)}
-        </View>
-      </View>
-      {viewMode !== 'list' ? <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={selectPlace} /></View> : null}
-      {viewMode !== 'list' && selected ? <View style={styles.selectedCard}><Text style={styles.selectedLabel}>지도에서 선택한 장소</Text><Text style={styles.selectedTitle}>{selected.name}</Text>
-        <Text style={styles.selectedMeta}>{selected.category} · {selected.address}</Text><RouteMapChooser place={selected} /></View> : null}
-      {viewMode !== 'map' && places.length > 0 ? <View style={styles.list}>
-        <View style={styles.listHeading}><Text style={styles.listTitle}>장소 {places.length.toLocaleString('ko-KR')}곳</Text><Text style={styles.totalCount}>전체 {totalCount.toLocaleString('ko-KR')}곳</Text></View>
-        <Text style={styles.source}>출처: {sources.includes('NAVER_LOCAL') ? '네이버 지역검색 · 한국관광공사 TourAPI' : '한국관광공사 TourAPI'} · 지도: 네이버 지도</Text>
-        {totalPages > 1 ? <View style={styles.pagination}>
-          <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
-          <View style={styles.pageStatus}><Text style={styles.pageCurrent}>{page.toLocaleString('ko-KR')}</Text><Text style={styles.pageDivider}> / </Text><Text style={styles.pageTotal}>{totalPages.toLocaleString('ko-KR')}</Text></View>
-          <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
-        </View> : null}
-        {sortedPlaces.map((place) => (
-          <ExplorePlaceCard key={place.id} place={place} selected={selected?.id === place.id} saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))} onSelect={selectPlace} onOpenDetails={openDetails} onToggleSaved={toggleSaved} onReport={reportPlace} />
-        ))}
-        {totalPages > 1 ? <View style={styles.paginationBottom}>
-          <MotionPressable accessibilityRole="button" disabled={loading || page <= 1} onPress={() => movePage(page - 1)} style={[styles.pageButton, (loading || page <= 1) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>‹ 이전</Text></MotionPressable>
-          <View style={styles.pageStatus}><Text style={styles.pageCurrent}>{page.toLocaleString('ko-KR')}</Text><Text style={styles.pageDivider}> / </Text><Text style={styles.pageTotal}>{totalPages.toLocaleString('ko-KR')}</Text></View>
-          <MotionPressable accessibilityRole="button" disabled={loading || page >= totalPages} onPress={() => movePage(page + 1)} style={[styles.pageButton, (loading || page >= totalPages) && styles.pageButtonDisabled]}><Text style={styles.pageButtonText}>다음 ›</Text></MotionPressable>
-        </View> : <View style={styles.listEnd}><Text style={styles.listEndText}>조건에 맞는 장소를 모두 확인했습니다.</Text></View>}
-      </View> : null}
-    </ScrollView>
-  </SafeAreaView>;
+
+        {loading && places.length === 0 ? <View style={styles.loading}><ActivityIndicator color="#ff2f2f" /><Text style={styles.loadingText}>장소를 불러오는 중입니다.</Text></View> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        {viewMode !== 'list' ? <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={selectPlace} /></View> : null}
+
+        {viewMode !== 'map' ? (
+          <View style={styles.list}>
+            <Text style={styles.listTitle}>총 {totalCount.toLocaleString('ko-KR')}곳</Text>
+            {places.map((place, index) => (
+              <ExplorePlaceCard
+                key={place.id}
+                place={place}
+                index={index}
+                selected={selected?.id === place.id}
+                saved={savedKeys.has(libraryPlaceKey(toLibraryPlace(place)))}
+                onSelect={selectPlace}
+                onOpenDetails={openDetails}
+                onToggleSaved={toggleSaved}
+                onReport={reportPlace}
+              />
+            ))}
+            {totalPages > 1 ? (
+              <View style={styles.pagination}>
+                <MotionPressable disabled={page <= 1 || loading} onPress={() => movePage(page - 1)} style={styles.pageButton}><Text style={styles.pageText}>‹ 이전</Text></MotionPressable>
+                <Text style={styles.pageStatus}>{page} / {totalPages}</Text>
+                <MotionPressable disabled={page >= totalPages || loading} onPress={() => movePage(page + 1)} style={styles.pageButton}><Text style={styles.pageText}>다음 ›</Text></MotionPressable>
+              </View>
+            ) : null}
+            <Text style={styles.source}>출처: {sources.includes('NAVER_LOCAL') ? '네이버 지역검색 · 한국관광공사 TourAPI' : '한국관광공사 TourAPI'} · 지도: 네이버 지도</Text>
+          </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#ffffff' }, container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 8, paddingBottom: 24 }, containerCompact: { paddingHorizontal: 12 },
-  eyebrow: { display: 'none' }, title: { color: '#171717', fontSize: 18, lineHeight: 40, fontWeight: '900', textAlign: 'center' }, subtitle: { display: 'none' },
-  filters: { marginTop: 4, backgroundColor: '#ffffff' }, searchButton: { minHeight: 40, marginTop: 7, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#ff3b36' }, disabled: { opacity: 0.65 },
-  searchLabel: { marginBottom: 8, color: '#101010', fontSize: 12, fontWeight: '900' }, searchRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 9 }, searchInput: { flex: 1, minHeight: 44, borderWidth: 1, borderColor: '#dadad4', borderRadius: 14, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 14, fontSize: 13, fontWeight: '700' }, clearButton: { width: 36, height: 36, marginLeft: -47, alignItems: 'center', justifyContent: 'center', borderRadius: 18 }, clearButtonText: { color: '#71716d', fontSize: 22, fontWeight: '700' }, submitButton: { minWidth: 58, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#101010', paddingHorizontal: 12 }, submitButtonText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  localityFilter: { marginTop: 18 }, localityLabel: { marginBottom: 9, color: '#454541', fontSize: 13, fontWeight: '900' }, localityRow: { flexDirection: 'row', gap: 7 }, localityInput: { flex: 1, minHeight: 46, borderWidth: 1, borderColor: '#dadad4', borderRadius: 13, backgroundColor: '#fafaf8', color: '#101010', paddingHorizontal: 12, fontSize: 12, fontWeight: '800' }, localityButton: { minWidth: 58, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#101010' }, localityButtonText: { color: '#ffffff', fontSize: 11, fontWeight: '900' },
-  instantNote: { marginTop: 12, color: '#71716d', fontSize: 11, lineHeight: 17 },
-  openFilter: { minHeight: 34, marginTop: 7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ffffff', paddingHorizontal: 2 }, openFilterActive: { backgroundColor: '#ffffff' }, toggle: { width: 42, height: 24, justifyContent: 'center', borderRadius: 12, backgroundColor: '#d8d8d8', padding: 2 }, toggleActive: { backgroundColor: '#caff2c' }, toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#ffffff' }, toggleKnobActive: { alignSelf: 'flex-end' }, openCheck: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#cfcfc8', borderRadius: 8 }, openCheckActive: { borderColor: '#18a65a', backgroundColor: '#18a65a' }, openCheckText: { color: '#ffffff', fontSize: 13, fontWeight: '900' }, openFilterCopy: { flex: 1 }, openFilterTitle: { color: '#101010', fontSize: 12, fontWeight: '900' }, openFilterNote: { marginTop: 2, color: '#71716d', fontSize: 10 },
-  searchText: { color: '#ffffff', fontSize: 14, fontWeight: '900' }, error: { marginTop: 12, borderRadius: 12, backgroundColor: '#fff0f0', color: '#aa2f2f', padding: 12, fontSize: 12, lineHeight: 18 },
-  resultToolbar: { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }, segmentedControl: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e3e3e3', borderRadius: 11, backgroundColor: '#f7f7f7', padding: 3 }, segmentButton: { minHeight: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 9, paddingHorizontal: 10 }, segmentButtonActive: { backgroundColor: '#ff3b36' }, segmentButtonText: { color: '#71716d', fontSize: 10, fontWeight: '900' }, segmentButtonTextActive: { color: '#ffffff' },
-  mapShell: { height: 250, marginTop: 8, overflow: 'hidden', borderRadius: 0 }, selectedCard: { marginTop: 12, borderRadius: 18, backgroundColor: '#fff0ee', padding: 16 }, selectedLabel: { color: '#ff3b36', fontSize: 10, fontWeight: '900' },
-  selectedTitle: { marginTop: 4, color: '#101010', fontSize: 18, fontWeight: '900' }, selectedMeta: { marginTop: 5, marginBottom: 14, color: '#71716d', fontSize: 11, lineHeight: 17 },
-  list: { marginTop: 12 }, listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }, listTitle: { color: '#101010', fontSize: 14, fontWeight: '900' }, totalCount: { color: '#ff3b36', fontSize: 12, fontWeight: '900' }, source: { marginTop: 4, marginBottom: 8, color: '#71716d', fontSize: 11 },
-  card: { marginTop: 8, position: 'relative', borderWidth: 1, borderColor: '#e8e8e8', borderRadius: 12, backgroundColor: '#ffffff', padding: 8 }, cardSelected: { borderColor: '#ff3b36' }, cardMain: { minHeight: 94, flexDirection: 'row', borderRadius: 12 }, cardImage: { width: 88, overflow: 'hidden', borderRadius: 12 }, cardCopy: { flex: 1, minWidth: 0, paddingLeft: 12, paddingRight: 34 }, cardTitle: { color: '#101010', fontSize: 16, fontWeight: '900' }, cardMeta: { marginTop: 5, marginBottom: 7, color: '#71716d', fontSize: 10, lineHeight: 15 }, openBadge: { marginBottom: 3, color: '#14894d', fontSize: 10, fontWeight: '900' }, hoursText: { marginBottom: 7, color: '#71716d', fontSize: 10, lineHeight: 15 }, detailButton: { minHeight: 36, marginTop: 9, alignItems: 'center', justifyContent: 'center', borderRadius: 9, backgroundColor: '#fff0ee' }, detailButtonText: { color: '#d72d28', fontSize: 10, fontWeight: '900' }, saveButton: { width: 36, height: 36, position: 'absolute', top: 12, right: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#deded8', borderRadius: 18, backgroundColor: '#ffffff' }, saveButtonActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, saveIcon: { color: '#343434', fontSize: 20, fontWeight: '900' }, saveIconActive: { color: '#ffffff' },
-  reportButton: { minHeight: 42, marginTop: 8, alignItems: 'center', justifyContent: 'center' }, reportButtonText: { color: '#71716d', fontSize: 11, fontWeight: '800', textDecorationLine: 'underline' },
-  pagination: { marginTop: 14, marginBottom: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }, paginationBottom: { marginTop: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  pageButton: { minWidth: 82, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 14 }, pageButtonDisabled: { opacity: 0.38 }, pageButtonText: { color: '#101010', fontSize: 12, fontWeight: '900' },
-  pageStatus: { minWidth: 86, minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#101010', paddingHorizontal: 12 }, pageCurrent: { color: '#caff2c', fontSize: 13, fontWeight: '900' }, pageDivider: { color: '#8b8b85', fontSize: 11, fontWeight: '800' }, pageTotal: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
-  listEnd: { minHeight: 58, marginTop: 18, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#efefeb', paddingHorizontal: 18 }, listEndText: { color: '#71716d', fontSize: 12, fontWeight: '800' },
+  safeArea: { flex: 1, backgroundColor: '#ffffff' },
+  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 5, paddingBottom: 22 },
+  containerCompact: { paddingHorizontal: 10 },
+  header: { height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  back: { width: 36, color: '#1b1b1b', fontSize: 31, lineHeight: 36 },
+  title: { color: '#171717', fontSize: 18, fontWeight: '900' },
+  headerSpacer: { width: 36 },
+  selectRow: { flexDirection: 'row', gap: 8, marginTop: 3 },
+  selectBox: { flex: 1, minHeight: 43, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#dedede', borderRadius: 9, backgroundColor: '#ffffff', paddingHorizontal: 11 },
+  selectBoxDisabled: { opacity: 0.5 },
+  selectPlaceholder: { display: 'none' },
+  selectValue: { flex: 1, color: '#4d4d4d', fontSize: 12, fontWeight: '700' },
+  selectArrow: { color: '#222222', fontSize: 16 },
+  pickerRow: { gap: 6, paddingTop: 8, paddingRight: 14 },
+  pickerChip: { minHeight: 31, justifyContent: 'center', borderWidth: 1, borderColor: '#e4e4e4', borderRadius: 16, backgroundColor: '#ffffff', paddingHorizontal: 11 },
+  pickerChipActive: { borderColor: '#b6ef19', backgroundColor: '#caff2c' },
+  pickerChipText: { color: '#555555', fontSize: 10, fontWeight: '800' },
+  pickerChipTextActive: { color: '#1f2800' },
+  categoryRow: { flexDirection: 'row', gap: 7, marginTop: 10 },
+  categoryChip: { flex: 1, minHeight: 31, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 16, backgroundColor: '#f7f7f7' },
+  categoryChipActive: { borderColor: '#caff2c', backgroundColor: '#caff2c' },
+  categoryText: { color: '#4b4b4b', fontSize: 10, fontWeight: '800' },
+  categoryTextActive: { color: '#172000', fontWeight: '900' },
+  openRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 },
+  openTitle: { color: '#292929', fontSize: 11, fontWeight: '900' },
+  toggle: { width: 38, height: 22, justifyContent: 'center', borderRadius: 11, backgroundColor: '#d8d8d8', padding: 2 },
+  toggleActive: { backgroundColor: '#caff2c' },
+  toggleKnob: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#ffffff' },
+  toggleKnobActive: { alignSelf: 'flex-end' },
+  segmentedControl: { minHeight: 36, flexDirection: 'row', borderWidth: 1, borderColor: '#dedede', borderRadius: 9, backgroundColor: '#ffffff', padding: 2 },
+  segmentButton: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  segmentButtonActive: { backgroundColor: '#caff2c' },
+  segmentText: { color: '#444444', fontSize: 10, fontWeight: '800' },
+  segmentTextActive: { color: '#172000', fontWeight: '900' },
+  loading: { minHeight: 80, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  loadingText: { color: '#777777', fontSize: 11, fontWeight: '700' },
+  error: { marginTop: 8, borderRadius: 9, backgroundColor: '#fff1f1', color: '#a33232', padding: 10, fontSize: 11 },
+  mapShell: { height: 205, marginTop: 8, overflow: 'hidden', borderRadius: 0, backgroundColor: '#eef2e8' },
+  list: { marginTop: 9 },
+  listTitle: { marginBottom: 4, color: '#2a2a2a', fontSize: 11, fontWeight: '900' },
+  card: { minHeight: 102, marginTop: 7, position: 'relative', flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e4e4e4', borderRadius: 10, backgroundColor: '#ffffff', padding: 7 },
+  cardSelected: { borderColor: '#d8d8d8' },
+  cardIndex: { position: 'absolute', zIndex: 4, top: 5, left: 5, width: 20, height: 20, alignItems: 'center', justifyContent: 'center', borderRadius: 5, backgroundColor: '#ff2f2f' },
+  cardIndexText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
+  cardImage: { width: 88, height: 82, overflow: 'hidden', borderRadius: 8, backgroundColor: '#eeeeee' },
+  cardCopy: { flex: 1, minWidth: 0, paddingHorizontal: 9 },
+  cardTitle: { color: '#202020', fontSize: 14, fontWeight: '900' },
+  cardMeta: { marginTop: 5, color: '#28a64e', fontSize: 10, fontWeight: '800' },
+  hoursText: { marginTop: 4, color: '#535353', fontSize: 9, lineHeight: 13 },
+  cardActions: { width: 67, gap: 5 },
+  routeButton: { minHeight: 34, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 3, borderWidth: 1, borderColor: '#e1e1e1', borderRadius: 8, backgroundColor: '#ffffff' },
+  routeIcon: { color: '#ff2f2f', fontSize: 11, fontWeight: '900' },
+  routeText: { color: '#222222', fontSize: 9, fontWeight: '900' },
+  saveButton: { minHeight: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e1e1e1', borderRadius: 8, backgroundColor: '#ffffff' },
+  saveText: { color: '#333333', fontSize: 9, fontWeight: '800' },
+  saveTextActive: { color: '#ff2f2f' },
+  pagination: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  pageButton: { minHeight: 34, justifyContent: 'center', borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, paddingHorizontal: 12 },
+  pageText: { color: '#333333', fontSize: 10, fontWeight: '800' },
+  pageStatus: { color: '#444444', fontSize: 10, fontWeight: '900' },
+  source: { marginTop: 12, color: '#9a9a9a', fontSize: 8, textAlign: 'center' },
 });
