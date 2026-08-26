@@ -12,6 +12,11 @@ type NaverLocalItem = {
   mapy?: string;
 };
 
+type NaverSearchConfig = {
+  endpoint: string;
+  headers: Record<string, string>;
+};
+
 const FOOD_CATEGORY = /음식점|한식|중식|일식|양식|분식|뷔페|카페|베이커리|술집|요리/;
 const FOOD_QUERY: Record<string, string> = {
   전체: "맛집",
@@ -214,13 +219,45 @@ function makeQueries({
   )).slice(0, MAX_QUERIES);
 }
 
+function naverSearchConfig(): NaverSearchConfig | null {
+  const apiHubClientId = process.env.NAVER_API_HUB_CLIENT_ID?.trim();
+  const apiHubClientSecret = process.env.NAVER_API_HUB_CLIENT_SECRET?.trim();
+  if (apiHubClientId && apiHubClientSecret) {
+    return {
+      endpoint: "https://naverapihub.apigw.ntruss.com/search/v1/local",
+      headers: {
+        "X-NCP-APIGW-API-KEY-ID": apiHubClientId,
+        "X-NCP-APIGW-API-KEY": apiHubClientSecret,
+      },
+    };
+  }
+
+  const legacyCredentialPairs = [
+    [process.env.NAVER_SEARCH_CLIENT_ID, process.env.NAVER_SEARCH_CLIENT_SECRET],
+    [process.env.NAVER_CLIENT_ID, process.env.NAVER_CLIENT_SECRET],
+  ] as const;
+  for (const [rawClientId, rawClientSecret] of legacyCredentialPairs) {
+    const clientId = rawClientId?.trim();
+    const clientSecret = rawClientSecret?.trim();
+    if (!clientId || !clientSecret) continue;
+    return {
+      endpoint: "https://openapi.naver.com/v1/search/local.json",
+      headers: {
+        "X-Naver-Client-Id": clientId,
+        "X-Naver-Client-Secret": clientSecret,
+      },
+    };
+  }
+
+  return null;
+}
+
 async function searchNaver(
   query: string,
   sort: "random" | "comment",
-  clientId: string,
-  clientSecret: string,
+  config: NaverSearchConfig,
 ) {
-  const url = new URL("https://openapi.naver.com/v1/search/local.json");
+  const url = new URL(config.endpoint);
   url.searchParams.set("query", query);
   url.searchParams.set("display", "5");
   url.searchParams.set("sort", sort);
@@ -229,10 +266,7 @@ async function searchNaver(
   const timeout = setTimeout(() => controller.abort(), 6_000);
   try {
     const response = await fetch(url, {
-      headers: {
-        "X-Naver-Client-Id": clientId,
-        "X-Naver-Client-Secret": clientSecret,
-      },
+      headers: config.headers,
       cache: "no-store",
       signal: controller.signal,
     });
@@ -270,9 +304,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "금액대를 선택해 주세요." }, { status: 400 });
   }
 
-  const clientId = process.env.NAVER_SEARCH_CLIENT_ID?.trim() || process.env.NAVER_CLIENT_ID?.trim();
-  const clientSecret = process.env.NAVER_SEARCH_CLIENT_SECRET?.trim() || process.env.NAVER_CLIENT_SECRET?.trim();
-  if (!clientId || !clientSecret) {
+  const searchConfig = naverSearchConfig();
+  if (!searchConfig) {
     return NextResponse.json(
       { error: "네이버 지역검색 API 설정이 필요합니다." },
       { status: 503, headers: { "Cache-Control": "private, no-store, max-age=0" } },
@@ -293,7 +326,7 @@ export async function GET(request: NextRequest) {
       const batch = await Promise.allSettled(
         searches
           .slice(offset, offset + QUERY_BATCH_SIZE)
-          .map(({ query, sort }) => searchNaver(query, sort, clientId, clientSecret)),
+          .map(({ query, sort }) => searchNaver(query, sort, searchConfig)),
       );
       for (const result of batch) {
         if (result.status === "rejected") {
