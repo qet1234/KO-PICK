@@ -152,7 +152,7 @@ export default function HomeAppDiscovery() {
         </a>
 
         <div className="kp-app-feature-cards">
-          <a href="/recommend"><span>⌁</span><strong>코스 설정</strong><small>테마 맞춤 코스로 알차게 여행하기</small></a>
+          <a href="/recommend"><span aria-hidden="true">🗺️</span><strong>코스 설정</strong><small>테마 맞춤 코스로 알차게 여행하기</small></a>
           <a className="is-office" href="/office-dining"><span>▣</span><strong>직장인 식사</strong><small>빠르고 간편하게 점심·회식 찾기</small></a>
           <a href="#seasonal-foods"><span>✿</span><strong>사계절 추천</strong><small>계절마다 꼭 맞는 장소를 추천해요</small></a>
         </div>
