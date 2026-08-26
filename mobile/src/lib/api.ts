@@ -9,6 +9,7 @@ export type TourPlace = {
   city: string | null;
   category: string;
   address: string | null;
+  phone?: string | null;
   latitude: number;
   longitude: number;
   imageUrl: string | null;

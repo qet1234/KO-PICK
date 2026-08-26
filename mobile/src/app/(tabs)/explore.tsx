@@ -217,6 +217,7 @@ export default function ExploreScreen() {
         name: place.name,
         category: place.category,
         address: place.address ?? '',
+        phone: place.phone ?? '',
         latitude: String(place.latitude),
         longitude: String(place.longitude),
         imageUrl: place.imageUrl ?? place.imageThumbnailUrl ?? '',

@@ -6,12 +6,16 @@ export function PlaceImage({
   attribution,
   copyrightCode,
   modificationAllowed,
+  height = 160,
+  borderRadius = 14,
 }: {
   name: string;
   imageUrl: string | null;
   attribution: string | null;
   copyrightCode: 'Type1' | 'Type3' | null;
   modificationAllowed: boolean;
+  height?: number;
+  borderRadius?: number;
 }) {
   const visible = Boolean(
     imageUrl && attribution && (copyrightCode === 'Type1' || copyrightCode === 'Type3'),
@@ -19,13 +23,13 @@ export function PlaceImage({
   if (!visible) return null;
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { borderRadius }]}>
       <Image
         accessibilityLabel={`${name} 대표 사진`}
         alt={`${name} 대표 사진`}
         source={{ uri: imageUrl ?? '' }}
         resizeMode={modificationAllowed ? 'cover' : 'contain'}
-        style={styles.image}
+        style={[styles.image, { height }]}
       />
       <Text numberOfLines={1} style={styles.attribution}>{attribution}</Text>
     </View>
@@ -34,7 +38,7 @@ export function PlaceImage({
 
 const styles = StyleSheet.create({
   wrapper: { overflow: 'hidden', borderRadius: 14, backgroundColor: '#eee9dd' },
-  image: { width: '100%', height: 160 },
+  image: { width: '100%' },
   attribution: {
     position: 'absolute',
     right: 6,
