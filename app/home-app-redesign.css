@@ -362,24 +362,54 @@
   display: none;
 }
 
+.kp-mobile-alert,
+.kp-app-mobile-region,
+.kp-app-weather {
+  display: none;
+}
+
 @media (max-width: 760px) {
+  .korea-pick-home {
+    min-height: calc(100vh - 64px);
+    background: #fff;
+  }
+
+  .korea-pick-home .kp-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
   .korea-pick-home .kp-header-inner {
-    min-height: 64px;
-    padding: 0 17px;
+    width: 100%;
+    min-height: 58px;
+    padding: 0 16px;
   }
 
   .korea-pick-home .kp-brand-mark {
-    width: 36px;
-    height: 36px;
+    display: none;
   }
 
   .korea-pick-home .kp-brand span {
     font-size: 25px;
+    font-weight: 950;
   }
 
   .korea-pick-home .kp-navigation,
-  .korea-pick-home .kp-header-service-buttons {
+  .korea-pick-home .kp-header-service-buttons,
+  .korea-pick-home .header-auth-buttons,
+  .korea-pick-home .header-user {
     display: none;
+  }
+
+  .kp-mobile-alert {
+    width: 38px;
+    height: 38px;
+    margin-left: auto;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #171717;
   }
 
   .kp-home-app {
@@ -390,46 +420,96 @@
     width: 100%;
     border: 0;
     border-radius: 0;
-    padding: 14px 16px 24px;
+    padding: 5px 16px 22px;
     box-shadow: none;
   }
 
-  .kp-app-location-row span {
+  .kp-app-location-help,
+  .kp-app-desktop-location {
     display: none;
   }
 
+  .kp-app-location-row {
+    min-height: 31px;
+    font-size: 11px;
+  }
+
+  .kp-app-mobile-region {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #111;
+  }
+
+  .kp-app-mobile-region > span {
+    display: inline;
+    color: #111;
+    font-size: 11px;
+  }
+
+  .kp-app-mobile-region select {
+    max-width: 150px;
+    border: 0;
+    outline: 0;
+    color: #222;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .kp-app-weather {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #383838;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .kp-app-weather b { font-size: 17px; }
+
   .kp-app-search {
-    min-height: 52px;
-    margin-top: 14px;
-    border-radius: 12px;
-    padding-left: 13px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    min-height: 42px;
+    margin-top: 4px;
+    border-radius: 9px;
+    padding: 2px 10px;
+    background: #fafafa;
   }
 
   .kp-app-search button {
-    min-height: 40px;
-    padding: 0 14px;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .kp-app-search input {
+    padding: 0 5px;
+    font-size: 12px;
   }
 
   .kp-app-region-selects {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .kp-app-region-selects label:last-child {
-    grid-column: 1 / -1;
+    display: none;
   }
 
   .kp-app-block {
-    margin-top: 22px;
+    margin-top: 15px;
   }
+
+  .kp-app-block h2 { margin-bottom: 8px; font-size: 13px; }
 
   .kp-app-relationships {
     gap: 7px;
   }
 
   .kp-app-relationships a {
-    min-height: 43px;
+    min-height: 36px;
     gap: 5px;
-    border-radius: 11px;
+    border-radius: 9px;
   }
 
   .kp-app-relationships span {
@@ -437,7 +517,7 @@
   }
 
   .kp-app-relationships strong {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .kp-app-categories {
@@ -445,9 +525,9 @@
   }
 
   .kp-app-categories a > span {
-    width: 58px;
-    height: 58px;
-    font-size: 23px;
+    width: 48px;
+    height: 48px;
+    font-size: 21px;
   }
 
   .kp-app-categories strong {
@@ -455,14 +535,25 @@
   }
 
   .kp-app-map-preview {
-    min-height: 190px;
-    margin-top: 23px;
-    border-radius: 15px;
+    min-height: 128px;
+    margin-top: 18px;
+    border-radius: 10px;
   }
 
+  .kp-app-map-preview > div {
+    top: 9px;
+    left: 9px;
+    padding: 7px 9px;
+    border-radius: 8px;
+  }
+
+  .kp-app-map-preview strong { font-size: 11px; }
+  .kp-app-map-preview div span { display: none; }
+
   .kp-app-map-preview .pin {
-    width: 28px;
-    height: 34px;
+    width: 23px;
+    height: 28px;
+    font-size: 9px;
   }
 
   .kp-app-feature-cards {
@@ -470,9 +561,9 @@
   }
 
   .kp-app-feature-cards a {
-    min-height: 136px;
-    border-radius: 14px;
-    padding: 13px;
+    min-height: 142px;
+    border-radius: 10px;
+    padding: 11px;
   }
 
   .kp-app-feature-cards strong {
@@ -480,7 +571,17 @@
   }
 
   .kp-app-feature-cards small {
-    font-size: 9px;
+    font-size: 8px;
+  }
+
+  .kp-app-feature-cards a > span { font-size: 23px; }
+
+  .kp-home-app .kp-home-popular,
+  .korea-pick-home #journeys,
+  .korea-pick-home #seasonal-foods,
+  .korea-pick-home .kp-footer,
+  .korea-pick-home + .kp-legal-footer {
+    display: none;
   }
 
   .korea-pick-home .kp-hero,
@@ -493,4 +594,3 @@
     margin-bottom: 0;
   }
 }
-

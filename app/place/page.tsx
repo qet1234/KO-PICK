@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PlaceDetailView, { type PlaceDetailData } from "@/components/PlaceDetailView";
 import "./place-detail.css";
+import "./place-detail-mockup.css";
 
 export const metadata: Metadata = {
   title: "장소 상세 | 오늘어디",
@@ -30,6 +31,7 @@ export default async function PlacePage({ searchParams }: { searchParams: Search
     imageModificationAllowed: value(params, "imageModificationAllowed") === "1",
     openingHoursText: value(params, "openingHoursText"),
     openingState: openingState === "open" || openingState === "closed" ? openingState : "unknown",
+    phone: value(params, "phone"),
   };
 
   return <PlaceDetailView place={place} />;

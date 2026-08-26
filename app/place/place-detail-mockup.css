@@ -1,0 +1,23 @@
+.kp-detail-actions a,
+.kp-detail-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kp-detail-actions span {
+  font-size: 10px;
+}
+
+@media (max-width: 720px) {
+  .kp-detail-topbar { height: 56px; }
+  .kp-detail-hero { height: 235px; }
+  .kp-detail-summary { padding: 14px; }
+  .kp-detail-summary h1 { font-size: 24px; }
+  .kp-detail-info-grid { padding: 12px 14px; }
+  .kp-detail-info-grid article { min-height: 92px; padding: 10px; }
+  .kp-detail-map-preview { height: 126px; }
+  .kp-detail-primary-action { min-height: 48px; border-radius: 10px; }
+}

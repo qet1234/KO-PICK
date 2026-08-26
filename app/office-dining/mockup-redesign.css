@@ -4,6 +4,11 @@
   color: #171717;
 }
 
+.od-mobile-title,
+.od-mobile-back,
+.od-mobile-quick-filters,
+.od-place-thumb { display: none; }
+
 .od-header {
   border-bottom: 1px solid #e8e8e8;
   background: rgba(255, 255, 255, 0.97);
@@ -136,19 +141,31 @@
     position: sticky;
     top: 0;
     z-index: 40;
-    min-height: 60px;
+    width: 100%;
+    min-height: 56px;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    padding: 0 8px;
   }
 
   .od-back {
     display: none;
   }
 
+  .od-brand {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    font-size: 0;
+  }
+
+  .od-brand > span { display: none; }
+  .od-mobile-back { display: grid; place-items: center; font-style: normal; }
+  .od-mobile-title { display: block; text-align: center; font-size: 18px; }
+
   .od-hero {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
-    padding: 18px 16px 12px;
-    box-shadow: none;
+    display: none;
   }
 
   .od-hero-copy p,
@@ -167,7 +184,7 @@
     margin: 0;
     border: 0;
     border-radius: 0;
-    padding: 10px 14px 18px;
+    padding: 8px 14px 14px;
     box-shadow: none;
   }
 
@@ -176,17 +193,21 @@
   }
 
   .od-mode-tabs button {
-    min-height: 50px;
-    border-radius: 11px;
-    padding: 9px;
+    min-height: 42px;
+    border-radius: 8px;
+    padding: 7px;
+    align-items: center;
+    text-align: center;
   }
+
+  .od-mode-tabs button strong { font-size: 13px; }
 
   .od-mode-tabs button span {
     display: none;
   }
 
   .od-builder-heading {
-    margin-top: 14px;
+    display: none;
   }
 
   .od-builder-heading h2 {
@@ -194,8 +215,7 @@
   }
 
   .od-form-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
+    display: none;
   }
 
   .od-form-grid label > span,
@@ -214,8 +234,41 @@
     grid-column: auto;
   }
 
+  .od-mobile-quick-filters {
+    margin-top: 9px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .od-mobile-quick-filters label {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+    padding: 8px 9px;
+    border: 1px solid #e4e4e4;
+    border-radius: 9px;
+    background: #fff;
+  }
+
+  .od-mobile-quick-filters span {
+    color: #868686;
+    font-size: 9px;
+  }
+
+  .od-mobile-quick-filters select {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #171717;
+    font-size: 10px;
+    font-weight: 850;
+  }
+
   .od-choice-group {
-    margin-top: 13px;
+    display: none;
   }
 
   .od-choice-group > div {
@@ -232,12 +285,14 @@
   }
 
   .od-actions {
-    margin-top: 16px;
+    margin-top: 9px;
+    display: block;
   }
 
   .od-search-button {
-    min-height: 50px;
-    border-radius: 11px;
+    width: 100%;
+    min-height: 44px;
+    border-radius: 8px;
   }
 
   .od-kakao-share,
@@ -262,6 +317,10 @@
     box-shadow: none;
   }
 
+  .od-map-panel { display: none; }
+
+  .od-list-panel { padding-top: 9px; }
+
   .od-map {
     min-height: 260px;
     border-radius: 14px;
@@ -269,19 +328,46 @@
 
   .od-list-heading h2,
   .od-map-heading h2 {
-    font-size: 18px;
+    font-size: 13px;
   }
+
+  .od-list-heading small { display: none; }
 
   .od-place-card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 10px;
+    grid-template-columns: minmax(0, 1fr) 72px;
+    gap: 7px;
+    padding: 7px;
+    min-height: 92px;
+  }
+
+  .od-place-main {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 9px;
+    align-items: center;
+    position: relative;
+    text-align: left;
+  }
+
+  .od-place-thumb {
+    width: 74px;
+    height: 74px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: radial-gradient(circle at 45% 40%, #f7ca75, #b76832 68%, #58321e);
+    font-size: 31px;
   }
 
   .od-place-number {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 8px;
+    border-radius: 6px 0 6px 0;
   }
 
   .od-place-copy strong {
@@ -291,5 +377,17 @@
   .od-place-actions {
     flex-direction: column;
   }
-}
 
+  .od-place-actions a,
+  .od-place-actions button {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 8px;
+    font-size: 9px;
+  }
+
+  .od-place-copy > span { font-size: 9px; }
+}

@@ -4,6 +4,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { springApiUrl } from "@/utils/spring-api";
 import { trackKeywordSearch } from "@/utils/trackKeywordSearch";
 import { koreaRegionDistricts, koreaRegions } from "@/utils/korea-region-districts";
+import AppIcon from "@/components/AppIcon";
 
 type TrendingPlace = {
   id: string;
@@ -107,10 +108,24 @@ export default function HomeAppDiscovery() {
   return (
     <section className="kp-home-app" aria-label="장소 빠른 검색">
       <div className="kp-container">
-        <div className="kp-app-location-row"><strong>● {locationLabel || "전국"}</strong><span>원하는 지역의 장소를 찾아보세요</span></div>
+        <div className="kp-app-location-row">
+          <label className="kp-app-mobile-region">
+            <span aria-hidden="true">●</span>
+            <select
+              aria-label="홈 지역 선택"
+              value={region}
+              onChange={(event) => { setRegion(event.target.value); setDistrict("전체"); setLocality(""); }}
+            >
+              {koreaRegions.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+          <strong className="kp-app-desktop-location">● {locationLabel || "전국"}</strong>
+          <span className="kp-app-location-help">원하는 지역의 장소를 찾아보세요</span>
+          <span className="kp-app-weather"><b aria-hidden="true">☀️</b> 24° 맑음</span>
+        </div>
 
         <form className="kp-app-search" onSubmit={submitSearch} role="search">
-          <span aria-hidden="true">⌕</span>
+          <span aria-hidden="true"><AppIcon name="search" size={20} /></span>
           <input aria-label="지역 또는 음식점명 검색" onChange={(event) => setQuery(event.target.value)} placeholder="어디로 떠나볼까요?" type="search" value={query} />
           <button type="submit">검색</button>
         </form>
@@ -152,4 +167,3 @@ export default function HomeAppDiscovery() {
     </section>
   );
 }
-

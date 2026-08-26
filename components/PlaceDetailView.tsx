@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import AppIcon from "@/components/AppIcon";
 import { naverMapSearchUrl } from "@/utils/naver-maps";
 import {
   PlaceLibraryLoginRequiredError,
@@ -22,6 +23,7 @@ export interface PlaceDetailData {
   imageModificationAllowed: boolean;
   openingHoursText: string;
   openingState: "open" | "closed" | "unknown";
+  phone: string;
 }
 
 function DetailFallback() {
@@ -84,9 +86,9 @@ export default function PlaceDetailView({ place }: { place: PlaceDetailData }) {
   return (
     <main className="kp-place-detail-page">
       <header className="kp-detail-topbar">
-        <Link href="/explore" aria-label="장소 찾기로 돌아가기">←</Link>
+        <Link href="/explore" aria-label="장소 찾기로 돌아가기"><AppIcon name="back" size={24} /></Link>
         <strong>장소 상세</strong>
-        <button type="button" onClick={() => void sharePlace()} aria-label="장소 공유">↗</button>
+        <button type="button" onClick={() => void sharePlace()} aria-label="장소 공유"><AppIcon name="share" size={21} /></button>
       </header>
 
       <section className="kp-detail-hero">
@@ -125,7 +127,7 @@ export default function PlaceDetailView({ place }: { place: PlaceDetailData }) {
       <section className="kp-detail-info-grid">
         <article><small>카테고리</small><strong>{place.category}</strong></article>
         <article><small>영업시간</small><strong>{place.openingHoursText || "공식 정보 확인 필요"}</strong></article>
-        <article><small>전화</small><strong>전화번호 정보 없음</strong></article>
+        <article><small>전화</small><strong>{place.phone || "공공데이터 번호 없음"}</strong></article>
       </section>
 
       <section className="kp-detail-map-preview" aria-label="찾아가는 길 미리보기">
@@ -133,10 +135,10 @@ export default function PlaceDetailView({ place }: { place: PlaceDetailData }) {
       </section>
 
       <section className="kp-detail-actions">
-        <a href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">길찾기</a>
-        <a href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">지도</a>
-        <button type="button" onClick={() => void savePlace()}>저장</button>
-        <button type="button" onClick={() => void sharePlace()}>공유</button>
+        <a href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer"><AppIcon name="route" size={20} /><span>길찾기</span></a>
+        {place.phone ? <a href={`tel:${place.phone.replace(/[^0-9+]/g, "")}`}><AppIcon name="phone" size={20} /><span>전화</span></a> : <a href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer"><AppIcon name="search" size={20} /><span>지도</span></a>}
+        <button type="button" onClick={() => void savePlace()}><AppIcon name="bookmark" size={20} /><span>저장</span></button>
+        <button type="button" onClick={() => void sharePlace()}><AppIcon name="share" size={20} /><span>공유</span></button>
       </section>
       <a className="kp-detail-primary-action" href={naverMapSearchUrl(place.name, place.address, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">네이버 지도로 길찾기</a>
     </main>

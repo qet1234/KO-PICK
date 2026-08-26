@@ -1,6 +1,7 @@
 import AuthHeader from "@/components/AuthHeader";
 import Image from "next/image";
 import HomeAppDiscovery from "@/components/HomeAppDiscovery";
+import AppIcon from "@/components/AppIcon";
 import HeroWeatherDashboard from "@/components/HeroWeatherDashboard";
 import SeasonalFoodList from "@/components/SeasonalFoodList";
 import "./home.css";
@@ -48,6 +49,9 @@ export default function Home() {
             </a>
           </div>
           <AuthHeader />
+          <a className="kp-mobile-alert" href="/account" aria-label="알림과 내 계정">
+            <AppIcon name="bell" size={21} />
+          </a>
         </div>
       </header>
 

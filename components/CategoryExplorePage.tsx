@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLocationPin from "@/components/BrandLocationPin";
+import AppIcon from "@/components/AppIcon";
 import { trackPlaceActivity } from "@/utils/trackPlaceActivity";
 import { reportPlaceInformation, trackOperationEvent } from "@/utils/operations-telemetry";
 import { isClientFeatureEnabled } from "@/utils/feature-flags-client";
@@ -51,6 +52,7 @@ interface Place {
   openingHoursText?: string | null;
   restDayText?: string | null;
   breakTimeText?: string | null;
+  phone?: string | null;
   source?: "TOUR_API" | "NAVER_LOCAL";
 }
 
@@ -842,10 +844,13 @@ export default function CategoryExplorePage({
   return (
     <main className="kp-explore-page">
       <header className="kp-explore-header">
-        <a href="/" className="kp-explore-brand" aria-label="오늘어디 홈">
+        <a href="/" className="kp-explore-brand" aria-label="홈으로 돌아가기">
           <span aria-hidden="true"><BrandLocationPin /></span>
           <strong>오늘어디</strong>
+          <i className="kp-explore-mobile-back"><AppIcon name="back" size={24} /></i>
         </a>
+
+        <strong className="kp-explore-mobile-title">장소 찾기</strong>
 
         <div>
           <small>PLACE EXPLORER</small>
@@ -1113,6 +1118,19 @@ export default function CategoryExplorePage({
               <span aria-hidden="true">✓</span>
               <div><strong>현재 영업 중</strong><small>공식 운영시간이 확인된 장소만 표시</small></div>
             </label>
+
+            <div className="kp-explore-mobile-view-toggle" aria-label="장소 보기 방식">
+              {(["split", "map", "list"] as ViewMode[]).map((mode) => (
+                <button
+                  className={viewMode === mode ? "is-active" : ""}
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  type="button"
+                >
+                  {mode === "split" ? "지도+목록" : mode === "list" ? "목록" : "지도"}
+                </button>
+              ))}
+            </div>
           </section>
 
           <div className="kp-explore-summary" aria-live="polite">
@@ -1214,6 +1232,7 @@ export default function CategoryExplorePage({
                         imageModificationAllowed: place.imageModificationAllowed ? "1" : "0",
                         openingHoursText: place.openingHoursText ?? "",
                         openingState: place.openingState ?? "unknown",
+                        phone: place.phone ?? "",
                       }).toString()}`}
                       onClick={() => void recordRecentPlace(place)}
                     >

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import BrandLocationPin from "@/components/BrandLocationPin";
+import AppIcon from "@/components/AppIcon";
 import { koreaRegionDistricts } from "@/utils/korea-region-districts";
 import { shareCourseOnKakao } from "@/utils/kakao-share";
 import {
@@ -383,7 +384,9 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
         <a className="od-brand" href="/" aria-label="오늘어디 홈">
           <span aria-hidden="true"><BrandLocationPin /></span>
           오늘어디
+          <i className="od-mobile-back"><AppIcon name="back" size={24} /></i>
         </a>
+        <strong className="od-mobile-title">직장인 식사</strong>
         <a className="od-back" href="/">홈으로</a>
       </header>
 
@@ -420,6 +423,27 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
           <span className="od-live-badge">네이버 지도 연동</span>
         </div>
 
+        <div className="od-mobile-quick-filters">
+          <label>
+            <span>인원</span>
+            <select value={headcount} onChange={(event) => setHeadcount(event.target.value)}>
+              {headcounts.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>음식 종류</span>
+            <select value={foodType} onChange={(event) => { setFoodType(event.target.value); setFoodDetail("전체"); }}>
+              {foodTypes.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>금액대</span>
+            <select value={budget} onChange={(event) => setBudget(event.target.value)}>
+              {budgets.map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+        </div>
+
         <div className="od-form-grid">
           <label><span>시·도</span><select value={region} onChange={(event) => { setRegion(event.target.value); setDistrict("전체"); }}>{regions.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label><span>시·군·구</span><select value={district} onChange={(event) => setDistrict(event.target.value)}><option value="전체">{region} 전체</option>{districts.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -443,7 +467,7 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
 
         <div className="od-actions">
           <button className="od-search-button" type="button" disabled={loading} onClick={() => void search()}>
-            {loading ? "식당을 찾고 있어요…" : `${mode} 장소 찾아보기`}
+            {loading ? "식당을 찾고 있어요…" : "조건에 맞는 장소 찾기"}
           </button>
           <button className="od-kakao-share" type="button" disabled={sharing} onClick={() => void shareDining()}>
             {sharing ? "공유 준비 중…" : `${mode === "회식" ? "회식" : "점심"} 조건 카카오톡 공유`}
@@ -469,12 +493,13 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
             {places.map((place, index) => (
               <article className={selectedId === place.id ? "od-place-card is-selected" : "od-place-card"} key={place.id}>
                 <button className="od-place-main" type="button" onClick={() => focusPlace(place)}>
+                  <span className="od-place-thumb" aria-hidden="true">🍲</span>
                   <span className="od-place-number">{String(index + 1).padStart(2, "0")}</span>
                   <span className="od-place-copy"><small>{place.category}</small><strong>{place.name}</strong><span>{place.address ?? `${place.region} ${place.city ?? ""}`}</span></span>
                 </button>
                 <div className="od-place-actions">
-                  <a href={naverMapSearchUrl(place.name, null, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer">음식점명으로 보기</a>
-                  <button type="button" onClick={() => startNaverRoute(place)}>네이버 길찾기</button>
+                  <a href={naverMapSearchUrl(place.name, null, place.latitude, place.longitude)} target="_blank" rel="noopener noreferrer"><AppIcon name="search" size={14} /> 장소보기</a>
+                  <button type="button" onClick={() => startNaverRoute(place)}><AppIcon name="route" size={14} /> 길찾기</button>
                 </div>
               </article>
             ))}
