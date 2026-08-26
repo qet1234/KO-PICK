@@ -73,13 +73,6 @@ export default function HomeScreen() {
           <MotionPressable accessibilityRole="button" onPress={searchRestaurants} style={styles.searchButton}><Text style={styles.searchButtonText}>검색</Text></MotionPressable>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.regionRow}>
-          {homeRegions.map((item) => <MotionPressable accessibilityRole="button" key={item} onPress={() => { setRegion(item); setDistrict('전체'); setLocality(''); }} style={[styles.regionChip, region === item && styles.regionChipActive]}><Text style={[styles.regionChipText, region === item && styles.regionChipTextActive]}>{item}</Text></MotionPressable>)}
-        </ScrollView>
-        {region !== '전국' ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.districtRow}>
-          {['전체', ...(koreaRegionDistricts[region] ?? [])].map((item) => <MotionPressable accessibilityRole="button" key={item} onPress={() => { setDistrict(item); setLocality(''); }} style={[styles.districtChip, district === item && styles.districtChipActive]}><Text style={[styles.districtChipText, district === item && styles.districtChipTextActive]}>{item === '전체' ? region + ' 전체' : item}</Text></MotionPressable>)}
-        </ScrollView> : null}
-        {district !== '전체' ? <TextInput accessibilityLabel="읍면동 입력" onChangeText={(value) => setLocality(value.slice(0, 40))} placeholder="읍·면·동 입력 (예: 역삼동)" placeholderTextColor="#9a9a9a" style={styles.localityInput} value={locality} /> : null}
 
         <Text style={styles.sectionTitle}>누구와 함께?</Text>
         <View style={styles.relationshipRow}>
