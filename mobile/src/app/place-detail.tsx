@@ -96,25 +96,24 @@ export default function PlaceDetailScreen() {
           <View style={styles.titleRow}>
             <View style={styles.titleCopy}>
               <Text style={styles.title}>{place.name}</Text>
-              <Text style={styles.category}>{place.category}</Text>
+              <Text style={styles.open}>{place.openingState === 'open' ? '영업 중' : place.category} · {place.openingHoursText ?? '운영시간 확인 필요'}</Text>
             </View>
             <MotionPressable accessibilityLabel={saved ? '찜 해제' : '찜하기'} onPress={() => void savePlace()} style={[styles.bookmark, saved && styles.bookmarkActive]}><Text style={[styles.bookmarkText, saved && styles.bookmarkTextActive]}>{saved ? '♥' : '♡'}</Text></MotionPressable>
           </View>
           <Text style={styles.address}>● {place.address ?? '주소 정보가 없습니다.'}</Text>
-          {place.openingState === 'open' ? <Text style={styles.open}>● 현재 영업 중</Text> : null}
         </View>
 
         <View style={styles.tabs}>
           <Text style={[styles.tab, styles.tabActive]}>정보</Text>
-          <Text style={styles.tab}>영업시간</Text>
-          <Text style={styles.tab}>편의정보</Text>
+          <Text style={styles.tab}>메뉴</Text>
+          <Text style={styles.tab}>리뷰</Text>
           <Text style={styles.tab}>사진</Text>
         </View>
 
         <View style={styles.infoGrid}>
-          <View style={styles.infoCard}><Text style={styles.infoLabel}>카테고리</Text><Text style={styles.infoValue}>{place.category}</Text></View>
-          <View style={styles.infoCard}><Text style={styles.infoLabel}>영업시간</Text><Text style={styles.infoValue}>{place.openingHoursText ?? '공식 영업시간 확인 필요'}</Text></View>
-          <View style={styles.infoCard}><Text style={styles.infoLabel}>전화</Text><Text style={styles.infoValue}>전화번호 정보 없음</Text></View>
+          <View style={styles.infoCard}><Text style={styles.infoLabel}>대표 정보</Text><Text style={styles.infoValue}>{place.category}</Text></View>
+          <View style={styles.infoCard}><Text style={styles.infoLabel}>영업시간</Text><Text style={styles.infoValue}>{place.openingHoursText ?? '공식 정보 확인 필요'}</Text></View>
+          <View style={styles.infoCard}><Text style={styles.infoLabel}>편의정보</Text><Text style={styles.infoValue}>상세 정보에서 확인</Text></View>
         </View>
 
         <View style={styles.mapPreview}>
@@ -134,38 +133,38 @@ export default function PlaceDetailScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingBottom: 28 },
+  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingBottom: 28 },
   header: { minHeight: 58, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14 },
   headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
   headerButtonText: { color: '#171717', fontSize: 34, lineHeight: 36 },
   headerShare: { color: '#171717', fontSize: 23, fontWeight: '900' },
   headerTitle: { color: '#171717', fontSize: 17, fontWeight: '900' },
-  heroImage: { height: 260, overflow: 'hidden', backgroundColor: '#f0f0f0' },
-  summary: { paddingHorizontal: 16, paddingTop: 17 },
+  heroImage: { height: 205, overflow: 'hidden', backgroundColor: '#f0f0f0' },
+  summary: { paddingHorizontal: 16, paddingTop: 13 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   titleCopy: { flex: 1 },
-  title: { color: '#171717', fontSize: 25, fontWeight: '900', letterSpacing: -0.8 },
+  title: { color: '#171717', fontSize: 23, fontWeight: '900', letterSpacing: -0.8 },
   category: { marginTop: 5, color: '#ff3b36', fontSize: 12, fontWeight: '900' },
-  bookmark: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e1e1e1', borderRadius: 21 },
+  bookmark: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e1e1e1', borderRadius: 18 },
   bookmarkActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' },
   bookmarkText: { color: '#222222', fontSize: 22, fontWeight: '900' },
   bookmarkTextActive: { color: '#ffffff' },
   address: { marginTop: 10, color: '#5f5f5f', fontSize: 12, lineHeight: 18 },
   open: { marginTop: 7, color: '#12924e', fontSize: 12, fontWeight: '900' },
-  tabs: { marginTop: 19, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e7e7e7', paddingHorizontal: 16 },
+  tabs: { marginTop: 13, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#e7e7e7', paddingHorizontal: 16 },
   tab: { flex: 1, paddingVertical: 13, color: '#7a7a7a', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   tabActive: { borderBottomWidth: 2, borderBottomColor: '#171717', color: '#171717' },
   infoGrid: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 15 },
-  infoCard: { flex: 1, minHeight: 105, borderWidth: 1, borderColor: '#e7e7e7', borderRadius: 13, backgroundColor: '#fafafa', padding: 11 },
+  infoCard: { flex: 1, minHeight: 92, borderWidth: 1, borderColor: '#e7e7e7', borderRadius: 13, backgroundColor: '#fafafa', padding: 11 },
   infoLabel: { color: '#7a7a7a', fontSize: 10, fontWeight: '800' },
   infoValue: { marginTop: 8, color: '#242424', fontSize: 11, lineHeight: 16, fontWeight: '800' },
-  mapPreview: { height: 150, marginHorizontal: 16, marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#dce2da', borderRadius: 14, backgroundColor: '#edf3e8' },
+  mapPreview: { height: 120, marginHorizontal: 16, marginTop: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#dce2da', borderRadius: 14, backgroundColor: '#edf3e8' },
   mapLabel: { position: 'absolute', zIndex: 3, top: 11, left: 11, borderRadius: 9, backgroundColor: '#ffffff', color: '#171717', paddingHorizontal: 10, paddingVertical: 7, fontSize: 11, fontWeight: '900' },
   mapRoadOne: { position: 'absolute', width: 320, height: 14, top: 82, left: -20, borderRadius: 7, backgroundColor: '#ffffff', transform: [{ rotate: '-12deg' }] },
   mapRoadTwo: { position: 'absolute', width: 220, height: 14, top: 78, right: -60, borderRadius: 7, backgroundColor: '#ffffff', transform: [{ rotate: '55deg' }] },
   pin: { position: 'absolute', top: 61, left: '58%', width: 33, height: 33, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#ff3b36' },
   pinText: { color: '#ffffff', fontSize: 14 },
-  actions: { gap: 9, paddingHorizontal: 16, paddingTop: 14 },
+  actions: { gap: 8, paddingHorizontal: 16, paddingTop: 10 },
   shareButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e1e1e1', borderRadius: 12, backgroundColor: '#ffffff' },
   shareButtonText: { color: '#171717', fontSize: 13, fontWeight: '900' },
 });
