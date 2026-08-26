@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LiveWeatherCard } from '@/components/live-weather-card';
 import { MotionPressable } from '@/components/motion-pressable';
-import { SeasonalFoods } from '@/components/seasonal-foods';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts } from '@/lib/korea-regions';
 
@@ -65,8 +63,8 @@ export default function HomeScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <View><Text style={styles.brand}>오늘어디</Text><Text style={styles.location}>● {locationLabel || '전국'}</Text></View>
-          <View style={styles.bell}><Text style={styles.bellText}>♧</Text></View>
+          <View><Text style={styles.brand}>오늘어디</Text><Text style={styles.location}>● {locationLabel || '전국'}⌄</Text></View>
+          <View style={styles.headerRight}><Text style={styles.weather}>☀️ 24° 맑음</Text><View style={styles.bell}><Text style={styles.bellText}>♧</Text></View></View>
         </View>
 
         <View style={styles.search}>
@@ -105,8 +103,6 @@ export default function HomeScreen() {
           <View style={styles.featureCard}><Text style={styles.featureIcon}>✿</Text><Text style={styles.featureTitle}>사계절 추천</Text><Text style={styles.featureText}>계절에 맞는 음식 보기</Text></View>
         </View>
 
-        <LiveWeatherCard />
-        <SeasonalFoods />
       </ScrollView>
     </SafeAreaView>
   );
@@ -114,15 +110,15 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 10, paddingBottom: 30 },
-  header: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { color: '#171717', fontSize: 29, fontWeight: '900', letterSpacing: -1.5 },
-  location: { marginTop: 5, color: '#383838', fontSize: 12, fontWeight: '800' },
-  bell: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e6e6e6', borderRadius: 19 },
+  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 18 },
+  header: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { color: '#111111', fontSize: 25, fontWeight: '900', letterSpacing: -1.2 },
+  location: { marginTop: 6, color: '#333333', fontSize: 11, fontWeight: '800' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 9 }, weather: { color: '#373737', fontSize: 11, fontWeight: '800' }, bell: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   bellText: { color: '#222222', fontSize: 21, fontWeight: '800' },
-  search: { minHeight: 52, marginTop: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#dedede', borderRadius: 13, backgroundColor: '#fafafa', paddingLeft: 13, paddingRight: 5 },
+  search: { minHeight: 44, marginTop: 7, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#dedede', borderRadius: 13, backgroundColor: '#fafafa', paddingLeft: 13, paddingRight: 5 },
   searchIcon: { color: '#4c4c4c', fontSize: 22 },
-  searchInput: { flex: 1, minHeight: 48, color: '#171717', paddingHorizontal: 8, fontSize: 13 },
+  searchInput: { flex: 1, minHeight: 42, color: '#171717', paddingHorizontal: 8, fontSize: 13 },
   searchButton: { minWidth: 56, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: '#ff3b36' },
   searchButtonText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   regionRow: { gap: 7, paddingTop: 12, paddingBottom: 3 },
@@ -136,7 +132,7 @@ const styles = StyleSheet.create({
   districtChipText: { color: '#6b6b6b', fontSize: 10, fontWeight: '800' },
   districtChipTextActive: { color: '#d52b26' },
   localityInput: { minHeight: 42, marginTop: 8, borderWidth: 1, borderColor: '#e2e2e2', borderRadius: 11, backgroundColor: '#fafafa', color: '#171717', paddingHorizontal: 12, fontSize: 12 },
-  sectionTitle: { marginTop: 22, marginBottom: 11, color: '#171717', fontSize: 15, fontWeight: '900' },
+  sectionTitle: { marginTop: 17, marginBottom: 9, color: '#171717', fontSize: 15, fontWeight: '900' },
   relationshipRow: { flexDirection: 'row', gap: 7 },
   relationshipChip: { flex: 1, minHeight: 43, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderColor: '#e4e4e4', borderRadius: 11, backgroundColor: '#ffffff' },
   relationshipIcon: { color: '#ff3b36', fontSize: 17, fontWeight: '900' },
@@ -146,7 +142,7 @@ const styles = StyleSheet.create({
   categoryIcon: { width: 59, height: 59, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#eeeeee', borderRadius: 30 },
   categoryIconText: { fontSize: 24 },
   categoryText: { color: '#222222', fontSize: 11, fontWeight: '900' },
-  mapPreview: { height: 200, marginTop: 24, overflow: 'hidden', borderWidth: 1, borderColor: '#dce2da', borderRadius: 16, backgroundColor: '#edf3e8' },
+  mapPreview: { height: 128, marginTop: 18, overflow: 'hidden', borderWidth: 1, borderColor: '#dce2da', borderRadius: 16, backgroundColor: '#edf3e8' },
   mapLabel: { position: 'absolute', zIndex: 4, top: 12, left: 12, borderWidth: 1, borderColor: '#ffffff', borderRadius: 11, backgroundColor: 'rgba(255,255,255,0.94)', paddingHorizontal: 11, paddingVertical: 9 },
   mapTitle: { color: '#171717', fontSize: 13, fontWeight: '900' },
   mapSubtitle: { marginTop: 2, color: '#777777', fontSize: 9 },
