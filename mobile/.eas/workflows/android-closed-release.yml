@@ -1,4 +1,4 @@
-name: Android closed testing release
+name: Android Play AAB build
 
 on:
   push:
@@ -12,17 +12,8 @@ on:
 
 jobs:
   build_android:
-    name: Build Android AAB
+    name: Build Android AAB for manual Play upload
     type: build
     params:
       platform: android
       profile: production
-
-  submit_android:
-    name: Deploy to Google Play closed testing
-    needs:
-      - build_android
-    type: submit
-    params:
-      profile: closed
-      build_id: ${{ needs.build_android.outputs.build_id }}
