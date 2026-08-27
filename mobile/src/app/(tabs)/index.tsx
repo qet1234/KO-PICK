@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
 import { LiveWeatherHeader } from '@/components/live-weather-header';
+import { HomeNaverMapPreview } from '@/components/home-naver-map-preview';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts } from '@/lib/korea-regions';
 import courseSettingImage from '../../../assets/images/course-setting-3d.png';
@@ -128,20 +129,11 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>지금 여기, 인기 장소</Text>
-        <MotionPressable accessibilityRole="button" onPress={() => explore('전체')} style={styles.mapPreview}>
-          <View style={[styles.mapBlock, styles.mapBlockOne]} />
-          <View style={[styles.mapBlock, styles.mapBlockTwo]} />
-          <View style={[styles.mapBlock, styles.mapBlockThree]} />
-          <View style={[styles.mapRoad, styles.roadOne]} />
-          <View style={[styles.mapRoad, styles.roadTwo]} />
-          <View style={[styles.mapRoad, styles.roadThree]} />
-          <View style={[styles.river]} />
-          <View style={[styles.pin, styles.pinOne]}><Text style={styles.pinDot}>●</Text></View>
-          <View style={[styles.pin, styles.pinTwo]}><Text style={styles.pinDot}>●</Text></View>
-          <View style={[styles.pin, styles.pinThree]}><Text style={styles.pinDot}>●</Text></View>
-          <View style={[styles.pin, styles.pinFour]}><Text style={styles.pinDot}>●</Text></View>
-          <View style={[styles.pin, styles.pinFive]}><Text style={styles.pinDot}>●</Text></View>
-        </MotionPressable>
+        <HomeNaverMapPreview
+          locationLabel={[region, district === '전체' ? '' : district, locality].filter(Boolean).join(' ') || '전국'}
+          onPress={() => explore('전체')}
+          region={region}
+        />
 
         <View style={styles.featureRow}>
           <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, styles.courseCard]}>
@@ -186,23 +178,6 @@ const styles = StyleSheet.create({
   categoryIconCircle: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#e6e6e6', borderRadius: 26, backgroundColor: '#ffffff' },
   categoryIconText: { fontSize: 23, fontWeight: '900' },
   categoryText: { color: '#242424', fontSize: 10, fontWeight: '900' },
-  mapPreview: { height: 116, overflow: 'hidden', borderWidth: 1, borderColor: '#e3e5df', borderRadius: 8, backgroundColor: '#eaf2e5' },
-  mapBlock: { position: 'absolute', backgroundColor: '#d9ead0', borderRadius: 3 },
-  mapBlockOne: { width: 90, height: 38, left: 22, top: 16 },
-  mapBlockTwo: { width: 72, height: 42, right: 48, top: 14 },
-  mapBlockThree: { width: 105, height: 27, left: 118, bottom: 12 },
-  mapRoad: { position: 'absolute', height: 9, borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 5, backgroundColor: '#ffffff' },
-  roadOne: { width: 360, left: -24, top: 48, transform: [{ rotate: '-9deg' }] },
-  roadTwo: { width: 260, left: 35, top: 83, transform: [{ rotate: '31deg' }] },
-  roadThree: { width: 230, right: -20, top: 35, transform: [{ rotate: '72deg' }] },
-  river: { position: 'absolute', width: 250, height: 26, right: -42, bottom: -3, borderRadius: 15, backgroundColor: '#cde7f5', transform: [{ rotate: '-9deg' }] },
-  pin: { position: 'absolute', width: 24, height: 30, alignItems: 'center', justifyContent: 'center', borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: 14, backgroundColor: '#ff2f2f', transform: [{ rotate: '45deg' }], elevation: 3 },
-  pinDot: { color: '#ffffff', fontSize: 7, transform: [{ rotate: '-45deg' }] },
-  pinOne: { top: 20, left: '23%' },
-  pinTwo: { top: 61, left: '9%' },
-  pinThree: { top: 36, left: '48%' },
-  pinFour: { top: 16, left: '73%' },
-  pinFive: { top: 67, left: '69%' },
   featureRow: { marginTop: 13, flexDirection: 'row', gap: 7 },
   featureCard: { flex: 1, height: 145, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9, backgroundColor: '#ffffff', padding: 10 },
   courseCard: { backgroundColor: '#fffafa' },

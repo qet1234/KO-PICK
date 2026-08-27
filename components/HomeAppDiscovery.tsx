@@ -6,6 +6,7 @@ import { springApiUrl } from "@/utils/spring-api";
 import { trackKeywordSearch } from "@/utils/trackKeywordSearch";
 import { koreaRegionDistricts, koreaRegions } from "@/utils/korea-region-districts";
 import AppIcon from "@/components/AppIcon";
+import HomeNaverMapPreview from "@/components/HomeNaverMapPreview";
 
 type TrendingPlace = {
   id: string;
@@ -147,10 +148,11 @@ export default function HomeAppDiscovery() {
           <div className="kp-app-categories">{categories.map((item) => <a href={exploreHref(item.category, region, "", district, locality)} key={item.label}><span className={`is-${item.tone}`} aria-hidden="true">{item.icon}</span><strong>{item.label}</strong></a>)}</div>
         </section>
 
-        <a className="kp-app-map-preview" href={exploreHref("전체", region, "", district, locality)}>
-          <div><strong>지금 여기, 인기 장소</strong><span>{locationLabel || "전국"} 지도에서 한눈에 보기</span></div>
-          <i className="pin pin-one">1</i><i className="pin pin-two">2</i><i className="pin pin-three">3</i><i className="pin pin-four">4</i><i className="pin pin-five">5</i>
-        </a>
+        <HomeNaverMapPreview
+          href={exploreHref("전체", region, "", district, locality)}
+          locationLabel={locationLabel || "전국"}
+          region={region}
+        />
 
         <div className="kp-app-feature-cards">
           <a className="is-course" href="/recommend">
