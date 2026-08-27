@@ -150,7 +150,7 @@ export default function PrivacyPage() {
                   <tr>
                     <td>Supabase Inc.<br /><a href="mailto:privacy@supabase.com">privacy@supabase.com</a></td>
                     <td>제1조의 회원·동의·저장·활동·신고·공유 정보 · 인증·DB·API</td>
-                    <td>운영 프로젝트 선택 리전 및 미국의 지원·제어 처리 환경 · 기능 이용 시 TLS 전송</td>
+                    <td>대한민국(서울, ap-northeast-2) 및 미국의 지원·제어 처리 환경 · 기능 이용 시 TLS 전송</td>
                     <td>계약 이행에 필요한 처리위탁 · 제1조의 보유기간까지 · 거부 시 회원·서버 기능 이용 불가</td>
                   </tr>
                   <tr>
@@ -175,7 +175,7 @@ export default function PrivacyPage() {
               연결 해제를 위해 일회성 승인 코드를 Apple에 전송할 수 있습니다. 자세한 내용은 <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noreferrer">Apple 개인정보처리방침</a>에서 확인할 수 있습니다.
             </p>
             <p className="legal-note">
-              Supabase 고객 데이터의 정확한 저장 국가는 운영 프로젝트의 선택 리전입니다. 운영자는 출시 전 Supabase 대시보드의 실제 리전을 확인해 이 항목에 국가명을 명시하고, 변경 시 사전에 방침을 갱신합니다.
+              현재 운영 프로젝트의 고객 데이터 저장 리전은 대한민국 서울(ap-northeast-2)입니다. 리전 또는 국외 처리 구조가 변경되면 시행 전에 이 방침을 갱신합니다.
             </p>
           </section>
 
