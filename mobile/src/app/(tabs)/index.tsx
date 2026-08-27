@@ -5,6 +5,7 @@ import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
+import { LiveWeatherHeader } from '@/components/live-weather-header';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts } from '@/lib/korea-regions';
 import courseSettingImage from '../../../assets/images/course-setting-3d.png';
@@ -61,20 +62,10 @@ function resolveHomeLocation(input: string, selectedRegion: string, selectedDist
   };
 }
 
-function displayRegion(region: string) {
-  const labels: Record<string, string> = {
-    서울: '서울특별시', 부산: '부산광역시', 대구: '대구광역시', 인천: '인천광역시',
-    광주: '광주광역시', 대전: '대전광역시', 울산: '울산광역시', 세종: '세종특별자치시',
-    경기: '경기도', 강원: '강원특별자치도', 충북: '충청북도', 충남: '충청남도',
-    전북: '전북특별자치도', 전남: '전라남도', 경북: '경상북도', 경남: '경상남도', 제주: '제주특별자치도',
-  };
-  return labels[region] ?? region;
-}
-
 export default function HomeScreen() {
-  const [region] = useState('서울');
-  const [district] = useState('전체');
-  const [locality] = useState('');
+  const [region, setRegion] = useState('서울');
+  const [district, setDistrict] = useState('전체');
+  const [locality, setLocality] = useState('');
   const [query, setQuery] = useState('');
 
   const explore = (category: string, nextQuery = '', nextRegion = region, nextDistrict = district, nextLocality = locality) => {
@@ -89,20 +80,15 @@ export default function HomeScreen() {
     explore('맛집', resolved.query, resolved.region, resolved.district, resolved.locality);
   };
 
-  const locationLabel = [displayRegion(region), district === '전체' ? '' : district, locality].filter(Boolean).join(' ');
-
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View>
+          <View style={styles.headerMain}>
             <Text style={styles.brand}>오늘어디</Text>
-            <Text style={styles.location}>●  {locationLabel || '전국'}⌄</Text>
+            <LiveWeatherHeader onLocationChange={(next) => { setRegion(next.region); setDistrict(next.district); setLocality(next.locality); }} />
           </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.weather}>☀️  24° 맑음</Text>
-            <Text style={styles.bell}>♧</Text>
-          </View>
+          <Text style={styles.bell}>♧</Text>
         </View>
 
         <View style={styles.search}>
@@ -183,10 +169,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
   container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 18 },
   header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerMain: { minWidth: 0, flex: 1, marginRight: 12 },
   brand: { color: '#111111', fontSize: 27, fontWeight: '900', letterSpacing: -1.3 },
-  location: { marginTop: 7, color: '#252525', fontSize: 11, fontWeight: '800' },
-  headerRight: { alignItems: 'flex-end', gap: 8 },
-  weather: { color: '#333333', fontSize: 11, fontWeight: '800' },
   bell: { color: '#111111', fontSize: 21, fontWeight: '900' },
   search: { minHeight: 43, marginTop: 9, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e2e2', borderRadius: 11, backgroundColor: '#ffffff', paddingHorizontal: 12 },
   searchIcon: { color: '#252525', fontSize: 20, marginRight: 7 },

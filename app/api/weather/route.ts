@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
+import { searchWeatherLocations } from "@/utils/weather-location-search";
 
 export const dynamic = "force-dynamic";
 
@@ -84,9 +85,49 @@ async function fetchJson(url: string, revalidate = 600) {
   return response.json();
 }
 
-async function resolveCoordinates(region: string, district: string) {
+function isKoreaCoordinate(latitude: number, longitude: number) {
+  return Number.isFinite(latitude)
+    && Number.isFinite(longitude)
+    && latitude >= 32
+    && latitude <= 39.8
+    && longitude >= 124
+    && longitude <= 132;
+}
+
+function locationName(region: string, district: string, locality = "") {
+  return [region, district !== "전체" ? district : "", locality].filter(Boolean).join(" ");
+}
+
+async function resolveCoordinates(
+  region: string,
+  district: string,
+  locality = "",
+  requestedLatitude?: number,
+  requestedLongitude?: number,
+) {
+  if (locality && isKoreaCoordinate(Number(requestedLatitude), Number(requestedLongitude))) {
+    return {
+      latitude: Number(requestedLatitude),
+      longitude: Number(requestedLongitude),
+      name: locationName(region, district, locality),
+    };
+  }
+
+  if (locality && district !== "전체") {
+    const matches = await searchWeatherLocations({ region, district, query: locality });
+    const exact = matches.find((item) => item.name.replace(/\s+/g, "") === locality.replace(/\s+/g, ""))
+      ?? matches[0];
+    if (exact) {
+      return {
+        latitude: exact.latitude,
+        longitude: exact.longitude,
+        name: locationName(region, district, exact.name),
+      };
+    }
+  }
+
   if (!district || district === "전체") {
-    return { ...regionCoordinates[region], name: region };
+    return { ...(regionCoordinates[region] ?? regionCoordinates.서울), name: region };
   }
 
   const query = encodeURIComponent(`${district} ${region} 대한민국`);
@@ -99,11 +140,11 @@ async function resolveCoordinates(region: string, district: string) {
     [item.name, item.admin1, item.admin2].some((value) => value?.includes(district)),
   ) ?? results[0];
 
-  if (!match) return { ...regionCoordinates[region], name: `${region} ${district}` };
+  if (!match) return { ...(regionCoordinates[region] ?? regionCoordinates.서울), name: locationName(region, district) };
   return {
     latitude: Number(match.latitude),
     longitude: Number(match.longitude),
-    name: `${region} ${district}`,
+    name: locationName(region, district),
   };
 }
 
@@ -146,10 +187,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ updatedAt: new Date().toISOString(), regions: await nationwideWeather() });
     }
 
-    const region = request.nextUrl.searchParams.get("region") || "서울";
+    const requestedRegion = request.nextUrl.searchParams.get("region") || "서울";
+    const region = regionCoordinates[requestedRegion] ? requestedRegion : "서울";
     const district = request.nextUrl.searchParams.get("district") || "전체";
+    const locality = request.nextUrl.searchParams.get("locality")?.trim() || "";
+    const latitude = Number(request.nextUrl.searchParams.get("latitude"));
+    const longitude = Number(request.nextUrl.searchParams.get("longitude"));
     const requestedDate = request.nextUrl.searchParams.get("date") || "";
-    const location = await resolveCoordinates(region, district);
+    const location = await resolveCoordinates(region, district, locality, latitude, longitude);
 
     const params = new URLSearchParams({
       latitude: String(location.latitude),
@@ -219,6 +264,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       region,
       district,
+      locality,
       locationName: location.name,
       latitude: location.latitude,
       longitude: location.longitude,
