@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts } from '@/lib/korea-regions';
+import courseSettingImage from '../../../assets/images/course-setting-3d.png';
 
 const homeRegions = ['전국', ...Object.keys(koreaRegionDistricts)];
 const relationships = [
@@ -157,10 +158,10 @@ export default function HomeScreen() {
         </MotionPressable>
 
         <View style={styles.featureRow}>
-          <MotionPressable onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={styles.featureCard}>
+          <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, styles.courseCard]}>
             <Text style={styles.featureTitle}>코스 설정</Text>
             <Text style={styles.featureText}>테마 맞춤 코스로{`\n`}알차게 여행하기</Text>
-            <View style={styles.routeVisual}><Text style={styles.routePin}>●</Text><Text style={styles.routeDots}>⌁⌁⌁</Text><Text style={styles.routePin}>●</Text></View>
+            <Image accessibilityIgnoresInvertColors alt="지도 위 출발지와 목적지가 표시된 코스 설정" resizeMode="contain" source={courseSettingImage} style={styles.courseImage} />
           </MotionPressable>
           <MotionPressable onPress={() => router.push('/(tabs)/office')} style={[styles.featureCard, styles.officeCard]}>
             <Text style={styles.featureTitleLight}>직장인 식사</Text>
@@ -220,14 +221,13 @@ const styles = StyleSheet.create({
   pinFive: { top: 67, left: '69%' },
   featureRow: { marginTop: 13, flexDirection: 'row', gap: 7 },
   featureCard: { flex: 1, height: 145, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9, backgroundColor: '#ffffff', padding: 10 },
+  courseCard: { backgroundColor: '#fffafa' },
   officeCard: { borderColor: '#17324f', backgroundColor: '#17324f' },
   featureTitle: { color: '#171717', fontSize: 12, fontWeight: '900' },
   featureTitleLight: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   featureText: { marginTop: 4, color: '#626262', fontSize: 8, lineHeight: 12, fontWeight: '700' },
   featureTextLight: { marginTop: 4, color: '#d9e1e9', fontSize: 8, lineHeight: 12, fontWeight: '700' },
-  routeVisual: { marginTop: 'auto', minHeight: 60, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
-  routePin: { color: '#ff2f2f', fontSize: 22 },
-  routeDots: { color: '#1e1e1e', fontSize: 20, transform: [{ rotate: '-18deg' }] },
+  courseImage: { width: 76, height: 76, alignSelf: 'center', marginTop: 'auto', marginBottom: -8 },
   officeVisual: { marginTop: 'auto', minHeight: 62, alignItems: 'center', justifyContent: 'flex-end' },
   officeCity: { color: '#0e2238', fontSize: 28, letterSpacing: -5 },
   officePlate: { position: 'absolute', right: 3, bottom: 1, fontSize: 26 },

@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { springApiUrl } from "@/utils/spring-api";
 import { trackKeywordSearch } from "@/utils/trackKeywordSearch";
 import { koreaRegionDistricts, koreaRegions } from "@/utils/korea-region-districts";
@@ -152,7 +153,18 @@ export default function HomeAppDiscovery() {
         </a>
 
         <div className="kp-app-feature-cards">
-          <a href="/recommend"><span aria-hidden="true">🗺️</span><strong>코스 설정</strong><small>테마 맞춤 코스로 알차게 여행하기</small></a>
+          <a className="is-course" href="/recommend">
+            <Image
+              className="kp-app-course-image"
+              src="/images/course-setting-3d.png"
+              alt="지도 위 출발지와 목적지가 표시된 코스 설정"
+              width={640}
+              height={640}
+              sizes="(max-width: 720px) 88px, 112px"
+            />
+            <strong>코스 설정</strong>
+            <small>테마 맞춤 코스로 알차게 여행하기</small>
+          </a>
           <a className="is-office" href="/office-dining"><span>▣</span><strong>직장인 식사</strong><small>빠르고 간편하게 점심·회식 찾기</small></a>
           <a href="#seasonal-foods"><span>✿</span><strong>사계절 추천</strong><small>계절마다 꼭 맞는 장소를 추천해요</small></a>
         </div>

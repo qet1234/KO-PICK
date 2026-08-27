@@ -315,6 +315,19 @@
   color: #fff;
 }
 
+.kp-app-feature-cards a.is-course {
+  overflow: hidden;
+  background: linear-gradient(145deg, #fff 48%, #fff5f3 100%);
+}
+
+.kp-app-feature-cards .kp-app-course-image {
+  width: 92px;
+  height: 92px;
+  margin: -12px 0 -2px -8px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(183, 36, 31, 0.12));
+}
+
 .kp-app-feature-cards a > span {
   color: var(--app-red);
   font-size: 29px;
@@ -564,6 +577,12 @@
     min-height: 142px;
     border-radius: 10px;
     padding: 11px;
+  }
+
+  .kp-app-feature-cards .kp-app-course-image {
+    width: 72px;
+    height: 72px;
+    margin: -6px 0 0 -6px;
   }
 
   .kp-app-feature-cards strong {
