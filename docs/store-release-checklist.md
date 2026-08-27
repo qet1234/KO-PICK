@@ -37,7 +37,7 @@ Application ID와 Bundle ID는 최초 스토어 등록 뒤 변경하지 않습�
 - [ ] Apple App ID의 Sign in with Apple capability, Services ID·키·Team ID와 Supabase Apple Provider 설정
 - [ ] App Store Connect의 개인정보처리방침 URL에 `https://koreapick.duckdns.org/privacy` 입력
 - [ ] Google Play의 개인정보처리방침 URL과 계정 삭제 URL `https://koreapick.duckdns.org/account-deletion` 입력
-- [ ] Supabase Dashboard에서 운영 프로젝트의 실제 데이터 저장 리전 국가를 확인하고 개인정보처리방침 제6조에 국가명 명시
+- [x] Supabase 운영 프로젝트 리전 확인 및 개인정보처리방침 제6조 반영 완료: 대한민국 서울(`ap-northeast-2`)
 - [ ] Vercel·Supabase의 DPA/위탁 조건과 하위처리자 목록을 운영자 계정에서 검토·보관
 - [ ] TourAPI 활용 신청을 운영계정으로 승인받고 서비스키 호출 한도 확인
 - [ ] Google·Kakao·Naver의 Android/iOS 앱 등록, OAuth redirect URI 및 Android 서명 SHA 지문 확인
