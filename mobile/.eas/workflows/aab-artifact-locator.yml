@@ -19,11 +19,36 @@ jobs:
       git_commit_hash: bf991d225de88420c36e17756e5cec1943a71eee
       wait_for_in_progress: false
 
-  comment_aab:
-    name: Publish downloadable existing AAB
+  export_aab:
+    name: Export existing AAB for manual Play upload
     needs: [locate_aab]
+    environment: production
+    steps:
+      - uses: eas/download_build
+        id: download_aab
+        with:
+          build_id: ${{ needs.locate_aab.outputs.build_id }}
+          extensions: [aab]
+      - name: Upload existing AAB to temporary transfer bucket
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            -X POST \
+            -H "apikey: $EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @"${{ steps.download_aab.outputs.artifact_path }}" \
+            "$EXPO_PUBLIC_SUPABASE_URL/storage/v1/object/chatgpt-aab-transfer-20260828/todaywhere-1.0.0-vc53-973e89f5.aab"
+
+  comment_aab:
+    name: Publish downloadable AAB link
+    needs: [locate_aab, export_aab]
     type: github-comment
     params:
-      message: "Google Play 수동 업로드용 기존 production AAB입니다."
-      build_ids:
-        - ${{ needs.locate_aab.outputs.build_id }}
+      payload: |
+        ## Google Play 수동 업로드용 AAB 준비 완료
+        - Build ID: `${{ needs.locate_aab.outputs.build_id }}`
+        - App: `${{ needs.locate_aab.outputs.app_identifier }}`
+        - Version: `${{ needs.locate_aab.outputs.app_version }}`
+        - Version code: `${{ needs.locate_aab.outputs.app_build_version }}`
+        - Download: https://vbwaruzncfaxnjyybudm.supabase.co/storage/v1/object/public/chatgpt-aab-transfer-20260828/todaywhere-1.0.0-vc53-973e89f5.aab
