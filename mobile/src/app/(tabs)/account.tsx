@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
@@ -19,7 +19,12 @@ import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/ap
 import { deleteAccount } from '@/lib/api';
 import { appConfig } from '@/lib/config';
 import { getMobileOperationVisitorId } from '@/lib/operations';
-import { clearMobileLocalData } from '@/lib/privacy-preferences';
+import {
+  clearMobileLocalData,
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+  type AnalyticsConsent,
+} from '@/lib/privacy-preferences';
 import { supabase } from '@/lib/supabase';
 
 function providerLabel(provider: unknown) {
@@ -47,8 +52,41 @@ export default function AccountScreen() {
   const [confirmText, setConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [analyticsConsent, setAnalyticsConsentState] = useState<AnalyticsConsent>(null);
+  const [analyticsSaving, setAnalyticsSaving] = useState(false);
+  const [analyticsMessage, setAnalyticsMessage] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    void getAnalyticsConsent().then((value) => {
+      if (!cancelled) setAnalyticsConsentState(value);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const logout = async () => {
     await supabase.auth.signOut({ scope: 'local' });
+  };
+
+  const updateAnalyticsConsent = async (value: Exclude<AnalyticsConsent, null>) => {
+    if (analyticsSaving) return;
+    setAnalyticsSaving(true);
+    setAnalyticsMessage('');
+    try {
+      await setAnalyticsConsent(value, session?.user.id);
+      setAnalyticsConsentState(value);
+      setAnalyticsMessage(
+        value === 'granted'
+          ? '서비스 개선 데이터 제공을 허용했습니다.'
+          : '서비스 개선 데이터 제공을 중단하고 기존 기록 삭제를 요청했습니다.',
+      );
+    } catch {
+      setAnalyticsMessage('설정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setAnalyticsSaving(false);
+    }
   };
 
   const removeAccount = async () => {
@@ -205,6 +243,67 @@ export default function AccountScreen() {
           </View>
         ) : null}
 
+        <View style={styles.analyticsCard}>
+          <View style={styles.analyticsHeading}>
+            <Text style={styles.analyticsTitle}>서비스 개선 데이터</Text>
+            <Text style={styles.analyticsState}>
+              {analyticsConsent === 'granted'
+                ? '현재 허용됨'
+                : analyticsConsent === 'denied'
+                  ? '현재 허용 안 함'
+                  : '선택하지 않음'}
+            </Text>
+          </View>
+          <Text style={styles.analyticsDescription}>
+            검색·장소 이용 이벤트와 앱 성능·오류 정보를 최대 90일 동안 품질 개선에 사용합니다. 광고 추적과 정밀 위치에는 사용하지 않습니다.
+          </Text>
+          <View style={styles.analyticsActions}>
+            <MotionPressable
+              accessibilityLabel="서비스 개선 데이터 허용 안 함"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: analyticsSaving, selected: analyticsConsent === 'denied' }}
+              disabled={analyticsSaving}
+              onPress={() => void updateAnalyticsConsent('denied')}
+              style={[
+                styles.analyticsChoice,
+                analyticsConsent === 'denied' && styles.analyticsChoiceDenied,
+                analyticsSaving && styles.analyticsChoiceDisabled,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.analyticsChoiceText,
+                  analyticsConsent === 'denied' && styles.analyticsChoiceTextDenied,
+                ]}
+              >
+                허용 안 함
+              </Text>
+            </MotionPressable>
+            <MotionPressable
+              accessibilityLabel="서비스 개선 데이터 허용"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: analyticsSaving, selected: analyticsConsent === 'granted' }}
+              disabled={analyticsSaving}
+              onPress={() => void updateAnalyticsConsent('granted')}
+              style={[
+                styles.analyticsChoice,
+                analyticsConsent === 'granted' && styles.analyticsChoiceGranted,
+                analyticsSaving && styles.analyticsChoiceDisabled,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.analyticsChoiceText,
+                  analyticsConsent === 'granted' && styles.analyticsChoiceTextGranted,
+                ]}
+              >
+                허용
+              </Text>
+            </MotionPressable>
+          </View>
+          {analyticsMessage ? <Text style={styles.analyticsMessage}>{analyticsMessage}</Text> : null}
+        </View>
+
         <View style={styles.links}>
           <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/terms`)}><Text style={styles.link}>이용약관</Text></MotionPressable>
           <MotionPressable onPress={() => void Linking.openURL(`${appConfig.webUrl}/privacy`)}><Text style={styles.link}>개인정보처리방침</Text></MotionPressable>
@@ -291,6 +390,20 @@ const styles = StyleSheet.create({
   naverUsageState: { color: '#03a94c', fontSize: 11, fontWeight: '800' },
   naverUsageValue: { marginTop: 5, color: '#61615c', fontSize: 12, lineHeight: 18 },
   naverUsageFootnote: { marginTop: 15, borderRadius: 12, backgroundColor: '#f4fbf6', color: '#4f6357', fontSize: 11, lineHeight: 17, paddingHorizontal: 12, paddingVertical: 10 },
+  analyticsCard: { marginTop: 18, borderWidth: 1, borderColor: '#e2e2dc', borderRadius: 20, backgroundColor: '#ffffff', padding: 18 },
+  analyticsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  analyticsTitle: { flex: 1, color: '#101010', fontSize: 17, fontWeight: '900' },
+  analyticsState: { color: '#5f5f5a', fontSize: 11, fontWeight: '800' },
+  analyticsDescription: { marginTop: 9, color: '#686863', fontSize: 12, lineHeight: 19 },
+  analyticsActions: { marginTop: 14, flexDirection: 'row', gap: 10 },
+  analyticsChoice: { flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#d8d8d2', borderRadius: 12, backgroundColor: '#ffffff', paddingVertical: 12 },
+  analyticsChoiceGranted: { borderColor: '#1976d2', backgroundColor: '#eef6ff' },
+  analyticsChoiceDenied: { borderColor: '#777771', backgroundColor: '#f2f2ef' },
+  analyticsChoiceDisabled: { opacity: 0.55 },
+  analyticsChoiceText: { color: '#555550', fontSize: 13, fontWeight: '800' },
+  analyticsChoiceTextGranted: { color: '#0f5fae' },
+  analyticsChoiceTextDenied: { color: '#333330' },
+  analyticsMessage: { marginTop: 11, color: '#565651', fontSize: 11, lineHeight: 17 },
   links: { marginTop: 18, borderRadius: 20, backgroundColor: '#ffffff', paddingHorizontal: 18 },
   link: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dadad4', color: '#454541', fontSize: 14, fontWeight: '700', paddingVertical: 16 },
   deleteCard: { marginTop: 18, borderWidth: 1, borderColor: '#f0caca', borderRadius: 20, backgroundColor: '#fffafa', padding: 18 },
