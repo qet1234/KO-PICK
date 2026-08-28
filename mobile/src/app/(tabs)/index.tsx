@@ -10,6 +10,7 @@ import { HomeNaverMapPreview } from '@/components/home-naver-map-preview';
 import { appConfig } from '@/lib/config';
 import { koreaRegionDistricts } from '@/lib/korea-regions';
 import courseSettingImage from '../../../assets/images/course-setting-3d.png';
+import officeDiningCardImage from '../../../assets/images/office-dining-card.webp';
 
 const homeRegions = ['전국', ...Object.keys(koreaRegionDistricts)];
 const relationships = [
@@ -141,10 +142,19 @@ export default function HomeScreen() {
             <Text style={styles.featureText}>테마 맞춤 코스로{`\n`}알차게 여행하기</Text>
             <Image accessibilityIgnoresInvertColors alt="지도 위 출발지와 목적지가 표시된 코스 설정" resizeMode="contain" source={courseSettingImage} style={styles.courseImage} />
           </MotionPressable>
-          <MotionPressable onPress={() => router.push('/(tabs)/office')} style={[styles.featureCard, styles.officeCard]}>
-            <Text style={styles.featureTitleLight}>직장인 식사</Text>
-            <Text style={styles.featureTextLight}>빠르고 만족스러운{`\n`}점심·회식 찾기</Text>
-            <View style={styles.officeVisual}><Text style={styles.officeCity}>▥▥▥</Text><Text style={styles.officePlate}>🍴</Text></View>
+          <MotionPressable
+            accessibilityLabel="직장인 식사에서 빠르고 만족스러운 점심·회식 찾기"
+            accessibilityRole="button"
+            onPress={() => router.push('/(tabs)/office')}
+            style={[styles.featureCard, styles.officeCard]}
+          >
+            <Image
+              accessibilityIgnoresInvertColors
+              alt=""
+              resizeMode="cover"
+              source={officeDiningCardImage}
+              style={styles.officeImage}
+            />
           </MotionPressable>
           <View style={styles.featureCard}>
             <Text style={styles.featureTitle}>사계절 추천</Text>
@@ -181,14 +191,10 @@ const styles = StyleSheet.create({
   featureRow: { marginTop: 13, flexDirection: 'row', gap: 7 },
   featureCard: { flex: 1, height: 145, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9, backgroundColor: '#ffffff', padding: 10 },
   courseCard: { backgroundColor: '#fffafa' },
-  officeCard: { borderColor: '#17324f', backgroundColor: '#17324f' },
+  officeCard: { borderColor: '#ffd7c5', backgroundColor: '#fff8f1', padding: 0 },
+  officeImage: { width: '100%', height: '100%' },
   featureTitle: { color: '#171717', fontSize: 12, fontWeight: '900' },
-  featureTitleLight: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   featureText: { marginTop: 4, color: '#626262', fontSize: 8, lineHeight: 12, fontWeight: '700' },
-  featureTextLight: { marginTop: 4, color: '#d9e1e9', fontSize: 8, lineHeight: 12, fontWeight: '700' },
   courseImage: { width: 76, height: 76, alignSelf: 'center', marginTop: 'auto', marginBottom: -8 },
-  officeVisual: { marginTop: 'auto', minHeight: 62, alignItems: 'center', justifyContent: 'flex-end' },
-  officeCity: { color: '#0e2238', fontSize: 28, letterSpacing: -5 },
-  officePlate: { position: 'absolute', right: 3, bottom: 1, fontSize: 26 },
   seasonVisual: { marginTop: 'auto', fontSize: 31, textAlign: 'center' },
 });

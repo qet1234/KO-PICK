@@ -343,8 +343,17 @@
 }
 
 .kp-app-feature-cards a.is-office {
-  background: linear-gradient(150deg, #17375c, #0e243d);
-  color: #fff;
+  overflow: hidden;
+  border-color: #ffd7c5;
+  background: #fff8f1;
+  padding: 0;
+}
+
+.kp-app-feature-cards .kp-app-office-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .kp-app-feature-cards a.is-course {
@@ -365,10 +374,6 @@
   font-size: 29px;
 }
 
-.kp-app-feature-cards a.is-office > span {
-  color: #fff;
-}
-
 .kp-app-feature-cards strong {
   margin-top: auto;
   font-size: 15px;
@@ -380,10 +385,6 @@
   color: var(--app-muted);
   font-size: 11px;
   line-height: 1.45;
-}
-
-.kp-app-feature-cards a.is-office small {
-  color: #dbe8f2;
 }
 
 .kp-home-app .kp-home-popular {

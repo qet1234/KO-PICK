@@ -167,7 +167,21 @@ export default function HomeAppDiscovery() {
             <strong>코스 설정</strong>
             <small>테마 맞춤 코스로 알차게 여행하기</small>
           </a>
-          <a className="is-office" href="/office-dining"><span>▣</span><strong>직장인 식사</strong><small>빠르고 간편하게 점심·회식 찾기</small></a>
+          <a
+            aria-label="직장인 식사에서 빠르고 만족스러운 점심·회식 찾기"
+            className="is-office"
+            href="/office-dining"
+          >
+            <Image
+              alt=""
+              aria-hidden="true"
+              className="kp-app-office-image"
+              height={550}
+              src="/images/office-dining-card.webp"
+              unoptimized
+              width={480}
+            />
+          </a>
           <a href="#seasonal-foods"><span>✿</span><strong>사계절 추천</strong><small>계절마다 꼭 맞는 장소를 추천해요</small></a>
         </div>
 
