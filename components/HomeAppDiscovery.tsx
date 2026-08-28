@@ -21,20 +21,17 @@ type TrendingPlace = {
 };
 
 const relationships = [
-  { label: "혼자", image: "/images/home/relationship-solo.webp" },
-  { label: "커플", image: "/images/home/relationship-couple.webp" },
-  { label: "친구", image: "/images/home/relationship-friend.webp" },
-  { label: "가족", image: "/images/home/relationship-family.webp" },
+  { label: "혼자", image: "/images/home/relationship-solo-icon.webp" },
+  { label: "커플", image: "/images/home/relationship-couple-icon.webp" },
+  { label: "친구", image: "/images/home/relationship-friend-icon.webp" },
+  { label: "가족", image: "/images/home/relationship-family-icon.webp" },
 ] as const;
 
-const quickCategories = [
-  { label: "맛집", icon: "🍴", category: "음식", tone: "coral" },
-  { label: "카페", icon: "☕", category: "카페", tone: "brown" },
-] as const;
-
-const destinationCategories = [
-  { label: "관광지", category: "관광지", image: "/images/home/category-attraction.webp", width: 1000, height: 454 },
-  { label: "축제", category: "축제", image: "/images/home/category-festival.webp", width: 1000, height: 382 },
+const categories = [
+  { label: "맛집", icon: "🍴", image: "", category: "음식", tone: "coral" },
+  { label: "카페", icon: "☕", image: "", category: "카페", tone: "brown" },
+  { label: "관광지", icon: "", image: "/images/home/category-attraction-icon.webp", category: "관광지", tone: "blue" },
+  { label: "축제", icon: "", image: "/images/home/category-festival-icon.webp", category: "축제", tone: "orange" },
 ] as const;
 
 function exploreHref(category: string, region: string, query = "", district = "전체", locality = "", journey = "") {
@@ -146,7 +143,8 @@ export default function HomeAppDiscovery() {
           <div className="kp-app-relationships">
             {relationships.map((item) => (
               <a aria-label={`${item.label}와 함께 장소 찾기`} href={exploreHref("전체", region, "", district, locality, item.label)} key={item.label}>
-                <Image alt="" aria-hidden="true" height={516} src={item.image} width={900} />
+                <Image alt="" aria-hidden="true" height={160} src={item.image} width={160} />
+                <strong>{item.label}</strong>
               </a>
             ))}
           </div>
@@ -155,12 +153,12 @@ export default function HomeAppDiscovery() {
         <section className="kp-app-block" aria-labelledby="category-title">
           <h2 id="category-title">어떤 곳을 찾으세요?</h2>
           <div className="kp-app-categories">
-            {quickCategories.map((item) => <a href={exploreHref(item.category, region, "", district, locality)} key={item.label}><span className={`is-${item.tone}`} aria-hidden="true">{item.icon}</span><strong>{item.label}</strong></a>)}
-          </div>
-          <div className="kp-app-destination-cards">
-            {destinationCategories.map((item) => (
-              <a aria-label={`${item.label} 장소 찾기`} href={exploreHref(item.category, region, "", district, locality)} key={item.label}>
-                <Image alt="" aria-hidden="true" height={item.height} src={item.image} width={item.width} />
+            {categories.map((item) => (
+              <a href={exploreHref(item.category, region, "", district, locality)} key={item.label}>
+                <span className={`is-${item.tone}`} aria-hidden="true">
+                  {item.image ? <Image alt="" height={180} src={item.image} width={180} /> : item.icon}
+                </span>
+                <strong>{item.label}</strong>
               </a>
             ))}
           </div>

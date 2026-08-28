@@ -154,34 +154,45 @@
 
 .kp-app-relationships {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
 }
 
 .kp-app-relationships a {
-  display: block;
-  overflow: hidden;
-  border-radius: 17px;
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--app-line);
+  border-radius: 13px;
+  background: #fff;
+  color: var(--app-black);
   text-decoration: none;
-  box-shadow: 0 7px 18px rgba(13, 38, 83, 0.09);
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 5px 14px rgba(13, 38, 83, 0.05);
+  transition: border-color 160ms ease, transform 160ms ease;
 }
 
 .kp-app-relationships a:hover {
+  border-color: #a9c8f2;
   transform: translateY(-2px);
-  box-shadow: 0 11px 24px rgba(13, 38, 83, 0.14);
 }
 
 .kp-app-relationships img {
   display: block;
-  width: 100%;
-  height: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.kp-app-relationships strong {
+  font-size: 13px;
 }
 
 .kp-app-categories {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 120px));
-  justify-content: center;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -208,36 +219,19 @@
 }
 
 .kp-app-categories a > span.is-brown { background: #fff8ef; }
-.kp-app-categories strong {
-  font-size: 13px;
-}
+.kp-app-categories a > span.is-blue,
+.kp-app-categories a > span.is-orange { padding: 4px; background: #fff; }
 
-.kp-app-destination-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.kp-app-destination-cards a {
-  display: block;
-  overflow: hidden;
-  aspect-ratio: 2.35 / 1;
-  border-radius: 17px;
-  box-shadow: 0 8px 20px rgba(13, 38, 83, 0.12);
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-.kp-app-destination-cards a:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(13, 38, 83, 0.17);
-}
-
-.kp-app-destination-cards img {
+.kp-app-categories a > span img {
   display: block;
   width: 100%;
   height: 100%;
+  border-radius: 50%;
   object-fit: cover;
+}
+
+.kp-app-categories strong {
+  font-size: 13px;
 }
 
 .kp-app-map-preview {
@@ -571,7 +565,18 @@
   }
 
   .kp-app-relationships a {
+    min-height: 36px;
     border-radius: 11px;
+  }
+
+  .kp-app-relationships img {
+    width: 23px;
+    height: 23px;
+    border-radius: 7px;
+  }
+
+  .kp-app-relationships strong {
+    font-size: 10px;
   }
 
   .kp-app-categories {
@@ -586,16 +591,6 @@
 
   .kp-app-categories strong {
     font-size: 11px;
-  }
-
-  .kp-app-destination-cards {
-    grid-template-columns: 1fr;
-    gap: 9px;
-    margin-top: 12px;
-  }
-
-  .kp-app-destination-cards a {
-    border-radius: 11px;
   }
 
   .kp-app-map-preview {
