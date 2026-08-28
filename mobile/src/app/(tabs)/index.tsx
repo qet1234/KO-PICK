@@ -32,6 +32,16 @@ const categories = [
   { label: '축제', icon: '', image: categoryFestivalImage, category: '축제', color: '#f18c16' },
 ] as const;
 
+function DiscoveryIcon() {
+  return (
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.discoveryIcon}>
+      <View style={styles.discoveryPin} />
+      <View style={styles.discoveryDot} />
+      <Text maxFontSizeMultiplier={1} style={styles.discoverySparkle}>✦</Text>
+    </View>
+  );
+}
+
 function resolveHomeLocation(input: string, selectedRegion: string, selectedDistrict: string, selectedLocality: string) {
   let remaining = input.trim();
   let region = selectedRegion;
@@ -103,7 +113,7 @@ export default function HomeScreen() {
             <Text style={styles.brand}>오늘어디</Text>
             <LiveWeatherHeader onLocationChange={(next) => { setRegion(next.region); setDistrict(next.district); setLocality(next.locality); }} />
           </View>
-          <Text style={styles.bell}>♧</Text>
+          <DiscoveryIcon />
         </View>
 
         <View style={styles.search}>
@@ -190,7 +200,10 @@ const styles = StyleSheet.create({
   header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerMain: { minWidth: 0, flex: 1, marginRight: 12 },
   brand: { color: '#111111', fontSize: 27, fontWeight: '900', letterSpacing: -1.3 },
-  bell: { color: '#111111', fontSize: 21, fontWeight: '900' },
+  discoveryIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  discoveryPin: { width: 20, height: 20, marginTop: -2, borderWidth: 2, borderColor: '#1677e8', borderTopLeftRadius: 11, borderTopRightRadius: 11, borderBottomRightRadius: 11, borderBottomLeftRadius: 3, backgroundColor: '#ffffff', transform: [{ rotate: '-45deg' }] },
+  discoveryDot: { position: 'absolute', left: 11, top: 8, width: 7, height: 7, borderWidth: 1.7, borderColor: '#1677e8', borderRadius: 4, backgroundColor: '#eaf3ff' },
+  discoverySparkle: { position: 'absolute', right: -1, top: -3, color: '#ff9a1f', fontSize: 10, fontWeight: '900' },
   search: { minHeight: 43, marginTop: 9, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e2e2', borderRadius: 11, backgroundColor: '#ffffff', paddingHorizontal: 12 },
   searchIcon: { color: '#252525', fontSize: 20, marginRight: 7 },
   searchInput: { flex: 1, minHeight: 42, color: '#171717', fontSize: 13, paddingVertical: 0 },
