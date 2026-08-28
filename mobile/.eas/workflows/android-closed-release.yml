@@ -7,6 +7,7 @@ on:
     paths:
       - "mobile/**"
       - "!mobile/.eas/**"
+      - "!mobile/.aab-build-trigger"
       - "!mobile/**/*.md"
   workflow_dispatch: {}
 
