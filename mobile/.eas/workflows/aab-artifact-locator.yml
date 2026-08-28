@@ -1,0 +1,34 @@
+name: Locate existing Play AAB
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "mobile/.eas/workflows/aab-artifact-locator.yml"
+
+jobs:
+  locate_aab:
+    name: Locate successful production Android build
+    type: get-build
+    params:
+      platform: android
+      profile: production
+      distribution: store
+      app_identifier: com.koreapick.app
+      git_commit_hash: bf991d225de88420c36e17756e5cec1943a71eee
+      wait_for_in_progress: false
+
+  comment_aab:
+    name: Publish existing AAB build details
+    needs: [locate_aab]
+    type: github-comment
+    params:
+      payload: |
+        ## Existing Google Play AAB
+        - Build ID: `${{ needs.locate_aab.outputs.build_id }}`
+        - App: `${{ needs.locate_aab.outputs.app_identifier }}`
+        - Version: `${{ needs.locate_aab.outputs.app_version }}`
+        - Version code: `${{ needs.locate_aab.outputs.app_build_version }}`
+        - Distribution: `${{ needs.locate_aab.outputs.distribution }}`
+        - EAS build page: https://expo.dev/accounts/use1234/projects/ko-pick/builds/${{ needs.locate_aab.outputs.build_id }}
