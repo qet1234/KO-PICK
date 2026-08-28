@@ -20,15 +20,10 @@ jobs:
       wait_for_in_progress: false
 
   comment_aab:
-    name: Publish existing AAB build details
+    name: Publish downloadable existing AAB
     needs: [locate_aab]
     type: github-comment
     params:
-      payload: |
-        ## Existing Google Play AAB
-        - Build ID: `${{ needs.locate_aab.outputs.build_id }}`
-        - App: `${{ needs.locate_aab.outputs.app_identifier }}`
-        - Version: `${{ needs.locate_aab.outputs.app_version }}`
-        - Version code: `${{ needs.locate_aab.outputs.app_build_version }}`
-        - Distribution: `${{ needs.locate_aab.outputs.distribution }}`
-        - EAS build page: https://expo.dev/accounts/use1234/projects/ko-pick/builds/${{ needs.locate_aab.outputs.build_id }}
+      message: "Google Play 수동 업로드용 기존 production AAB입니다."
+      build_ids:
+        - ${{ needs.locate_aab.outputs.build_id }}
