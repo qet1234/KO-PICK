@@ -37,6 +37,14 @@ type Place = {
   address: string | null;
   latitude: number;
   longitude: number;
+  imageUrl: string | null;
+  imageThumbnailUrl: string | null;
+  imageCopyrightCode: "Type1" | "Type3" | null;
+  imageLicenseLabel: string | null;
+  imageAttribution: string | null;
+  imageModificationAllowed: boolean;
+  imageLicenseUrl: string | null;
+  imageSourceUrl: string | null;
 };
 
 const regions = [
@@ -493,7 +501,24 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
             {places.map((place, index) => (
               <article className={selectedId === place.id ? "od-place-card is-selected" : "od-place-card"} key={place.id}>
                 <button className="od-place-main" type="button" onClick={() => focusPlace(place)}>
-                  <span className="od-place-thumb" aria-hidden="true">🍲</span>
+                  <span className="od-place-thumb">
+                    {place.imageUrl ? (
+                      <>
+                        <img
+                          alt={`${place.name} 음식점 사진`}
+                          className={place.imageModificationAllowed ? "" : "is-contain"}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          src={place.imageThumbnailUrl ?? place.imageUrl}
+                        />
+                        <span className="od-place-photo-credit" title={place.imageAttribution ?? undefined}>
+                          관광공사 · {place.imageCopyrightCode === "Type1" ? "공공누리 1" : "공공누리 3"}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="od-place-thumb-empty">공공사진<br />없음</span>
+                    )}
+                  </span>
                   <span className="od-place-number">{String(index + 1).padStart(2, "0")}</span>
                   <span className="od-place-copy"><small>{place.category}</small><strong>{place.name}</strong><span>{place.address ?? `${place.region} ${place.city ?? ""}`}</span></span>
                 </button>
@@ -504,6 +529,9 @@ export default function OfficeDiningFinder({ initialSearch = "" }: { initialSear
               </article>
             ))}
           </div>
+          {places.some((place) => Boolean(place.imageUrl)) && (
+            <p className="od-photo-note">음식점 사진: 한국관광공사 TourAPI · 사진별 공공누리 이용조건 적용</p>
+          )}
           {places.length > 0 && <p className="od-route-note">모바일은 네이버 지도 앱 길찾기로 연결되며, PC는 네이버 장소 페이지에서 길찾기를 이어서 이용할 수 있습니다.</p>}
         </div>
       </section>

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isOperationalFeatureEnabled } from "@/utils/feature-flags-server";
+import {
+  attachTourRestaurantPhotos,
+  loadTourRestaurantPhotoCatalog,
+} from "@/utils/office-dining-tour-images";
 
 type DiningMode = "회식" | "점심";
 
@@ -327,6 +331,7 @@ export async function GET(request: NextRequest) {
     ...queries.map((query) => ({ query, sort: "comment" as const })),
   ].slice(0, MAX_SEARCHES);
   const found = new Map<string, NaverLocalItem>();
+  const tourPhotoCatalogPromise = loadTourRestaurantPhotoCatalog(region);
 
   try {
     let successfulQueries = 0;
@@ -355,7 +360,7 @@ export async function GET(request: NextRequest) {
     }
     if (successfulQueries === 0 && lastError) throw lastError;
 
-    const places = Array.from(found.values()).slice(0, MAX_RESULTS).map((item, index) => {
+    const naverPlaces = Array.from(found.values()).slice(0, MAX_RESULTS).map((item, index) => {
       const point = coordinates(item)!;
       return {
         id: `naver-dining-${index}-${item.mapx}-${item.mapy}`,
@@ -368,9 +373,17 @@ export async function GET(request: NextRequest) {
         longitude: point.longitude,
       };
     });
+    const tourPhotoCatalog = await tourPhotoCatalogPromise;
+    const places = attachTourRestaurantPhotos(naverPlaces, tourPhotoCatalog);
 
     return NextResponse.json(
-      { places, query: queries[0], budget },
+      {
+        places,
+        query: queries[0],
+        budget,
+        photoSource: "한국관광공사 TourAPI",
+        photoCoverage: places.filter((place) => Boolean(place.imageUrl)).length,
+      },
       { headers: { "Cache-Control": "private, no-store, max-age=0" } },
     );
   } catch (error) {

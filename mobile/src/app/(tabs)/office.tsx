@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   ScrollView,
   Share,
@@ -304,7 +305,21 @@ export default function OfficeDiningScreen() {
               <View key={place.id} style={styles.restaurantCard}>
                 <MotionPressable onPress={() => setSelected(place)} style={styles.restaurantMain}>
                   <View style={styles.restaurantThumb}>
-                    <Text style={styles.restaurantThumbIcon}>🍲</Text>
+                    {place.imageUrl ? (
+                      <>
+                        <Image
+                          accessibilityLabel={`${place.name} 음식점 사진`}
+                          resizeMode={place.imageModificationAllowed ? 'cover' : 'contain'}
+                          source={{ uri: place.imageThumbnailUrl || place.imageUrl }}
+                          style={styles.restaurantImage}
+                        />
+                        <Text numberOfLines={1} style={styles.restaurantPhotoCredit}>
+                          관광공사 · {place.imageCopyrightCode === 'Type1' ? '공공누리 1' : '공공누리 3'}
+                        </Text>
+                      </>
+                    ) : (
+                      <Text style={styles.restaurantPhotoEmpty}>공공사진{"\n"}없음</Text>
+                    )}
                   </View>
                   <View style={styles.restaurantCopy}>
                     <Text numberOfLines={1} style={styles.restaurantTitle}>{place.name}</Text>
@@ -346,7 +361,7 @@ export default function OfficeDiningScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.source}>장소: 네이버 지역검색 · 지도: 네이버 지도</Text>
+        <Text style={styles.source}>장소: 네이버 지역검색 · 사진: 한국관광공사 TourAPI · 지도: 네이버 지도</Text>
       </ScrollView>
 
       <Modal animationType="slide" transparent visible={picker !== null} onRequestClose={() => setPicker(null)}>
@@ -420,8 +435,10 @@ const styles = StyleSheet.create({
   list: { gap: 8 },
   restaurantCard: { minHeight: 102, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e3e3e3', borderRadius: 10, backgroundColor: '#ffffff', padding: 7 },
   restaurantMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' },
-  restaurantThumb: { width: 84, height: 84, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 8, backgroundColor: '#efe5d7' },
-  restaurantThumbIcon: { fontSize: 34 },
+  restaurantThumb: { width: 84, height: 84, position: 'relative', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 8, backgroundColor: '#f1f2f0' },
+  restaurantImage: { width: '100%', height: '100%' },
+  restaurantPhotoEmpty: { color: '#818681', fontSize: 10, fontWeight: '800', lineHeight: 14, textAlign: 'center' },
+  restaurantPhotoCredit: { maxWidth: 78, position: 'absolute', right: 3, bottom: 3, overflow: 'hidden', borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.62)', color: '#ffffff', fontSize: 6, fontWeight: '800', paddingHorizontal: 3, paddingVertical: 2 },
   restaurantCopy: { flex: 1, minWidth: 0, paddingHorizontal: 9 },
   restaurantTitle: { color: '#202020', fontSize: 14, fontWeight: '900' },
   restaurantCategory: { marginTop: 5, color: '#2ba756', fontSize: 10, fontWeight: '800' },

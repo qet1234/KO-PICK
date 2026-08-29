@@ -37,6 +37,14 @@ export type NaverDiningPlace = {
   address: string | null;
   latitude: number;
   longitude: number;
+  imageUrl: string | null;
+  imageThumbnailUrl: string | null;
+  imageCopyrightCode: "Type1" | "Type3" | null;
+  imageLicenseLabel: string | null;
+  imageAttribution: string | null;
+  imageModificationAllowed: boolean;
+  imageLicenseUrl: string | null;
+  imageSourceUrl: string | null;
 };
 
 export type Recommendation = {
