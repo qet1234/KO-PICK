@@ -160,7 +160,7 @@ export async function loadTourRestaurantPhotoCatalog(region: string) {
 
   try {
     const response = await fetch(
-      \`\${TOUR_API_RESTAURANT_ENDPOINT}?\${params.toString()}\`,
+      `${TOUR_API_RESTAURANT_ENDPOINT}?${params.toString()}`,
       {
         next: { revalidate: 86_400 },
         signal: controller.signal,
