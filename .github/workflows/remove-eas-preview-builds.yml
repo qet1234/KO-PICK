@@ -30,6 +30,16 @@ jobs:
           set -euo pipefail
           test -n "${EXPO_TOKEN:-}"
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install project dependencies
+        run: npm ci
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -40,8 +50,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          build_json="$(eas build:list --platform android --build-profile preview --status finished --limit 100 --json --non-interactive)"
-          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[].id')
+          build_json="$(eas build:list --platform android --build-profile preview --limit 100 --json --non-interactive)"
+          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[] | select(.status == "FINISHED") | .id')
           if [ "${#build_ids[@]}" -eq 0 ]; then
             echo "No retired Android preview builds found."
             exit 0
