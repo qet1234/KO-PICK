@@ -1,14 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./download.module.css";
-
-type DownloadStatus =
-  | "checking"
-  | "ready"
-  | "preparing"
-  | "downloading"
-  | "error";
 
 interface ClientEnvironment {
   devicePlatform: "android" | "ios" | null;
@@ -16,14 +9,8 @@ interface ClientEnvironment {
   isInstalled: boolean;
 }
 
-interface AndroidDownloadStatus {
-  ready?: boolean;
-  versionCode?: number;
-  downloadUrl?: string;
-}
-
-const DOWNLOAD_ENDPOINT = "/api/app-download";
-const AVAILABILITY_CHECK_INTERVAL_MS = 10_000;
+const GOOGLE_PLAY_URL =
+  "https://play.google.com/store/apps/details?id=com.koreapick.app";
 
 function getDevicePlatform(): "android" | "ios" | null {
   const userAgent = window.navigator.userAgent;
@@ -54,11 +41,6 @@ function getClientEnvironment(): ClientEnvironment {
 }
 
 export default function DownloadLauncher() {
-  const [androidStatus, setAndroidStatus] = useState<DownloadStatus>("checking");
-  const [androidVersionCode, setAndroidVersionCode] = useState<number | null>(null);
-  const [androidDownloadUrl, setAndroidDownloadUrl] = useState(
-    `${DOWNLOAD_ENDPOINT}?platform=android&download=1`,
-  );
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [iosActionMessage, setIOSActionMessage] = useState("");
   const [clientEnvironment, setClientEnvironment] = useState<ClientEnvironment | null>(null);
@@ -66,65 +48,13 @@ export default function DownloadLauncher() {
   const isIOSSafari = clientEnvironment?.isIOSSafari ?? false;
   const isInstalled = clientEnvironment?.isInstalled ?? false;
 
-  const checkAndroidAvailability = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `${DOWNLOAD_ENDPOINT}?platform=android&status=1`,
-        { cache: "no-store" },
-      );
-
-      if (response.ok) {
-        const result = (await response.json()) as AndroidDownloadStatus;
-        if (typeof result.versionCode === "number") {
-          setAndroidVersionCode(result.versionCode);
-        }
-        if (typeof result.downloadUrl === "string" && result.downloadUrl.startsWith("/")) {
-          setAndroidDownloadUrl(result.downloadUrl);
-        }
-        setAndroidStatus("ready");
-        return;
-      }
-
-      setAndroidStatus("preparing");
-    } catch {
-      setAndroidStatus("error");
-    }
-  }, []);
-
   useEffect(() => {
     const environmentFrame = window.requestAnimationFrame(() => {
       setClientEnvironment(getClientEnvironment());
     });
-    const availabilityFrame = window.requestAnimationFrame(() => {
-      void checkAndroidAvailability();
-    });
-    const availabilityTimer = window.setInterval(
-      () => void checkAndroidAvailability(),
-      AVAILABILITY_CHECK_INTERVAL_MS,
-    );
 
-    return () => {
-      window.cancelAnimationFrame(environmentFrame);
-      window.cancelAnimationFrame(availabilityFrame);
-      window.clearInterval(availabilityTimer);
-    };
-  }, [checkAndroidAvailability]);
-
-  const androidStatusMessage = () => {
-    if (androidStatus === "checking") return "최신 Android APK를 확인하고 있습니다…";
-    if (androidStatus === "ready") {
-      return androidVersionCode
-        ? `현재 배포 중인 최신 APK를 받을 수 있습니다. (버전 코드 ${androidVersionCode})`
-        : "현재 배포 중인 최신 APK를 받을 수 있습니다.";
-    }
-    if (androidStatus === "preparing") {
-      return "새 APK를 준비 중입니다. 완료되면 이 페이지의 같은 버튼이 자동으로 최신 파일을 가리킵니다.";
-    }
-    if (androidStatus === "downloading") {
-      return "최신 APK 다운로드를 시작했습니다. 기존 앱을 삭제하지 말고 업데이트 설치해 주세요.";
-    }
-    return "최신 APK 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-  };
+    return () => window.cancelAnimationFrame(environmentFrame);
+  }, []);
 
   const iosStatusMessage = () => {
     if (iosActionMessage) return iosActionMessage;
@@ -170,12 +100,13 @@ export default function DownloadLauncher() {
       <div className={styles.downloadOption}>
         <a
           className={styles.downloadButton}
-          href={androidDownloadUrl}
-          onClick={() => setAndroidStatus("downloading")}
+          href={GOOGLE_PLAY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          Android 최신 APK 다운로드 / 업데이트
+          Google Play에서 설치 / 업데이트
         </a>
-        <p className={styles.status}>{androidStatusMessage()}</p>
+        <p className={styles.status}>Android 앱은 Google Play를 통해서만 배포됩니다.</p>
       </div>
 
       <div className={styles.downloadOption}>
@@ -203,7 +134,7 @@ export default function DownloadLauncher() {
             {isIOSSafari ? (
               <>
                 <p className={styles.safariNotice}>
-                  iPhone은 APK나 IPA 파일을 직접 내려받는 방식이 아니라 Safari의 홈 화면 앱 설치 방식으로 사용할 수 있습니다.
+                  iPhone은 Safari의 홈 화면 앱 설치 방식으로 사용할 수 있습니다.
                 </p>
                 <ol>
                   <li><strong>1</strong><span>Safari 화면 아래의 <b>공유</b> 버튼을 누릅니다.</span></li>

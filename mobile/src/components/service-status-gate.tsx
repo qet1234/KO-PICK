@@ -6,8 +6,9 @@ import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
-import { appConfig } from '@/lib/config';
 import { fetchMobileServiceStatus, type MobileServiceStatus } from '@/lib/service-status';
+
+const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.koreapick.app';
 
 function dateTime(value: string | null) {
   if (!value) return null;
@@ -95,7 +96,7 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
   const schedule = scheduleText(status);
 
   const openUpdate = async () => {
-    const updateUrl = status.update.url || new URL('/download', appConfig.webUrl).toString();
+    const updateUrl = status.update.url || GOOGLE_PLAY_URL;
     await Linking.openURL(updateUrl);
   };
 

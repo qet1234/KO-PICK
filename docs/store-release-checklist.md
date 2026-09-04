@@ -1,6 +1,6 @@
 # 오늘어디 스토어 정식 출시 준수 체크리스트
 
-기준일: 2026-08-11
+기준일: 2026-09-04
 
 이 문서는 저장소의 실제 데이터 흐름과 현재 Apple·Google 공개 심사 기준을 대조한 출시 점검표입니다. 법률 자문이나 심사 승인을 보장하지 않으며, 콘솔·계약·사업자 정보는 출시 책임자가 실제 값으로 최종 확인해야 합니다.
 
@@ -42,9 +42,10 @@ Application ID와 Bundle ID는 최초 스토어 등록 뒤 변경하지 않습�
 - [ ] TourAPI 활용 신청을 운영계정으로 승인받고 서비스키 호출 한도 확인
 - [ ] Google·Kakao·Naver의 Android/iOS 앱 등록, OAuth redirect URI 및 Android 서명 SHA 지문 확인
 - [ ] App Store Connect와 Google Play Console의 개발자 법적 명칭·연락처·필요 시 주소를 실제 사업자 정보로 입력
+- [ ] Play Console Android 개발자 인증에서 `com.koreapick.app` 패키지 등록 상태 확인
 - [ ] 실제 기기에서 네 가지 로그인, 계정 삭제, 분석 동의 거부·철회, 외부 지도·예약, 오프라인·토큰 만료를 검증
 
-Apple 유료 멤버십이 아직 활성화되지 않았으므로 iOS App Store/TestFlight 정식 배포는 현재 차단 상태입니다. Android preview APK 직접 배포는 가능하지만, Play Console 출시에는 별도 개발자 계정과 심사 절차가 필요합니다.
+Android는 Google Play App Signing이 적용된 AAB로만 배포합니다. 외부 APK 직접 배포와 외부 APK 서명 키 사용은 중단합니다. iOS 출시는 Apple Developer Program과 App Store Connect 준비 상태를 별도로 확인합니다.
 
 ## 4. App Store 개인정보 라벨 권장 입력
 
