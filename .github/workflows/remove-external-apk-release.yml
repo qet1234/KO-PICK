@@ -1,0 +1,30 @@
+name: Remove retired external APK release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/remove-external-apk-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  remove-retired-apk:
+    name: Delete retired APK release and tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Delete android-latest release and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view android-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete android-latest --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+            echo "Retired external APK release deleted."
+          else
+            echo "Retired external APK release is already absent."
+          fi
