@@ -14,49 +14,47 @@ jobs:
   remove-preview-builds:
     name: Delete retired Android preview builds
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: mobile
+    timeout-minutes: 10
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EAS_PROJECT_ID: 8914e5dd-3545-482a-ad4d-4290b399e4b1
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Check Expo token
+      - name: Delete completed Android preview builds
         shell: bash
         run: |
           set -euo pipefail
           test -n "${EXPO_TOKEN:-}"
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          query='query PreviewBuilds($appId: String!, $offset: Int!, $limit: Int!, $filter: BuildFilter) { app { byId(appId: $appId) { builds(offset: $offset, limit: $limit, filter: $filter) { id } } } }'
+          mutation='mutation DeleteBuild($buildId: ID!) { build(buildId: $buildId) { deleteBuild(buildId: $buildId) { id } } }'
+          deleted=0
 
-      - name: Install project dependencies
-        run: npm ci
+          for batch in $(seq 1 10); do
+            payload="$(jq -n               --arg query "$query"               --arg app_id "$EAS_PROJECT_ID"               '{query: $query, variables: {appId: $app_id, offset: 0, limit: 100, filter: {platform: "ANDROID", status: "FINISHED", buildProfile: "preview"}}}')"
+            response="$(curl --fail-with-body --silent --show-error               https://api.expo.dev/graphql               -H "Authorization: Bearer $EXPO_TOKEN"               -H 'Content-Type: application/json'               --data "$payload")"
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: 23.2.0
-          token: ${{ secrets.EXPO_TOKEN }}
+            if jq -e '.errors and (.errors | length > 0)' >/dev/null <<<"$response"; then
+              jq -r '.errors[].message' <<<"$response"
+              exit 1
+            fi
 
-      - name: Delete completed Android preview builds
-        shell: bash
-        run: |
-          set -euo pipefail
-          build_json="$(eas build:list --platform android --limit 100 --json --non-interactive)"
-          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[] | select(.buildProfile == "preview" and .status == "FINISHED") | .id')
-          if [ "${#build_ids[@]}" -eq 0 ]; then
-            echo "No retired Android preview builds found."
-            exit 0
-          fi
-          for build_id in "${build_ids[@]}"; do
-            eas build:delete "$build_id" --non-interactive
+            mapfile -t build_ids < <(jq -r '.data.app.byId.builds[].id' <<<"$response")
+            if [ "${#build_ids[@]}" -eq 0 ]; then
+              echo "Deleted $deleted retired Android preview build(s)."
+              exit 0
+            fi
+
+            for build_id in "${build_ids[@]}"; do
+              delete_payload="$(jq -n                 --arg query "$mutation"                 --arg build_id "$build_id"                 '{query: $query, variables: {buildId: $build_id}}')"
+              delete_response="$(curl --fail-with-body --silent --show-error                 https://api.expo.dev/graphql                 -H "Authorization: Bearer $EXPO_TOKEN"                 -H 'Content-Type: application/json'                 --data "$delete_payload")"
+
+              if jq -e '.errors and (.errors | length > 0)' >/dev/null <<<"$delete_response"; then
+                jq -r '.errors[].message' <<<"$delete_response"
+                exit 1
+              fi
+              deleted=$((deleted + 1))
+            done
           done
-          echo "Deleted ${#build_ids[@]} retired Android preview build(s)."
+
+          echo "More than 1,000 preview builds were found; cleanup stopped safely."
+          exit 1
