@@ -1,0 +1,52 @@
+name: Remove retired EAS preview APK builds
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/remove-eas-preview-builds.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  remove-preview-builds:
+    name: Delete retired Android preview builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check Expo token
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${EXPO_TOKEN:-}"
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: 23.2.0
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Delete completed Android preview builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_json="$(eas build:list --platform android --build-profile preview --status finished --limit 100 --json --non-interactive)"
+          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[].id')
+          if [ "${#build_ids[@]}" -eq 0 ]; then
+            echo "No retired Android preview builds found."
+            exit 0
+          fi
+          for build_id in "${build_ids[@]}"; do
+            eas build:delete "$build_id" --non-interactive
+          done
+          echo "Deleted ${#build_ids[@]} retired Android preview build(s)."
