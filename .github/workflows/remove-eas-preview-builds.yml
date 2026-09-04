@@ -50,8 +50,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          build_json="$(eas build:list --platform android --build-profile preview --limit 100 --json --non-interactive)"
-          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[] | select(.status == "FINISHED") | .id')
+          build_json="$(eas build:list --platform android --limit 100 --json --non-interactive)"
+          mapfile -t build_ids < <(printf '%s' "$build_json" | jq -r '.[] | select(.buildProfile == "preview" and .status == "FINISHED") | .id')
           if [ "${#build_ids[@]}" -eq 0 ]; then
             echo "No retired Android preview builds found."
             exit 0
