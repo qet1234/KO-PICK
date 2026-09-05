@@ -175,11 +175,9 @@ async function rankRecommendationsByEngagement(items: Recommendation[]) {
 
 export type AccountDeletionResult = {
   success: boolean;
-  appleRevocation: 'not_applicable' | 'revoked' | 'manual_required';
 };
 
 export async function deleteAccount(options?: {
-  appleAuthorizationCode?: string;
   visitorId?: string | null;
 }) {
   if (!appConfig.isSupabaseConfigured) {
@@ -202,7 +200,6 @@ export async function deleteAccount(options?: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        appleAuthorizationCode: options?.appleAuthorizationCode,
         visitorId: options?.visitorId,
       }),
       signal: controller.signal,

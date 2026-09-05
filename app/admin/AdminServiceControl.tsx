@@ -36,11 +36,8 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
   const [featureFlags, setFeatureFlags] = useState(initialStatus.featureFlags);
   const [customFeature, setCustomFeature] = useState("");
   const [androidMinVersion, setAndroidMinVersion] = useState(initialStatus.androidMinVersion);
-  const [iosMinVersion, setIosMinVersion] = useState(initialStatus.iosMinVersion);
   const [androidForceUpdate, setAndroidForceUpdate] = useState(initialStatus.androidForceUpdate);
-  const [iosForceUpdate, setIosForceUpdate] = useState(initialStatus.iosForceUpdate);
   const [androidStoreUrl, setAndroidStoreUrl] = useState(initialStatus.androidStoreUrl ?? "");
-  const [iosStoreUrl, setIosStoreUrl] = useState(initialStatus.iosStoreUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ error?: boolean; message: string } | null>(null);
 
@@ -94,9 +91,6 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
           androidStoreUrl,
           endsAt: inputToIso(endsAt),
           featureFlags,
-          iosForceUpdate,
-          iosMinVersion,
-          iosStoreUrl,
           message,
           mode,
           startsAt: inputToIso(startsAt),
@@ -121,7 +115,7 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
         <div>
           <span className="admin-kicker">APP SERVICE CONTROL</span>
           <h2>앱 점검·업데이트 제어</h2>
-          <p>Android·iOS 앱의 운영 상태와 필수 업데이트 안내를 원격으로 변경합니다.</p>
+          <p>Android 앱의 운영 상태와 필수 업데이트 안내를 원격으로 변경합니다.</p>
         </div>
         <strong className={`service-mode-badge is-${mode}`}>{modeLabels[mode]}</strong>
       </div>
@@ -162,7 +156,7 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
             <p>
               {mode === "operational"
                 ? "정상 운영 상태에서도 관리할 기능을 선택해 둘 수 있습니다. 앱에는 점검 안내가 표시되지 않습니다."
-                : "선택한 기능은 Android·iOS 점검 안내의 영향받는 기능에 표시됩니다."}
+                : "선택한 기능은 Android 점검 안내의 영향받는 기능에 표시됩니다."}
             </p>
             <div>
               <button
@@ -243,12 +237,6 @@ export default function AdminServiceControl({ initialStatus }: { initialStatus: 
             <label className="service-switch"><input checked={androidForceUpdate} onChange={(event) => setAndroidForceUpdate(event.target.checked)} type="checkbox" /><span />강제 적용</label>
             <label className="service-field"><span>최소 버전</span><input onChange={(event) => setAndroidMinVersion(event.target.value)} pattern="\d+\.\d+\.\d+" required value={androidMinVersion} /></label>
             <label className="service-field"><span>업데이트 주소</span><input onChange={(event) => setAndroidStoreUrl(event.target.value)} placeholder="https://..." type="url" value={androidStoreUrl} /></label>
-          </article>
-          <article>
-            <div><strong>iOS 필수 업데이트</strong><small>TestFlight 또는 App Store 주소를 지정할 수 있습니다.</small></div>
-            <label className="service-switch"><input checked={iosForceUpdate} onChange={(event) => setIosForceUpdate(event.target.checked)} type="checkbox" /><span />강제 적용</label>
-            <label className="service-field"><span>최소 버전</span><input onChange={(event) => setIosMinVersion(event.target.value)} pattern="\d+\.\d+\.\d+" required value={iosMinVersion} /></label>
-            <label className="service-field"><span>업데이트 주소</span><input onChange={(event) => setIosStoreUrl(event.target.value)} placeholder="https://..." type="url" value={iosStoreUrl} /></label>
           </article>
         </div>
 

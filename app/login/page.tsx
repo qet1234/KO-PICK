@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 
-type SocialProvider = "google" | "kakao" | "naver" | "apple";
+type SocialProvider = "google" | "kakao" | "naver";
 type SupabaseOAuthProvider = "google" | "kakao";
 
 export default function LoginPage() {
@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   const handleSocialLogin = async (
     provider: SupabaseOAuthProvider,
-    activeKey: Exclude<SocialProvider, "apple" | "naver">,
+    activeKey: Exclude<SocialProvider, "naver">,
     providerLabel: string,
   ) => {
     if (loading) return;

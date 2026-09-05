@@ -78,6 +78,7 @@ jobs:
           OPERATIONS_MIGRATION: supabase/migrations/20260811150000_operations_observability.sql
           DATA_DRIVEN_MIGRATION: supabase/migrations/20260812172000_data_driven_recommendations.sql
           TOGETHER_REMOVAL_MIGRATION: supabase/migrations/20260811180000_remove_together_spaces.sql
+          IOS_REMOVAL_MIGRATION: supabase/migrations/20260905050000_remove_ios_service_status.sql
         shell: bash
         run: |
           set -euo pipefail
@@ -93,7 +94,7 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$SECURITY_MONITORING_MIGRATION" "$COUPLE_DISABLE_MIGRATION" "$PLACE_LIBRARY_MIGRATION" "$OPERATIONS_MIGRATION" "$DATA_DRIVEN_MIGRATION" "$TOGETHER_REMOVAL_MIGRATION"; do
+            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$SECURITY_MONITORING_MIGRATION" "$COUPLE_DISABLE_MIGRATION" "$PLACE_LIBRARY_MIGRATION" "$OPERATIONS_MIGRATION" "$DATA_DRIVEN_MIGRATION" "$TOGETHER_REMOVAL_MIGRATION" "$IOS_REMOVAL_MIGRATION"; do
               echo "Applying reviewed migration $(basename "$migration") through the Supabase Management API."
               jq -Rs '{query: .}' "$migration" > reviewed-migration.json
               curl --fail-with-body --silent --show-error \
@@ -121,6 +122,21 @@ jobs:
             "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
             | tee verify-migration-response.json
           jq -e '.[0].ready == true' verify-migration-response.json >/dev/null
+
+      - name: Verify iOS service status columns are removed
+        if: steps.changes.outputs.migrations == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -n '{query: "select to_regclass('\''public.app_service_status'\'') is not null and not exists (select 1 from information_schema.columns where table_schema = '\''public'\'' and table_name = '\''app_service_status'\'' and column_name in ('\''ios_min_version'\'', '\''ios_force_update'\'', '\''ios_store_url'\'')) as ready", read_only: true}' > verify-ios-removed.json
+          curl --fail-with-body --silent --show-error --max-time 30 \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data-binary @verify-ios-removed.json \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" \
+            | tee verify-ios-removed-response.json
+          jq -e '.[0].ready == true' verify-ios-removed-response.json >/dev/null
 
       - name: Verify Together Spaces data and APIs are removed
         if: steps.changes.outputs.migrations == 'true'

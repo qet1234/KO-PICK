@@ -637,16 +637,6 @@ h1 strong {
   background: #03c75a;
 }
 
-.quick-login-icon.is-apple {
-  color: #000;
-}
-
-.quick-login-icon.is-apple svg {
-  width: 23px;
-  height: 30px;
-  display: block;
-}
-
 .quick-login-icon.is-google svg {
   width: 24px;
   height: 24px;

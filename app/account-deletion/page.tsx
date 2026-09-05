@@ -45,7 +45,7 @@ export default function AccountDeletionPage() {
           </section>
           <section>
             <h2>유의사항</h2>
-            <p className="legal-note legal-danger">삭제된 계정과 개인 데이터는 복구할 수 없습니다. Google·Apple·카카오·네이버 계정 자체는 삭제되지 않으며 오늘어디와의 연결만 해제됩니다. Apple 로그인 회원은 앱 탈퇴 과정에서 연결 토큰 해제를 함께 시도하고, 자동 해제가 불가능한 경우 Apple 계정 설정의 수동 해제 방법을 안내합니다.</p>
+            <p className="legal-note legal-danger">삭제된 계정과 개인 데이터는 복구할 수 없습니다. Google·카카오·네이버 계정 자체는 삭제되지 않으며 오늘어디와의 연결만 해제됩니다.</p>
           </section>
         </div>
       </article>

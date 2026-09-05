@@ -1,12 +1,11 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 import { createAndroidConfig } from './config/platform/android.js';
-import { createIosConfig } from './config/platform/ios.js';
 
 const easProjectId = '8914e5dd-3545-482a-ad4d-4290b399e4b1';
 const naverMapClientId =
   process.env.EXPO_PUBLIC_NAVER_MAP_CLIENT_ID?.trim() || 'NAVER_MAP_CLIENT_ID_REQUIRED';
-const releaseProfiles = new Set(['production', 'testflight', 'ios-production']);
+const releaseProfiles = new Set(['production']);
 const isReleaseBuild = releaseProfiles.has(process.env.EAS_BUILD_PROFILE ?? '');
 
 if (isReleaseBuild) {
@@ -26,6 +25,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: '오늘어디',
   slug: 'ko-pick',
+  platforms: ['android', 'web'],
   version: '1.0.0',
   orientation: 'portrait',
   scheme: 'kopick',
@@ -39,7 +39,6 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     checkAutomatically: 'ON_LOAD',
     fallbackToCacheTimeout: 0,
   },
-  ios: createIosConfig(config.ios),
   android: createAndroidConfig(config.android),
   web: {
     ...config.web,
@@ -48,7 +47,6 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-secure-store',
-    'expo-apple-authentication',
     [
       'expo-splash-screen',
       {

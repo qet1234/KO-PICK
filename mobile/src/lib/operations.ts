@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
-import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 import { getAnalyticsConsent } from '@/lib/privacy-preferences';
@@ -39,7 +38,7 @@ export async function trackMobileOperation(event: MobileOperationEvent) {
     await fetch(new URL('/api/operations/events', appConfig.webUrl).toString(), {
       body: JSON.stringify({
         ...event,
-        platform: Platform.OS === 'ios' ? 'ios' : 'android',
+        platform: 'android',
         visitorId: await visitorId(),
       }),
       headers: { 'Content-Type': 'application/json' },
@@ -62,7 +61,7 @@ export async function reportMobilePlace(place: {
       category: place.category,
       placeId: place.id,
       placeName: place.name,
-      platform: Platform.OS === 'ios' ? 'ios' : 'android',
+      platform: 'android',
       reason,
       visitorId: await visitorId(),
     }),

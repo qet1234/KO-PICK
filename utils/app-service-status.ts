@@ -38,9 +38,6 @@ export type AppServiceStatusRecord = {
   androidStoreUrl: string | null;
   endsAt: string | null;
   featureFlags: OperationalFeatureFlags;
-  iosForceUpdate: boolean;
-  iosMinVersion: string;
-  iosStoreUrl: string | null;
   message: string;
   mode: AppServiceMode;
   startsAt: string | null;
@@ -55,9 +52,6 @@ export const defaultAppServiceStatus: AppServiceStatusRecord = {
   androidStoreUrl: null,
   endsAt: null,
   featureFlags: defaultOperationalFeatureFlags,
-  iosForceUpdate: false,
-  iosMinVersion: "1.0.0",
-  iosStoreUrl: null,
   message: "더 안정적인 서비스 제공을 위해 시스템 점검을 진행하고 있습니다.",
   mode: "operational",
   startsAt: null,
@@ -96,9 +90,6 @@ export function normalizeAppServiceStatus(value: unknown): AppServiceStatusRecor
     androidStoreUrl: nullableString(row.android_store_url),
     endsAt: nullableString(row.ends_at),
     featureFlags,
-    iosForceUpdate: row.ios_force_update === true,
-    iosMinVersion: string(row.ios_min_version, "1.0.0"),
-    iosStoreUrl: nullableString(row.ios_store_url),
     message: string(row.message, defaultAppServiceStatus.message),
     mode,
     startsAt: nullableString(row.starts_at),

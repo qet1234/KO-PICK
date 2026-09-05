@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       details: text(body.details, 500),
       place_id: text(body.placeId, 120, true),
       place_name: text(body.placeName, 160, true),
-      platform: body.platform === "android" || body.platform === "ios" ? body.platform : "web",
+      platform: body.platform === "android" ? "android" : "web",
       reason,
       report_bucket: Math.floor(Date.now() / 86_400_000),
       reporter_user_id: reporterUserId,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
 
     const response = NextResponse.json({ ok: true });
-    if (!current && body.platform !== "android" && body.platform !== "ios") {
+    if (!current && body.platform !== "android") {
       response.cookies.set(COOKIE, visitorId, { httpOnly: true, maxAge: 60 * 60 * 24 * 90, path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
     }
     return response;

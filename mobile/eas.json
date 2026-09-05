@@ -16,18 +16,6 @@
       "android": {
         "buildType": "app-bundle"
       }
-    },
-    "testflight": {
-      "distribution": "store",
-      "autoIncrement": true,
-      "channel": "production-ios",
-      "environment": "production"
-    },
-    "ios-production": {
-      "distribution": "store",
-      "autoIncrement": true,
-      "channel": "production-ios",
-      "environment": "production"
     }
   },
   "submit": {
@@ -42,12 +30,6 @@
         "track": "alpha",
         "releaseStatus": "completed"
       }
-    },
-    "testflight": {
-      "ios": {}
-    },
-    "ios-production": {
-      "ios": {}
     }
   }
 }

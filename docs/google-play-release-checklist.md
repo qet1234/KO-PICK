@@ -1,8 +1,8 @@
 # 오늘어디 Google Play 출시 체크리스트
 
-기준일: 2026-09-04
+기준일: 2026-09-05
 
-현재 출시 대상은 Android / Google Play만 포함합니다. iOS / TestFlight / App Store 출시는 보류 상태이며 iOS 소스 코드는 향후 재개를 위해 유지합니다.
+현재 출시 대상은 Android / Google Play만 포함하며 다른 모바일 플랫폼 코드는 포함하지 않습니다.
 
 ## Android 고정 값
 
@@ -57,13 +57,6 @@ GitHub Actions의 `Mobile Android release` 워크플로가 다음 항목을 검�
 - [ ] 실제 Android 기기에서 네이버 지도/길찾기/예약 외부 연결 확인
 - [ ] 실제 Android 기기에서 회원탈퇴 후 계정 및 로컬 데이터 삭제 확인
 - [ ] 내부 테스트 또는 비공개 테스트 트랙 검증
-
-## iOS 보류 정책
-
-- iOS TestFlight GitHub Actions 워크플로 제거
-- EAS `testflight` build/submit profile 제거
-- Android 출시에는 iOS 빌드나 Apple Developer 멤버십을 요구하지 않음
-- iOS 앱 소스와 Bundle ID 설정은 향후 재개를 위해 유지
 
 ## 출시 판정
 

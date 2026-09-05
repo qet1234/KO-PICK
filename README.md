@@ -71,10 +71,6 @@ npx --yes supabase@2.75.0 functions deploy kopick-api --no-verify-jwt
 npx --yes supabase@2.75.0 functions deploy naver-userinfo --no-verify-jwt
 ```
 
-Apple 로그인 계정의 앱 내 회원탈퇴 시 연동 토큰까지 해제하려면 Supabase Edge Function
-secret에 `APPLE_CLIENT_ID`, `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`를 등록합니다.
-`APPLE_PRIVATE_KEY`는 Sign in with Apple이 활성화된 `.p8` 키의 전체 내용입니다.
-
 전체 운영 전환, OAuth 공급자 설정, Render 데이터 백업과 사용자 UUID 매핑 절차는 [`docs/supabase-cutover.md`](docs/supabase-cutover.md)를 따릅니다.
 
 ## 인증
@@ -104,9 +100,9 @@ npm run build
 
 GitHub Actions는 Next.js 타입 검사·빌드와 두 Supabase Edge Function의 Deno 검사를 수행합니다.
 
-## Android·iOS 앱
+## Android 앱
 
-향후 앱 기능은 웹을 WebView로 감싸지 않고 [`mobile/`](mobile/)의 Expo React Native 공용 프로젝트에서 개발합니다. 웹과 앱은 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 공유하며 Vercel 웹 배포와 앱 빌드는 서로 분리됩니다.
+앱 기능은 웹을 WebView로 감싸지 않고 [`mobile/`](mobile/)의 Expo React Native Android 프로젝트에서 개발합니다. 웹과 앱은 동일한 Supabase Auth, PostgreSQL, RLS, RPC, Edge Functions를 공유하며 Vercel 웹 배포와 앱 빌드는 서로 분리됩니다.
 
 - 모바일 시작 문서: [`mobile/README.md`](mobile/README.md)
 - 전체 확장 설계: [`docs/mobile-app-architecture.md`](docs/mobile-app-architecture.md)

@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 
@@ -49,7 +48,7 @@ export async function fetchMobileServiceStatus() {
   const timeout = setTimeout(() => controller.abort(), 5_000);
   try {
     const url = new URL('/api/app-status', appConfig.webUrl);
-    url.searchParams.set('platform', Platform.OS === 'ios' ? 'ios' : 'android');
+    url.searchParams.set('platform', 'android');
     url.searchParams.set('version', Constants.expoConfig?.version ?? '0.0.0');
     const response = await fetch(url.toString(), {
       headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },

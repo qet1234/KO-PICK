@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "오늘어디",
     description: "전국 맛집, 카페, 여행지와 축제를 찾는 장소 추천 서비스",
     lang: "ko-KR",
-    start_url: "/?source=ios-home-screen",
+    start_url: "/?source=home-screen",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

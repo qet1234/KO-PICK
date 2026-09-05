@@ -1,7 +1,6 @@
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import type { Provider, Session } from '@supabase/supabase-js';
-import { Platform } from 'react-native';
 
 import { appConfig } from '@/lib/config';
 import { PRIVACY_VERSION, TERMS_VERSION } from '@/lib/legal';
@@ -9,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export type MobileAuthProvider = 'apple' | 'google' | 'kakao' | 'naver';
+export type MobileAuthProvider = 'google' | 'kakao' | 'naver';
 
 const appRedirectTo = makeRedirectUri({
   scheme: 'kopick',
@@ -65,7 +64,7 @@ async function createSessionFromUrl(url: string) {
 }
 
 function normalizedProvider(value: unknown): MobileAuthProvider {
-  if (value === 'apple' || value === 'google' || value === 'kakao' || value === 'naver') {
+  if (value === 'google' || value === 'kakao' || value === 'naver') {
     return value;
   }
   return 'google';
@@ -139,6 +138,6 @@ export async function signInWithNaver() {
     throw new Error('Supabase 앱 환경변수를 먼저 설정해 주세요.');
   }
   const startUrl = new URL('/auth/mobile/naver', appConfig.webUrl);
-  startUrl.searchParams.set('platform', Platform.OS);
+  startUrl.searchParams.set('platform', 'android');
   return finishBrowserLogin(startUrl.toString(), 'naver');
 }

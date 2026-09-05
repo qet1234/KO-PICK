@@ -13,7 +13,7 @@ export default function TermsPage() {
           <a href="/">← 오늘어디 홈</a>
           <small>TERMS OF SERVICE</small>
           <h1>이용약관</h1>
-          <p>시행일 2026년 8월 11일</p>
+          <p>시행일 2026년 9월 5일</p>
         </header>
         <div className="legal-content">
           <section>
@@ -38,7 +38,7 @@ export default function TermsPage() {
               <li>회원은 소셜 로그인 전에 이용약관과 개인정보 수집·이용에 각각 동의하고 만 14세 이상임을 확인해야 합니다.</li>
               <li>회원은 정확한 계정 정보를 사용하고 인증수단을 안전하게 관리해야 합니다.</li>
               <li>회원 서비스는 만 14세 이상을 대상으로 하며 만 14세 미만은 가입할 수 없습니다.</li>
-              <li>iOS 앱은 Google·카카오·네이버 등 제3자 로그인과 함께 Apple 로그인을 제공합니다. 로그인 제공자의 장애·정책 변경 시 일부 방식이 일시 제한될 수 있습니다.</li>
+              <li>Google·카카오·네이버 로그인 제공자의 장애나 정책 변경 시 일부 로그인 방식이 일시 제한될 수 있습니다.</li>
             </ol>
           </section>
           <section>

@@ -1,17 +1,10 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
-import { signInWithAppleNative } from '@/lib/apple-auth';
 import { signInWithNaver, signInWithSupabaseOAuth, type MobileAuthProvider } from '@/lib/auth';
 import { appConfig } from '@/lib/config';
 
@@ -57,8 +50,6 @@ export default function LoginScreen() {
     try {
       if (provider === 'naver') {
         await signInWithNaver();
-      } else if (provider === 'apple' && Platform.OS === 'ios') {
-        await signInWithAppleNative();
       } else {
         await signInWithSupabaseOAuth(provider);
       }
@@ -119,12 +110,6 @@ export default function LoginScreen() {
           <MotionPressable disabled={!ready} onPress={() => void login('google')} style={[styles.provider, styles.google, !ready && styles.disabled]}>
             <Text style={styles.googleText}>{active === 'google' ? 'Google 연결 중...' : 'G  Google로 로그인'}</Text>
           </MotionPressable>
-          {Platform.OS === 'ios' ? (
-            <MotionPressable disabled={!ready} onPress={() => void login('apple')} style={[styles.provider, styles.apple, !ready && styles.disabled]}>
-              <Text style={styles.providerText}>{active === 'apple' ? 'Apple 연결 중...' : '  Apple로 로그인'}</Text>
-            </MotionPressable>
-          ) : null}
-
           {message ? <Text style={[styles.message, active && styles.status]}>{message}</Text> : null}
           {!appConfig.isSupabaseConfigured ? (
             <Text style={styles.configWarning}>앱 빌드 전에 Supabase 공개 환경변수를 설정해 주세요.</Text>
@@ -158,9 +143,7 @@ const styles = StyleSheet.create({
   naverSymbol: { position: 'absolute', left: 18, color: '#ffffff', fontSize: 21, fontWeight: '900', letterSpacing: -1.5 },
   naverText: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
   google: { borderWidth: 1, borderColor: '#dadad4', backgroundColor: '#ffffff' },
-  apple: { backgroundColor: '#000000' },
   disabled: { opacity: 0.42 },
-  providerText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
   kakaoText: { color: '#191919', fontSize: 15, fontWeight: '900' },
   googleText: { color: '#26332c', fontSize: 15, fontWeight: '900' },
   message: { marginTop: 14, color: '#a43232', fontSize: 13, lineHeight: 19, textAlign: 'center' },

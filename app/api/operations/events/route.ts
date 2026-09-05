@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const eventType = shortText(body?.eventType, 40);
   const feature = shortText(body?.feature, 60);
-  const platform = body?.platform === "android" || body?.platform === "ios" ? body.platform : "web";
+  const platform = body?.platform === "android" ? "android" : "web";
   if (!eventType || !EVENT_TYPES.has(eventType) || !feature) {
     return NextResponse.json({ error: "운영 이벤트 형식이 올바르지 않습니다." }, { status: 400 });
   }

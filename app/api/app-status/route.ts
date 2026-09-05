@@ -15,7 +15,6 @@ const noStoreHeaders = {
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const platform = requestUrl.searchParams.get("platform") === "ios" ? "ios" : "android";
   const currentVersion = requestUrl.searchParams.get("version")?.trim() || "0.0.0";
   let status = defaultAppServiceStatus;
 
@@ -37,9 +36,9 @@ export async function GET(request: Request) {
     console.error("앱 서비스 상태 설정 오류:", error);
   }
 
-  const minimumVersion = platform === "ios" ? status.iosMinVersion : status.androidMinVersion;
-  const forceUpdate = platform === "ios" ? status.iosForceUpdate : status.androidForceUpdate;
-  const storeUrl = platform === "ios" ? status.iosStoreUrl : status.androidStoreUrl;
+  const minimumVersion = status.androidMinVersion;
+  const forceUpdate = status.androidForceUpdate;
+  const storeUrl = status.androidStoreUrl;
 
   return NextResponse.json({
     affectedFeatures: status.affectedFeatures,

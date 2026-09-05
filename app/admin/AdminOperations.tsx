@@ -126,7 +126,7 @@ export function AdminOperationsDashboard({ summary }: { summary: OperationsSumma
           </div>
         </article>
         <article className="admin-panel">
-          <div className="panel-title"><div><h2>최근 앱 오류</h2><p>웹·Android·iOS 런타임 오류</p></div></div>
+          <div className="panel-title"><div><h2>최근 앱 오류</h2><p>웹·Android 런타임 오류</p></div></div>
           <div className="error-list">
             {summary.recentErrors.map((item, index) => <div key={`${item.created_at}-${index}`}><span>{item.platform.toUpperCase()}</span><strong>{item.error_message || "오류 메시지 없음"}</strong><small>{item.feature} · {new Date(item.created_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}</small></div>)}
             {summary.recentErrors.length === 0 ? <p className="chart-empty">수집된 앱 오류가 없습니다.</p> : null}

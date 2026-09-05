@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { readFile } from 'node:fs/promises';
 
 const expectedAssets = [

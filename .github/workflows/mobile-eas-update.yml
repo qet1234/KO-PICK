@@ -1,4 +1,4 @@
-name: Mobile Android and iOS automatic update
+name: Mobile Android automatic update
 
 on:
   push:
@@ -57,5 +57,5 @@ jobs:
       - name: Publish Android production update
         run: eas update --channel production --platform android --message "${{ github.event.head_commit.message || 'Manual Android production update' }}" --environment production --non-interactive
 
-      - name: Publish Android and iOS preview update
-        run: eas update --channel preview --platform all --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment preview --non-interactive
+      - name: Publish Android preview update
+        run: eas update --channel preview --platform android --message "${{ github.event.head_commit.message || 'Manual preview update' }}" --environment preview --non-interactive

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: "오늘어디의 개인정보 처리, 국외 이전, 보유·삭제 및 이용자 권리를 안내합니다.",
 };
 
-const effectiveDate = "2026년 8월 11일";
+const effectiveDate = "2026년 9월 5일";
 
 export default function PrivacyPage() {
   return (
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           <a href="/">← 오늘어디 홈</a>
           <small>PRIVACY POLICY</small>
           <h1>개인정보처리방침</h1>
-          <p>시행일 {effectiveDate} · 웹, Android 및 iOS 앱에 공통 적용</p>
+          <p>시행일 {effectiveDate} · 웹 및 Android 앱에 공통 적용</p>
         </header>
 
         <div className="legal-content">
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
             <h2>6. 국외 이전 및 선택형 외부 로그인</h2>
             <p>
               아래 서비스는 기능을 제공하는 과정에서 암호화된 네트워크를 통해 국외에서 정보를 처리할 수 있습니다.
-              이전을 원하지 않으면 Google·Apple 로그인이나 Gmail 문의를 사용하지 않고 카카오·네이버 로그인 또는 비회원 탐색을 선택할 수 있습니다.
+              이전을 원하지 않으면 Google 로그인이나 Gmail 문의를 사용하지 않고 카카오·네이버 로그인 또는 비회원 탐색을 선택할 수 있습니다.
             </p>
             <div className="legal-table-wrap">
               <table>
@@ -168,12 +168,6 @@ export default function PrivacyPage() {
                 </tbody>
               </table>
             </div>
-            <p>
-              iOS에서 이용자가 <strong>Apple로 로그인</strong>을 선택하면 로그인 요청, Apple 고유 식별자와 이용자가 공개한 이메일·이름이
-              미국 등 Apple 운영 지역에서 TLS로 처리될 수 있습니다. 처리 근거는 이용자 동의와 로그인 계약 이행이며, 회원탈퇴 또는
-              연동 해제 시까지 처리됩니다. Apple 로그인을 거부해도 다른 로그인이나 비회원 탐색을 이용할 수 있습니다. 탈퇴 시에는
-              연결 해제를 위해 일회성 승인 코드를 Apple에 전송할 수 있습니다. 자세한 내용은 <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noreferrer">Apple 개인정보처리방침</a>에서 확인할 수 있습니다.
-            </p>
             <p className="legal-note">
               현재 운영 프로젝트의 고객 데이터 저장 리전은 대한민국 서울(ap-northeast-2)입니다. 리전 또는 국외 처리 구조가 변경되면 시행 전에 이 방침을 갱신합니다.
             </p>
@@ -200,7 +194,6 @@ export default function PrivacyPage() {
             <ul>
               <li>보유기간 종료 또는 목적 달성 시 지체 없이 삭제하고, 전자 파일은 복구하기 어려운 방식으로 파기합니다.</li>
               <li>회원탈퇴 시 계정과 회원에 연결된 저장·최근·동의 데이터를 삭제합니다. 앱의 저장 장소·최근 장소·선호 지도·방문자 UUID·동의 설정도 함께 삭제합니다.</li>
-              <li>Apple 로그인 회원은 탈퇴 과정에서 Apple 연결 토큰 해제를 시도하며 자동 해제가 불가능하면 수동 해제 방법을 안내합니다.</li>
               <li>백업 사본은 운영상 즉시 분리하고 백업 순환 주기에 따라 삭제하며, 복구 목적 외에는 사용하지 않습니다.</li>
             </ul>
           </section>

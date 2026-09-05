@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
 import { useSession } from '@/context/session-context';
-import { appleAuthorizationCodeForDeletion, clearAppleAuthState } from '@/lib/apple-auth';
 import { deleteAccount } from '@/lib/api';
 import { appConfig } from '@/lib/config';
 import { getMobileOperationVisitorId } from '@/lib/operations';
@@ -28,7 +27,7 @@ import {
 import { supabase } from '@/lib/supabase';
 
 function providerLabel(provider: unknown) {
-  return ({ google: 'Google', kakao: '카카오', naver: '네이버', apple: 'Apple' } as Record<string, string>)[String(provider)] || '소셜';
+  return ({ google: 'Google', kakao: '카카오', naver: '네이버' } as Record<string, string>)[String(provider)] || '소셜';
 }
 
 const supportEmail = 'jjs092200@gmail.com';
@@ -94,28 +93,13 @@ export default function AccountScreen() {
     setDeleting(true);
     setDeleteError('');
     try {
-      const isApple = session.user.app_metadata.provider === 'apple'
-        || session.user.identities?.some((identity) => identity.provider === 'apple');
-      const appleCode = isApple ? await appleAuthorizationCodeForDeletion() : undefined;
       const visitorId = await getMobileOperationVisitorId();
-      const result = await deleteAccount({ appleAuthorizationCode: appleCode, visitorId });
+      await deleteAccount({ visitorId });
       await supabase.auth.signOut({ scope: 'local' });
-      await clearAppleAuthState();
       await clearMobileLocalData();
       setDeleteOpen(false);
       setConfirmText('');
-      if (result.appleRevocation === 'manual_required') {
-        Alert.alert(
-          '계정 삭제 완료',
-          '오늘어디 계정은 삭제됐습니다. Apple 계정 설정에서 오늘어디 연결도 해제해 주세요.',
-          [
-            { text: '나중에' },
-            { text: 'Apple 설정 열기', onPress: () => void Linking.openURL('https://account.apple.com/account/manage') },
-          ],
-        );
-      } else {
-        Alert.alert('회원탈퇴 완료', '오늘어디 계정과 삭제 대상 데이터가 처리되었습니다.');
-      }
+      Alert.alert('회원탈퇴 완료', '오늘어디 계정과 삭제 대상 데이터가 처리되었습니다.');
     } catch (error) {
       setDeleteError(error instanceof Error ? error.message : '회원탈퇴 처리 중 오류가 발생했습니다.');
     } finally {
@@ -188,7 +172,7 @@ export default function AccountScreen() {
         ) : (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>로그인하고 장소를 저장하세요</Text>
-            <Text style={styles.cardDescription}>카카오·네이버·Google·Apple 계정을 연결할 수 있습니다.</Text>
+            <Text style={styles.cardDescription}>카카오·네이버·Google 계정을 연결할 수 있습니다.</Text>
             <MotionPressable accessibilityRole="button" onPress={() => router.push('/login')} style={styles.loginButton}>
               <Text style={styles.loginText}>로그인 / 회원가입</Text>
             </MotionPressable>
