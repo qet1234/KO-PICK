@@ -78,7 +78,7 @@ jobs:
           OPERATIONS_MIGRATION: supabase/migrations/20260811150000_operations_observability.sql
           DATA_DRIVEN_MIGRATION: supabase/migrations/20260812172000_data_driven_recommendations.sql
           TOGETHER_REMOVAL_MIGRATION: supabase/migrations/20260811180000_remove_together_spaces.sql
-          IOS_REMOVAL_MIGRATION: supabase/migrations/20260905050000_remove_ios_service_status.sql
+          IOS_REMOVAL_MIGRATION: supabase/migrations/20260905173301_remove_ios_service_status.sql
         shell: bash
         run: |
           set -euo pipefail
