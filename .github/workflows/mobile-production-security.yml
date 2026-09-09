@@ -47,7 +47,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Setup EAS
-        uses: expo/expo-github-action@v8
+        uses: expo/expo-github-action@v9
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
