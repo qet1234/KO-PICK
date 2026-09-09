@@ -67,18 +67,6 @@ jobs:
 
       - name: Apply database migration
         if: steps.changes.outputs.migrations == 'true'
-        env:
-          ADMIN_MIGRATION: supabase/migrations/20260810130000_admin_dashboard.sql
-          APP_STATUS_MIGRATION: supabase/migrations/20260810170000_app_service_status.sql
-          SECURITY_MONITORING_MIGRATION: supabase/migrations/20260812111000_admin_security_monitoring.sql
-          COUPLE_DISABLE_MIGRATION: supabase/migrations/20260810194000_disable_couple_space_feature.sql
-          OPERATOR_MIGRATION: supabase/migrations/20260810150000_register_primary_operator.sql
-          LEGAL_SHARE_MIGRATION: supabase/migrations/20260731223000_legal_course_sharing.sql
-          PLACE_LIBRARY_MIGRATION: supabase/migrations/20260811113000_place_library_and_shared_polls.sql
-          OPERATIONS_MIGRATION: supabase/migrations/20260811150000_operations_observability.sql
-          DATA_DRIVEN_MIGRATION: supabase/migrations/20260812172000_data_driven_recommendations.sql
-          TOGETHER_REMOVAL_MIGRATION: supabase/migrations/20260811180000_remove_together_spaces.sql
-          IOS_REMOVAL_MIGRATION: supabase/migrations/20260905173301_remove_ios_service_status.sql
         shell: bash
         run: |
           set -euo pipefail
@@ -94,15 +82,28 @@ jobs:
           fi
 
           if [ "$migration_applied" != true ]; then
-            for migration in "$LEGAL_SHARE_MIGRATION" "$ADMIN_MIGRATION" "$OPERATOR_MIGRATION" "$APP_STATUS_MIGRATION" "$SECURITY_MONITORING_MIGRATION" "$COUPLE_DISABLE_MIGRATION" "$PLACE_LIBRARY_MIGRATION" "$OPERATIONS_MIGRATION" "$DATA_DRIVEN_MIGRATION" "$TOGETHER_REMOVAL_MIGRATION" "$IOS_REMOVAL_MIGRATION"; do
-              echo "Applying reviewed migration $(basename "$migration") through the Supabase Management API."
-              jq -Rs '{query: .}' "$migration" > reviewed-migration.json
-              curl --fail-with-body --silent --show-error \
+            # The reviewed migration may already have been applied through the management API.
+            # Only verify its recorded version; never replay historical CREATE OR REPLACE statements.
+            if [ "${{ github.event_name }}" != "push" ]; then
+              echo "Repair the database connection before manually applying migrations."
+              exit 1
+            fi
+            mapfile -t changed_migrations < <(git diff --name-only "${{ github.event.before }}" "$GITHUB_SHA" -- 'supabase/migrations/*.sql')
+            test "${#changed_migrations[@]}" -gt 0
+            for migration in "${changed_migrations[@]}"; do
+              version="$(basename "$migration" | cut -d_ -f1)"
+              [[ "$version" =~ ^[0-9]{14}$ ]] || exit 1
+              jq -n --arg version "$version" '{query: ("select exists(select 1 from supabase_migrations.schema_migrations where version = '\''" + $version + "'\'') as applied"), read_only: true}' > verify-applied.json
+              curl --fail-with-body --silent --show-error --max-time 30 \
                 --request POST \
                 --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
                 --header "Content-Type: application/json" \
-                --data-binary @reviewed-migration.json \
-                "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query"
+                --data-binary @verify-applied.json \
+                "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/database/query" > verify-applied-response.json
+              jq -e '.[0].applied == true' verify-applied-response.json >/dev/null || {
+                echo "Migration $version is not recorded. Apply it through a reviewed migration workflow."
+                exit 1
+              }
             done
           fi
 

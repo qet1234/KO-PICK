@@ -16,6 +16,7 @@ import {
   verifyLegalConsentCookie,
 } from "@/utils/legal-consent";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/utils/legal-document-versions";
+import { createMobileExchange, MOBILE_REQUEST_COOKIE, readMobileRequest } from "@/utils/mobile-auth-exchange";
 
 export const runtime = "nodejs";
 
@@ -99,6 +100,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const mobileRequest = isMobileState
+      ? readMobileRequest(request.cookies.get(MOBILE_REQUEST_COOKIE)?.value, state)
+      : null;
+    if (isMobileState && !mobileRequest) {
+      return createMobileNaverRedirect({ requestUrl: request.url, error: "앱에서 로그인을 다시 시작해 주세요.", useAppLink });
+    }
+
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
     const supabasePublishableKey =
@@ -151,10 +159,12 @@ export async function GET(request: NextRequest) {
         : createNaverErrorRedirect(request.url, message);
     }
 
-    if (isMobileState) {
+    if (isMobileState && mobileRequest) {
+      const mobileCode = await createMobileExchange(mobileRequest.challenge, exchange.token_hash);
       return createMobileNaverRedirect({
         requestUrl: request.url,
-        tokenHash: exchange.token_hash,
+        mobileCode,
+        appState: mobileRequest.appState,
         useAppLink,
       });
     }

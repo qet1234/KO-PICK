@@ -79,7 +79,8 @@ export function createNaverErrorRedirect(
 export function createMobileNaverRedirect(options: {
   requestUrl: string;
   error?: string;
-  tokenHash?: string;
+  mobileCode?: string;
+  appState?: string;
   useAppLink?: boolean;
 }) {
   const destination = options.useAppLink
@@ -87,7 +88,8 @@ export function createMobileNaverRedirect(options: {
     : new URL("kopick://auth/callback");
   const params = new URLSearchParams({ provider: "naver" });
   if (options.error) params.set("error_description", options.error);
-  if (options.tokenHash) params.set("token_hash", options.tokenHash);
+  if (options.mobileCode) params.set("mobile_code", options.mobileCode);
+  if (options.appState) params.set("auth_state", options.appState);
   if (options.useAppLink) {
     destination.hash = params.toString();
   } else {
@@ -100,6 +102,7 @@ export function createMobileNaverRedirect(options: {
     NAVER_MOBILE_STATE_COOKIE,
     NAVER_MOBILE_PLATFORM_COOKIE,
     NAVER_STATE_COOKIE,
+    "todaywhere_mobile_request_v2",
   ]) {
     response.cookies.set(cookieName, "", {
       httpOnly: true,

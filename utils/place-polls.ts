@@ -72,6 +72,8 @@ export async function voteSharedPlacePoll(
   displayName: string,
 ) {
   const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.is_anonymous) throw new Error("로그인 후 투표할 수 있습니다.");
   const { error } = await supabase.rpc("vote_shared_place_poll", {
     p_token: token,
     p_candidate_id: candidateId,

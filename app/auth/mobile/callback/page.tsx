@@ -9,6 +9,8 @@ function getAppCallbackUrl() {
   const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
   fragmentParams.forEach((value, key) => params.append(key, value));
 
+  const allowed = new Set(['code', 'mobile_code', 'auth_state', 'error', 'error_description', 'provider']);
+  for (const key of Array.from(params.keys())) if (!allowed.has(key)) params.delete(key);
   const query = params.toString();
   return `${APP_CALLBACK_URL}${query ? `?${query}` : ""}`;
 }

@@ -15,7 +15,7 @@ export default async function OwnerReservationsPage() {
     .select("id,name,address,place_source,place_id,approval_status")
     .eq("owner_user_id", user.id)
     .order("created_at", { ascending: true });
-  const storeIds = (stores ?? []).map((store) => store.id);
+  const storeIds = (stores ?? []).filter((store) => store.approval_status === "approved").map((store) => store.id);
   const reservations = storeIds.length ? (await supabase.from("merchant_reservations")
     .select("id,store_id,guest_name,customer_phone,reservation_date,reservation_time,party_size,menu,note,status,source,created_at")
     .in("store_id", storeIds)

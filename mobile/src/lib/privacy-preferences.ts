@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { appConfig } from '@/lib/config';
+import { supabase } from '@/lib/supabase';
 
 export type AnalyticsConsent = 'granted' | 'denied' | null;
 
@@ -28,11 +29,12 @@ export async function setAnalyticsConsent(
   await AsyncStorage.setItem(ANALYTICS_CONSENT_KEY, value);
   if (userId) await AsyncStorage.setItem(`${ANALYTICS_PROMPTED_PREFIX}${userId}`, '1');
 
-  if (value === 'denied' && previousVisitorId) {
+  if (value === 'denied') {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       await fetch(new URL('/api/operations/consent-withdrawal', appConfig.webUrl).toString(), {
         body: JSON.stringify({ visitorId: previousVisitorId }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         method: 'POST',
       });
     } catch {

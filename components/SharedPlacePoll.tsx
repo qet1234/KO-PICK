@@ -93,7 +93,7 @@ export default function SharedPlacePollView({ token }: { token: string }) {
                 </article>
               ))}
             </div>
-            <footer className="shared-poll-footer">한 기기에서 한 곳에 투표할 수 있으며, 다른 장소를 누르면 선택이 변경됩니다.</footer>
+            <footer className="shared-poll-footer">로그인한 계정당 한 곳에 투표할 수 있으며, 다른 장소를 누르면 선택이 변경됩니다. <a href={`/login?next=${encodeURIComponent(`/choose/${token}`)}`}>로그인하기</a></footer>
           </>
         ) : null}
       </section>

@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 
 import { appConfig } from '@/lib/config';
 import { getAnalyticsConsent } from '@/lib/privacy-preferences';
+import { supabase } from '@/lib/supabase';
 
 const VISITOR_KEY = 'kopick:operations-visitor:v1';
 
@@ -35,13 +36,15 @@ export async function getMobileOperationVisitorId() {
 export async function trackMobileOperation(event: MobileOperationEvent) {
   try {
     if (await getAnalyticsConsent() !== 'granted') return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
     await fetch(new URL('/api/operations/events', appConfig.webUrl).toString(), {
       body: JSON.stringify({
         ...event,
         platform: 'android',
         visitorId: await visitorId(),
       }),
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       method: 'POST',
     });
   } catch {

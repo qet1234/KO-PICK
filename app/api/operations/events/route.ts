@@ -1,9 +1,8 @@
-import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/admin";
+import { boundedJson, consumeLimit, operationVisitorId, requestUser } from "@/utils/security-request";
 
 const VISITOR_COOKIE = "todaywhere_ops_visitor";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EVENT_TYPES = new Set([
   "search_success", "search_no_results", "place_card_click", "map_open", "directions_open",
   "booking_open", "app_error", "app_crash", "api_request",
@@ -33,7 +32,15 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get("origin");
   if (origin && origin !== request.nextUrl.origin) return new NextResponse(null, { status: 403 });
 
-  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  const user = await requestUser(request);
+  if (!user) return new NextResponse(null, { status: 401 });
+  try {
+    if (!await consumeLimit("operations-minute", user.id, 60, 60) ||
+        !await consumeLimit("operations-day", user.id, 1000, 86400)) {
+      return new NextResponse(null, { status: 429, headers: { "Retry-After": "60" } });
+    }
+  } catch { return new NextResponse(null, { status: 503 }); }
+  const body = await boundedJson(request);
   const eventType = shortText(body?.eventType, 40);
   const feature = shortText(body?.feature, 60);
   const platform = body?.platform === "android" ? "android" : "web";
@@ -41,16 +48,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "운영 이벤트 형식이 올바르지 않습니다." }, { status: 400 });
   }
 
-  const suppliedVisitor = shortText(body?.visitorId, 36);
   const cookieVisitor = request.cookies.get(VISITOR_COOKIE)?.value;
-  const visitorId = suppliedVisitor && UUID_PATTERN.test(suppliedVisitor)
-    ? suppliedVisitor
-    : cookieVisitor && UUID_PATTERN.test(cookieVisitor)
-      ? cookieVisitor
-      : randomUUID();
+  const visitorId = operationVisitorId(user.id);
 
   const adminClient = createAdminClient();
   const { error } = await adminClient.from("admin_operation_events").insert({
+    actor_user_id: user.id,
     category: shortText(body?.category, 60),
     duration_ms: integer(body?.durationMs, 0, 120000),
     error_message: shortText(body?.errorMessage, 500),
