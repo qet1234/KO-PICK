@@ -81,7 +81,7 @@ jobs:
           file "$RUNNER_TEMP/oneul-eodi-production.aab"
 
       - name: Upload production AAB artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-production-aab
           path: ${{ runner.temp }}/oneul-eodi-production.aab
@@ -208,7 +208,7 @@ jobs:
           exit 1
 
       - name: Upload MobSF report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mobsf-production-report
           path: |
