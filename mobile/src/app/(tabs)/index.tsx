@@ -1,9 +1,10 @@
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Image, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAdaptiveLayout } from '@/hooks/use-adaptive-layout';
 import { MotionPressable } from '@/components/motion-pressable';
 import { LiveWeatherHeader } from '@/components/live-weather-header';
 import { HomeNaverMapPreview } from '@/components/home-naver-map-preview';
@@ -81,6 +82,7 @@ function resolveHomeLocation(input: string, selectedRegion: string, selectedDist
 }
 
 export default function HomeScreen() {
+  const layout = useAdaptiveLayout();
   const [region, setRegion] = useState('서울');
   const [district, setDistrict] = useState('전체');
   const [locality, setLocality] = useState('');
@@ -158,13 +160,14 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>지금 여기, 인기 장소</Text>
         <HomeNaverMapPreview
+          height={layout.previewMapHeight}
           locationLabel={[region, district === '전체' ? '' : district, locality].filter(Boolean).join(' ') || '전국'}
           onPress={() => explore('전체')}
           region={region}
         />
 
         <View style={styles.featureRow}>
-          <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, styles.courseCard]}>
+          <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, { height: layout.featureCardHeight }, styles.courseCard]}>
             <Text style={styles.featureTitle}>코스 설정</Text>
             <Text style={styles.featureText}>테마 맞춤 코스로{`\n`}알차게 여행하기</Text>
             <Image accessibilityIgnoresInvertColors alt="지도 위 출발지와 목적지가 표시된 코스 설정" resizeMode="contain" source={courseSettingImage} style={styles.courseImage} />
@@ -173,7 +176,7 @@ export default function HomeScreen() {
             accessibilityLabel="직장인 식사에서 빠르고 만족스러운 점심·회식 찾기"
             accessibilityRole="button"
             onPress={() => router.push('/(tabs)/office')}
-            style={[styles.featureCard, styles.officeCard]}
+            style={[styles.featureCard, { height: layout.featureCardHeight }, styles.officeCard]}
           >
             <Image
               accessibilityIgnoresInvertColors
@@ -183,7 +186,7 @@ export default function HomeScreen() {
               style={styles.officeImage}
             />
           </MotionPressable>
-          <View style={styles.featureCard}>
+          <View style={[styles.featureCard, { height: layout.featureCardHeight }]}>
             <Text style={styles.featureTitle}>사계절 추천</Text>
             <Text style={styles.featureText}>계절마다 딱 맞는{`\n`}장소를 추천해요</Text>
             <Text style={styles.seasonVisual}>🌸🌿</Text>
@@ -196,7 +199,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 18 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 520, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 18 },
   header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerMain: { minWidth: 0, flex: 1, marginRight: 12 },
   brand: { color: '#111111', fontSize: 27, fontWeight: '900', letterSpacing: -1.3 },

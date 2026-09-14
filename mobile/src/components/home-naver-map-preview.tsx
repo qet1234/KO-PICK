@@ -42,12 +42,14 @@ const markerOffsets = [
 ] as const;
 
 type HomeNaverMapPreviewProps = {
+  height?: number;
   locationLabel: string;
   onPress: () => void;
   region: string;
 };
 
 export function HomeNaverMapPreview({
+  height = 116,
   locationLabel,
   onPress,
   region,
@@ -60,7 +62,7 @@ export function HomeNaverMapPreview({
       accessibilityLabel={`${locationLabel} 장소를 네이버 지도에서 보기`}
       accessibilityRole="button"
       onPress={onPress}
-      style={styles.container}
+      style={[styles.container, { height }]}
     >
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <NaverMapView

@@ -2,6 +2,7 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  Platform,
   Alert,
   ActivityIndicator,
   Image,
@@ -339,7 +340,7 @@ export default function AccountScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
-  container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 34 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7f7f4' },
   eyebrow: { color: '#ff3b36', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' },

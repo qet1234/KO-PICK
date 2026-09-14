@@ -28,7 +28,8 @@ export function NaverPlacesMap<T extends MapPlace>({ places }: NaverPlacesMapPro
 
 const styles = StyleSheet.create({
   placeholder: {
-    height: 280,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,

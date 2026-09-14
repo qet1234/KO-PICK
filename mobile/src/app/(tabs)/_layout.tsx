@@ -93,6 +93,7 @@ export default function TabLayout() {
     <Tabs screenOptions={{
       headerShown: false,
       tabBarHideOnKeyboard: true,
+      tabBarLabelPosition: 'below-icon',
       tabBarActiveTintColor: colors.home,
       tabBarInactiveTintColor: '#252525',
       tabBarLabelStyle: { fontSize: compact ? 8 : 9, lineHeight: 11, fontWeight: '800', marginBottom: 2, textAlign: 'center' },

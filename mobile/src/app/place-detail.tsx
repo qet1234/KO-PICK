@@ -1,8 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Alert, Linking, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAdaptiveLayout } from '@/hooks/use-adaptive-layout';
 import { MotionPressable } from '@/components/motion-pressable';
 import { PlaceImage } from '@/components/place-image';
 import { RouteMapChooser } from '@/components/route-map-chooser';
@@ -12,6 +13,7 @@ import { openRouteMap } from '@/lib/map-links';
 import { toggleSavedPlace } from '@/lib/place-library';
 
 export default function PlaceDetailScreen() {
+  const layout = useAdaptiveLayout();
   const params = useLocalSearchParams<{
     id?: string; name?: string; category?: string; address?: string; phone?: string;
     latitude?: string; longitude?: string; imageUrl?: string;
@@ -107,7 +109,7 @@ export default function PlaceDetailScreen() {
           </MotionPressable>
         </View>
 
-        <View style={styles.heroImage}>
+        <View style={[styles.heroImage, { height: layout.mapHeight }]}>
           {!place.imageUrl ? <View style={styles.heroFallback}><Text style={styles.heroFallbackIcon}>🍽️</Text></View> : null}
           <PlaceImage
             name={place.name}
@@ -207,7 +209,7 @@ export default function PlaceDetailScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingBottom: 24 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 520, alignSelf: 'center', paddingBottom: 24 },
   header: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
   headerButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
   headerButtonText: { color: '#171717', fontSize: 32, lineHeight: 34 },

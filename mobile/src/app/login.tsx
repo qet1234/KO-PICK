@@ -1,7 +1,7 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
@@ -122,7 +122,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f7f7f4' },
-  container: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 36 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 560, alignSelf: 'center', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 36 },
   back: { color: '#71716d', fontSize: 14, fontWeight: '700' },
   brand: { marginTop: 34, color: '#ff3b36', fontSize: 16, fontWeight: '900', letterSpacing: 1.2 },
   title: { marginTop: 8, color: '#101010', fontSize: 29, fontWeight: '900' },
