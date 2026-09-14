@@ -27,7 +27,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'ko-pick',
   platforms: ['android', 'web'],
   version: '1.0.0',
-  orientation: 'portrait',
+  orientation: 'default',
   scheme: 'kopick',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -45,6 +45,7 @@ const createExpoConfig = ({ config }: ConfigContext): ExpoConfig => ({
     output: 'static',
   },
   plugins: [
+    './plugins/with-android-resizable',
     'expo-router',
     'expo-secure-store',
     [

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
@@ -151,7 +151,7 @@ export default function SavedPlacesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f7f7f4' }, container: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 36 },
+  safeArea: { flex: 1, backgroundColor: '#f7f7f4' }, container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 720, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 36 },
   eyebrow: { color: '#ff3b36', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, title: { marginTop: 5, color: '#101010', fontSize: 28, fontWeight: '900' }, subtitle: { marginTop: 8, color: '#71716d', fontSize: 12, lineHeight: 19 },
   tabs: { marginTop: 20, flexDirection: 'row', gap: 8 }, tab: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#dadad4', borderRadius: 999, backgroundColor: '#ffffff', paddingHorizontal: 17 }, tabActive: { borderColor: '#ff3b36', backgroundColor: '#ff3b36' }, tabText: { color: '#333333', fontSize: 12, fontWeight: '900' }, tabTextActive: { color: '#ffffff' }, clearText: { marginTop: 13, color: '#71716d', fontSize: 10, fontWeight: '800' }, loading: { marginVertical: 60 },
   empty: { marginTop: 20, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: '#dadad4', borderRadius: 20, padding: 42 }, emptyTitle: { color: '#101010', fontSize: 15, fontWeight: '900', textAlign: 'center' }, emptyText: { marginTop: 7, color: '#71716d', fontSize: 11, lineHeight: 17, textAlign: 'center' },

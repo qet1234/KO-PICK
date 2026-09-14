@@ -1,8 +1,9 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Platform, ActivityIndicator, Alert, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAdaptiveLayout } from '@/hooks/use-adaptive-layout';
 import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { PlaceImage } from '@/components/place-image';
@@ -83,6 +84,7 @@ const ExplorePlaceCard = memo(function ExplorePlaceCard({
 });
 
 export default function ExploreScreen() {
+  const layout = useAdaptiveLayout();
   const router = useRouter();
   const { session } = useSession();
   const params = useLocalSearchParams<{ region?: string; district?: string; locality?: string; category?: string; query?: string }>();
@@ -360,7 +362,7 @@ export default function ExploreScreen() {
         {loading && places.length === 0 ? <View style={styles.loading}><ActivityIndicator color="#ff2f2f" /><Text style={styles.loadingText}>장소를 불러오는 중입니다.</Text></View> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {viewMode !== 'list' ? <View style={styles.mapShell}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={selectPlace} /></View> : null}
+        {viewMode !== 'list' ? <View style={[styles.mapShell, { height: layout.mapHeight }]}><NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={selectPlace} /></View> : null}
 
         {viewMode !== 'map' ? (
           <View style={styles.list}>
@@ -395,7 +397,7 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 5, paddingBottom: 22 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 5, paddingBottom: 22 },
   containerCompact: { paddingHorizontal: 10 },
   header: { height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   back: { width: 36, color: '#1b1b1b', fontSize: 31, lineHeight: 36 },

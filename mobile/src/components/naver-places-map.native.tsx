@@ -54,9 +54,10 @@ export function NaverPlacesMap<T extends MapPlace>({ places, selectedId, onSelec
 }
 
 const styles = StyleSheet.create({
-  map: { height: 300, borderRadius: 20 },
+  map: { width: '100%', height: '100%' },
   message: {
-    height: 260,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,

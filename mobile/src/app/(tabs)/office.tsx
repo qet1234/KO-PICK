@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  Platform,
   ActivityIndicator,
   Alert,
   Image,
@@ -14,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAdaptiveLayout } from '@/hooks/use-adaptive-layout';
 import { MotionPressable } from '@/components/motion-pressable';
 import { NaverPlacesMap } from '@/components/naver-places-map';
 import { useSession } from '@/context/session-context';
@@ -73,6 +75,7 @@ function diningPlaceKey(place: NaverDiningPlace) {
 }
 
 export default function OfficeDiningScreen() {
+  const layout = useAdaptiveLayout();
   const router = useRouter();
   const { session } = useSession();
   const [mode, setMode] = useState<DiningMode>('점심');
@@ -347,7 +350,7 @@ export default function OfficeDiningScreen() {
               <Text style={styles.mapTitle}>지도에서 보기</Text>
               <Text style={styles.mapCount}>{places.length}곳</Text>
             </View>
-            <View style={styles.mapShell}>
+            <View style={[styles.mapShell, { height: layout.mapHeight }]}>
               <NaverPlacesMap places={places} selectedId={selected?.id ?? null} onSelect={setSelected} />
             </View>
             {selected ? (
@@ -401,7 +404,7 @@ export default function OfficeDiningScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#ffffff' },
-  container: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 4, paddingBottom: 26 },
+  container: { width: '100%', flexGrow: 1, maxWidth: Platform.OS === 'android' ? '100%' : 520, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 4, paddingBottom: 26 },
   header: { height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerSide: { width: 40, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
   back: { color: '#171717', fontSize: 32, lineHeight: 34 },
