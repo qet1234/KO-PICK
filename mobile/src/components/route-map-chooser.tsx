@@ -3,11 +3,13 @@ import {
   Alert,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
 import {
@@ -72,25 +74,30 @@ export function RouteMapChooser({ place }: { place: RoutablePlace }) {
       ) : null}
 
       <Modal animationType="slide" transparent visible={visible} onRequestClose={() => setVisible(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setVisible(false)}>
-          <Pressable style={styles.sheet} onPress={(event) => event.stopPropagation()}>
-            <Text style={styles.sheetTitle}>어떤 지도로 길찾을까요?</Text>
-            <Text style={styles.sheetSubtitle}>{place.name}</Text>
-            <MotionPressable style={[styles.providerButton, styles.naver]} onPress={() => void choose('naver')}>
-              <Text style={styles.providerText}>N  네이버지도</Text>
-            </MotionPressable>
-            <MotionPressable style={[styles.providerButton, styles.kakao]} onPress={() => void choose('kakao')}>
-              <Text style={[styles.providerText, styles.kakaoText]}>●  카카오맵</Text>
-            </MotionPressable>
-            <View style={styles.rememberRow}>
-              <View style={styles.rememberCopy}>
-                <Text style={styles.rememberTitle}>다음부터 선택한 지도로 바로 열기</Text>
-                <Text style={styles.rememberDescription}>계정이 아닌 이 기기에만 저장됩니다.</Text>
-              </View>
-              <Switch value={remember} onValueChange={setRemember} />
+        <View style={styles.backdrop}>
+          <Pressable accessibilityLabel="길찾기 선택 창 닫기" accessibilityRole="button" style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
+          <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
+            <View accessibilityViewIsModal style={styles.sheet}>
+              <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheetContent}>
+                <Text style={styles.sheetTitle}>어떤 지도로 길찾을까요?</Text>
+                <Text style={styles.sheetSubtitle}>{place.name}</Text>
+                <MotionPressable style={[styles.providerButton, styles.naver]} onPress={() => void choose('naver')}>
+                  <Text style={styles.providerText}>N  네이버지도</Text>
+                </MotionPressable>
+                <MotionPressable style={[styles.providerButton, styles.kakao]} onPress={() => void choose('kakao')}>
+                  <Text style={[styles.providerText, styles.kakaoText]}>●  카카오맵</Text>
+                </MotionPressable>
+                <View style={styles.rememberRow}>
+                  <View style={styles.rememberCopy}>
+                    <Text style={styles.rememberTitle}>다음부터 선택한 지도로 바로 열기</Text>
+                    <Text style={styles.rememberDescription}>계정이 아닌 이 기기에만 저장됩니다.</Text>
+                  </View>
+                  <Switch value={remember} onValueChange={setRemember} />
+                </View>
+              </ScrollView>
             </View>
-          </Pressable>
-        </Pressable>
+          </SafeAreaView>
+        </View>
       </Modal>
     </>
   );
@@ -107,10 +114,17 @@ const styles = StyleSheet.create({
   routeButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
   resetText: { marginTop: 8, color: '#71716d', fontSize: 11, textAlign: 'center' },
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(9, 20, 14, 0.42)' },
+  safeArea: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
+    maxHeight: '100%',
+    flexShrink: 1,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: '#ffffff',
+    overflow: 'hidden',
+  },
+  sheetScroll: { flexGrow: 0, flexShrink: 1 },
+  sheetContent: {
     paddingHorizontal: 22,
     paddingTop: 24,
     paddingBottom: 34,

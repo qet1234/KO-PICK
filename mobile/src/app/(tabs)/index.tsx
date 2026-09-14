@@ -133,9 +133,9 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>누구와 함께?</Text>
-        <View style={styles.relationshipRow}>
+        <View style={[styles.relationshipRow, layout.stackCards && styles.relationshipRowWrapped]}>
           {relationships.map((item) => (
-            <MotionPressable accessibilityLabel={`${item.label}와 함께 장소 찾기`} accessibilityRole="button" key={item.label} onPress={() => exploreTogether(item.label)} style={styles.relationshipCard}>
+            <MotionPressable accessibilityLabel={`${item.label}와 함께 장소 찾기`} accessibilityRole="button" key={item.label} onPress={() => exploreTogether(item.label)} style={[styles.relationshipCard, layout.stackCards && styles.relationshipCardWrapped]}>
               <Image accessibilityIgnoresInvertColors alt="" resizeMode="cover" source={item.image} style={styles.relationshipImage} />
               <Text style={styles.relationshipText}>{item.label}</Text>
             </MotionPressable>
@@ -166,8 +166,8 @@ export default function HomeScreen() {
           region={region}
         />
 
-        <View style={styles.featureRow}>
-          <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, { height: layout.featureCardHeight }, styles.courseCard]}>
+        <View style={[styles.featureRow, layout.stackCards && styles.featureRowStacked]}>
+          <MotionPressable accessibilityLabel="코스 설정" accessibilityRole="button" onPress={() => void Linking.openURL(appConfig.webUrl + '/recommend')} style={[styles.featureCard, { minHeight: layout.featureCardHeight }, layout.stackCards && styles.featureCardStacked, styles.courseCard]}>
             <Text style={styles.featureTitle}>코스 설정</Text>
             <Text style={styles.featureText}>테마 맞춤 코스로{`\n`}알차게 여행하기</Text>
             <Image accessibilityIgnoresInvertColors alt="지도 위 출발지와 목적지가 표시된 코스 설정" resizeMode="contain" source={courseSettingImage} style={styles.courseImage} />
@@ -176,7 +176,7 @@ export default function HomeScreen() {
             accessibilityLabel="직장인 식사에서 빠르고 만족스러운 점심·회식 찾기"
             accessibilityRole="button"
             onPress={() => router.push('/(tabs)/office')}
-            style={[styles.featureCard, { height: layout.featureCardHeight }, styles.officeCard]}
+            style={[styles.featureCard, { minHeight: layout.featureCardHeight }, layout.stackCards && styles.featureCardStacked, styles.officeCard]}
           >
             <Image
               accessibilityIgnoresInvertColors
@@ -186,7 +186,7 @@ export default function HomeScreen() {
               style={styles.officeImage}
             />
           </MotionPressable>
-          <View style={[styles.featureCard, { height: layout.featureCardHeight }]}>
+          <View style={[styles.featureCard, { minHeight: layout.featureCardHeight }, layout.stackCards && styles.featureCardStacked]}>
             <Text style={styles.featureTitle}>사계절 추천</Text>
             <Text style={styles.featureText}>계절마다 딱 맞는{`\n`}장소를 추천해요</Text>
             <Text style={styles.seasonVisual}>🌸🌿</Text>
@@ -212,6 +212,8 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, minHeight: 42, color: '#171717', fontSize: 13, paddingVertical: 0 },
   sectionTitle: { marginTop: 18, marginBottom: 10, color: '#171717', fontSize: 13, fontWeight: '900' },
   relationshipRow: { flexDirection: 'row', gap: 7 },
+  relationshipRowWrapped: { flexWrap: 'wrap' },
+  relationshipCardWrapped: { flexBasis: '45%' },
   relationshipCard: { flex: 1, minHeight: 37, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderColor: '#e4e4e4', borderRadius: 9, backgroundColor: '#ffffff' },
   relationshipImage: { width: 23, height: 23, borderRadius: 7 },
   relationshipText: { color: '#272727', fontSize: 10, fontWeight: '800' },
@@ -222,12 +224,14 @@ const styles = StyleSheet.create({
   categoryImage: { width: 44, height: 44, borderRadius: 22 },
   categoryText: { color: '#242424', fontSize: 10, fontWeight: '900' },
   featureRow: { marginTop: 13, flexDirection: 'row', gap: 7 },
-  featureCard: { flex: 1, height: 145, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9, backgroundColor: '#ffffff', padding: 10 },
+  featureRowStacked: { flexDirection: 'column' },
+  featureCardStacked: { flex: 0, width: '100%' },
+  featureCard: { flex: 1, minHeight: 145, overflow: 'hidden', borderWidth: 1, borderColor: '#e5e5e5', borderRadius: 9, backgroundColor: '#ffffff', padding: 10 },
   courseCard: { backgroundColor: '#fffafa' },
   officeCard: { borderColor: '#ffd7c5', backgroundColor: '#fff8f1', padding: 0 },
-  officeImage: { width: '100%', height: '100%' },
+  officeImage: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   featureTitle: { color: '#171717', fontSize: 12, fontWeight: '900' },
   featureText: { marginTop: 4, color: '#626262', fontSize: 8, lineHeight: 12, fontWeight: '700' },
-  courseImage: { width: 76, height: 76, alignSelf: 'center', marginTop: 'auto', marginBottom: -8 },
+  courseImage: { width: 76, maxWidth: '100%', height: 76, alignSelf: 'center', marginTop: 'auto', marginBottom: -8 },
   seasonVisual: { marginTop: 'auto', fontSize: 31, textAlign: 'center' },
 });

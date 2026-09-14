@@ -97,7 +97,7 @@ export default function PlaceDetailScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <MotionPressable accessibilityLabel="뒤로 가기" onPress={() => router.back()} style={styles.headerButton}>

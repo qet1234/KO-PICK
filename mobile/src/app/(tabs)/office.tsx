@@ -368,7 +368,7 @@ export default function OfficeDiningScreen() {
       </ScrollView>
 
       <Modal animationType="slide" transparent visible={picker !== null} onRequestClose={() => setPicker(null)}>
-        <View style={styles.modalRoot}>
+        <SafeAreaView style={styles.modalRoot}>
           <MotionPressable accessibilityLabel="선택 창 닫기" onPress={() => setPicker(null)} style={styles.modalBackdrop} />
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
@@ -396,7 +396,7 @@ export default function OfficeDiningScreen() {
               })}
             </ScrollView>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );

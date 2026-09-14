@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import { usePathname, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MotionPressable } from '@/components/motion-pressable';
@@ -102,43 +102,45 @@ export function ServiceStatusGate({ children }: { children: ReactNode }) {
 
   return (
     <SafeAreaView style={[styles.noticeScreen, kind === 'maintenance' && styles.maintenanceScreen]}>
-      <View style={styles.noticeTop}>
-        <View style={[styles.statusDot, kind === 'partial' && styles.partialDot]} />
-        <Text style={styles.brand}>오늘어디</Text>
-      </View>
-      <View style={styles.noticeCard}>
-        <Text style={styles.eyebrow}>{kind === 'update' ? 'APP UPDATE' : kind === 'partial' ? 'PARTIAL MAINTENANCE' : kind === 'feature' ? 'FEATURE PAUSED' : 'SERVICE MAINTENANCE'}</Text>
-        <Text style={styles.noticeTitle}>{title}</Text>
-        <Text style={styles.noticeMessage}>{message}</Text>
-        {schedule && !updateRequired ? (
-          <View style={styles.schedule}><Text style={styles.scheduleLabel}>점검 시간</Text><Text style={styles.scheduleValue}>{schedule}</Text></View>
-        ) : null}
-        {!updateRequired && status.affectedFeatures.length > 0 ? (
-          <View style={styles.features}>
-            <Text style={styles.featuresLabel}>영향받는 기능</Text>
-            <View style={styles.featureList}>{status.affectedFeatures.map((feature) => <Text key={feature} style={styles.feature}>{feature}</Text>)}</View>
-          </View>
-        ) : null}
-        {updateRequired ? (
-          <MotionPressable accessibilityRole="button" onPress={() => void openUpdate()} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>업데이트하기</Text>
-          </MotionPressable>
-        ) : disabledFeature ? (
-          <MotionPressable accessibilityRole="button" onPress={() => router.replace('/')} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>홈으로 돌아가기</Text>
-          </MotionPressable>
-        ) : (
-          <MotionPressable accessibilityRole="button" disabled={checking} onPress={() => void refresh(true)} style={[styles.primaryButton, checking && styles.disabled]}>
-            {checking ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>다시 확인</Text>}
-          </MotionPressable>
-        )}
-        {partial ? (
-          <MotionPressable accessibilityRole="button" onPress={() => setDismissedPartial(status.updatedAt)} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>확인하고 계속 이용</Text>
-          </MotionPressable>
-        ) : null}
-        <Text style={styles.help}>{disabledFeature ? '운영 상태가 정상화되면 별도 업데이트 없이 다시 이용할 수 있습니다.' : '점검 종료 후 다시 확인하면 정상적으로 이용할 수 있습니다.'}</Text>
-      </View>
+      <ScrollView contentContainerStyle={styles.noticeContent}>
+        <View style={styles.noticeTop}>
+          <View style={[styles.statusDot, kind === 'partial' && styles.partialDot]} />
+          <Text style={styles.brand}>오늘어디</Text>
+        </View>
+        <View style={styles.noticeCard}>
+          <Text style={styles.eyebrow}>{kind === 'update' ? 'APP UPDATE' : kind === 'partial' ? 'PARTIAL MAINTENANCE' : kind === 'feature' ? 'FEATURE PAUSED' : 'SERVICE MAINTENANCE'}</Text>
+          <Text style={styles.noticeTitle}>{title}</Text>
+          <Text style={styles.noticeMessage}>{message}</Text>
+          {schedule && !updateRequired ? (
+            <View style={styles.schedule}><Text style={styles.scheduleLabel}>점검 시간</Text><Text style={styles.scheduleValue}>{schedule}</Text></View>
+          ) : null}
+          {!updateRequired && status.affectedFeatures.length > 0 ? (
+            <View style={styles.features}>
+              <Text style={styles.featuresLabel}>영향받는 기능</Text>
+              <View style={styles.featureList}>{status.affectedFeatures.map((feature) => <Text key={feature} style={styles.feature}>{feature}</Text>)}</View>
+            </View>
+          ) : null}
+          {updateRequired ? (
+            <MotionPressable accessibilityRole="button" onPress={() => void openUpdate()} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>업데이트하기</Text>
+            </MotionPressable>
+          ) : disabledFeature ? (
+            <MotionPressable accessibilityRole="button" onPress={() => router.replace('/')} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>홈으로 돌아가기</Text>
+            </MotionPressable>
+          ) : (
+            <MotionPressable accessibilityRole="button" disabled={checking} onPress={() => void refresh(true)} style={[styles.primaryButton, checking && styles.disabled]}>
+              {checking ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>다시 확인</Text>}
+            </MotionPressable>
+          )}
+          {partial ? (
+            <MotionPressable accessibilityRole="button" onPress={() => setDismissedPartial(status.updatedAt)} style={styles.secondaryButton}>
+              <Text style={styles.secondaryButtonText}>확인하고 계속 이용</Text>
+            </MotionPressable>
+          ) : null}
+          <Text style={styles.help}>{disabledFeature ? '운영 상태가 정상화되면 별도 업데이트 없이 다시 이용할 수 있습니다.' : '점검 종료 후 다시 확인하면 정상적으로 이용할 수 있습니다.'}</Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -148,7 +150,8 @@ const styles = StyleSheet.create({
   brandMark: { width: 54, height: 54, marginBottom: 8, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#ff3b36' },
   brandMarkText: { color: '#ffffff', fontSize: 24, fontWeight: '900' },
   loadingText: { color: '#71716d', fontSize: 12, fontWeight: '700' },
-  noticeScreen: { flex: 1, paddingHorizontal: 20, backgroundColor: '#f7f7f4' },
+  noticeScreen: { flex: 1, backgroundColor: '#f7f7f4' },
+  noticeContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 20 },
   maintenanceScreen: { backgroundColor: '#f5f3ed' },
   noticeTop: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 9 },
   statusDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#ff3b36', boxShadow: '0 0 0 5px rgba(255,59,54,0.12)' },
